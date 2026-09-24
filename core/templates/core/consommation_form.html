@@ -1,0 +1,471 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Nouvelle consommation - Tiers Payant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 95px;
+            background: #123b65;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.10);
+            gap: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+        }
+
+        .brand-text h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .brand-text p {
+            margin: 6px 0 0;
+            font-size: 13px;
+            opacity: .85;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,.12);
+            padding: 11px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .back:hover {
+            background: rgba(255,255,255,.20);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 32px;
+            border-radius: 14px;
+            box-shadow: 0 5px 20px rgba(15,23,42,.08);
+            border: 1px solid #e5e7eb;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            margin-bottom: 25px;
+            color: #123b65;
+            font-size: 24px;
+        }
+
+        .info {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-left: 5px solid #2563eb;
+            color: #1e3a8a;
+            padding: 18px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            line-height: 1.8;
+        }
+
+        .info strong {
+            color: #123b65;
+        }
+
+        .field {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            color: #334155;
+            margin-bottom: 7px;
+            font-size: 14px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 11px 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #fff;
+            color: #1f2937;
+            font-size: 15px;
+            outline: none;
+            transition: .2s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+        }
+
+        .errors {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .field .errors {
+            margin-top: 7px;
+            margin-bottom: 0;
+            font-size: 13px;
+        }
+
+        .actions {
+            margin-top: 30px;
+            padding-top: 22px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: #123b65;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0d2d4d;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 25px 15px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 700px) {
+            .header {
+                padding: 15px 20px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .brand img {
+                width: 110px;
+                height: 55px;
+            }
+
+            .brand-text h1 {
+                font-size: 19px;
+            }
+
+            .container {
+                margin: 25px auto;
+            }
+
+            .card {
+                padding: 22px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img src="{% static 'core/img/logo-sagps.png' %}" alt="Logo SAGPS">
+
+        <div class="brand-text">
+            <h1>Nouvelle consommation</h1>
+            <p>Plateforme Tiers Payant</p>
+        </div>
+
+    </div>
+
+    <a
+        class="back"
+        href="{% url 'demande_tp_details' detail_pec.id_pec.id_demande_id %}"
+    >
+        ← Retour
+    </a>
+
+</div>
+
+<div class="container">
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div class="errors">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+    <div class="card">
+
+        <h2>{{ titre }}</h2>
+
+        <div class="info">
+
+            <strong>PEC :</strong>
+            {{ detail_pec.id_pec.numero_pec }}
+
+            <br>
+
+            <strong>Acte :</strong>
+            {{ detail_pec.id_acte.code_acte }}
+            -
+            {{ detail_pec.id_acte.libelle }}
+
+            <br>
+{% if tarif_affiche %}
+
+    <br>
+
+    <strong>Tarif applicable :</strong>
+    {{ tarif_affiche.montant }} DA
+
+{% endif %}
+
+            <strong>Montant de base :</strong>
+            {{ detail_pec.montant_demande }} DA
+
+            <br>
+
+            <strong>Montant pris en charge :</strong>
+            {{ detail_pec.montant_accorde }} DA
+
+            <br>
+
+            <strong>Reste :</strong>
+            {{ detail_pec.montant_rejete }} DA
+
+        </div>
+
+        {% if form.errors %}
+
+            <div class="errors">
+                <strong>Veuillez corriger les erreurs :</strong>
+                {{ form.errors }}
+            </div>
+
+        {% endif %}
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            {% for field in form %}
+
+                <div class="field">
+
+                    {{ field.label_tag }}
+
+                    {{ field }}
+
+                    {% if field.errors %}
+
+                        <div class="errors">
+                            {{ field.errors }}
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
+
+            <div class="actions">
+
+                <button type="submit" class="btn btn-primary">
+                    💾 Enregistrer
+                </button>
+
+                <a
+                    href="{% url 'demande_tp_details' detail_pec.id_pec.id_demande_id %}"
+                    class="btn btn-secondary"
+                >
+                    Annuler
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant
+</div>
+
+</body>
+</html>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const sousActeField = document.getElementById("id_id_sous_acte");
+    const dateField = document.getElementById("id_date_prestation");
+
+    if (!sousActeField || !dateField) {
+        return;
+    }
+
+    const tarifBox = document.createElement("div");
+
+    tarifBox.style.marginTop = "10px";
+    tarifBox.style.padding = "12px 15px";
+    tarifBox.style.background = "#f0fdf4";
+    tarifBox.style.border = "1px solid #bbf7d0";
+    tarifBox.style.borderLeft = "5px solid #16a34a";
+    tarifBox.style.borderRadius = "8px";
+    tarifBox.style.color = "#166534";
+    tarifBox.style.fontWeight = "bold";
+    tarifBox.style.display = "none";
+
+    dateField.parentElement.insertAdjacentElement(
+        "afterend",
+        tarifBox
+    );
+
+    function chargerTarif() {
+
+        const sousActe = sousActeField.value;
+        const datePrestation = dateField.value;
+
+        if (!sousActe || !datePrestation) {
+            tarifBox.style.display = "none";
+            tarifBox.textContent = "";
+            return;
+        }
+
+        const url =
+            "{% url 'tarif_sous_acte_ajax' detail_pec.id_detail_pec %}"
+            + "?id_sous_acte="
+            + encodeURIComponent(sousActe)
+            + "&date_prestation="
+            + encodeURIComponent(datePrestation);
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+
+                if (data.tarif !== null && data.tarif !== undefined) {
+
+                    tarifBox.textContent =
+                        "Tarif applicable : "
+                        + Number(data.tarif).toLocaleString("fr-FR", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        })
+                        + " DA";
+
+                    tarifBox.style.display = "block";
+
+                } else {
+
+                    tarifBox.textContent =
+                        "Aucun tarif actif trouvÃ© pour ce sous-acte, ce prestataire et cette date.";
+
+                    tarifBox.style.background = "#fef2f2";
+                    tarifBox.style.borderColor = "#fecaca";
+                    tarifBox.style.borderLeftColor = "#dc2626";
+                    tarifBox.style.color = "#b91c1c";
+                    tarifBox.style.display = "block";
+                }
+            })
+            .catch(error => {
+
+                console.error("Erreur rÃ©cupÃ©ration tarif :", error);
+
+                tarifBox.textContent =
+                    "Impossible de rÃ©cupÃ©rer le tarif.";
+
+                tarifBox.style.background = "#fef2f2";
+                tarifBox.style.borderColor = "#fecaca";
+                tarifBox.style.borderLeftColor = "#dc2626";
+                tarifBox.style.color = "#b91c1c";
+                tarifBox.style.display = "block";
+            });
+    }
+
+    sousActeField.addEventListener("change", chargerTarif);
+    dateField.addEventListener("change", chargerTarif);
+
+    chargerTarif();
+});
+</script>

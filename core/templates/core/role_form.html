@@ -1,0 +1,384 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Gestion des rôles - Tiers Payant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 95px;
+            background: #123b65;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.10);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+            background: white;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .header-title p {
+            margin: 6px 0 0;
+            color: #dbeafe;
+            font-size: 14px;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: #1f5b91;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .back:hover {
+            background: #2874b8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 35px 25px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 14px;
+            box-shadow: 0 3px 14px rgba(0,0,0,.07);
+            border: 1px solid #e5e7eb;
+        }
+
+        .card-header {
+            margin-bottom: 28px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            color: #123b65;
+            font-size: 25px;
+        }
+
+        .card-header p {
+            margin: 7px 0 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 21px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #334155;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: white;
+            color: #1f2937;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            transition: .2s;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .errorlist {
+            margin: 6px 0 0;
+            padding: 0;
+            list-style: none;
+            color: #b91c1c;
+            font-size: 13px;
+        }
+
+        .helptext {
+            display: block;
+            margin-top: 5px;
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 28px;
+            padding-top: 22px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 11px 20px;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 22px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 700px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .back {
+                width: 100%;
+                text-align: center;
+            }
+
+            .container {
+                padding: 20px 15px;
+            }
+
+            .card {
+                padding: 22px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                text-align: center;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img src="{% static 'core/img/logo-sagps.png' %}" alt="SAGPS">
+
+        <div class="header-title">
+            <h1>Gestion des rôles</h1>
+            <p>Création et modification des rôles utilisateurs</p>
+        </div>
+
+    </div>
+
+    <a class="back" href="{% url 'roles' %}">
+        ← Retour aux rôles
+    </a>
+
+</div>
+
+
+<div class="container">
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h2>
+                {% if role %}
+                    Modifier le rôle
+                {% else %}
+                    Nouveau rôle
+                {% endif %}
+            </h2>
+
+            <p>
+                Renseignez les informations du rôle.
+            </p>
+
+        </div>
+
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="form-group">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+
+            <div class="form-group">
+
+                <label for="{{ form.code_role.id_for_label }}">
+                    Code du rôle
+                </label>
+
+                {{ form.code_role }}
+
+                {{ form.code_role.errors }}
+
+                {% if form.code_role.help_text %}
+                    <span class="helptext">
+                        {{ form.code_role.help_text }}
+                    </span>
+                {% endif %}
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="{{ form.libelle.id_for_label }}">
+                    Libellé
+                </label>
+
+                {{ form.libelle }}
+
+                {{ form.libelle.errors }}
+
+                {% if form.libelle.help_text %}
+                    <span class="helptext">
+                        {{ form.libelle.help_text }}
+                    </span>
+                {% endif %}
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="{{ form.description.id_for_label }}">
+                    Description
+                </label>
+
+                {{ form.description }}
+
+                {{ form.description.errors }}
+
+                {% if form.description.help_text %}
+                    <span class="helptext">
+                        {{ form.description.help_text }}
+                    </span>
+                {% endif %}
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="{{ form.statut.id_for_label }}">
+                    Statut
+                </label>
+
+                {{ form.statut }}
+
+                {{ form.statut.errors }}
+
+            </div>
+
+
+            <div class="actions">
+
+                <button type="submit" class="btn btn-primary">
+                    Enregistrer
+                </button>
+
+                <a href="{% url 'roles' %}" class="btn btn-secondary">
+                    Annuler
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant SAGPS
+</div>
+
+</body>
+</html>

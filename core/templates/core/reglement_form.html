@@ -1,0 +1,450 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Nouveau règlement - Tiers Payant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 95px;
+            background: #123b65;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.10);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+            background: white;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .header-title p {
+            margin: 6px 0 0;
+            color: #dbeafe;
+            font-size: 14px;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: #1f5b91;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            white-space: nowrap;
+            transition: .2s;
+        }
+
+        .back:hover {
+            background: #2874b8;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 3px 14px rgba(0,0,0,.07);
+            margin-bottom: 22px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #123b65;
+            font-size: 21px;
+        }
+
+        .info {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+            padding: 15px 18px;
+            border-radius: 9px;
+            margin-bottom: 22px;
+            line-height: 1.5;
+        }
+
+        .message {
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            border-radius: 9px;
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            font-weight: bold;
+        }
+
+        .errors {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-top: 7px;
+            margin-bottom: 15px;
+        }
+
+        .field {
+            margin-bottom: 19px;
+        }
+
+        .field label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 7px;
+            color: #334155;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            background: white;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 17px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+            transition: .2s;
+        }
+
+        .btn:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 700px;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 13px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+
+        th {
+            background: #f1f5f9;
+            color: #334155;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        td {
+            font-size: 14px;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .amount {
+            font-weight: bold;
+            color: #123b65;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 25px;
+            color: #64748b;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 22px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 800px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .back {
+                align-self: stretch;
+                text-align: center;
+            }
+
+            .container {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img src="{% static 'core/img/logo-sagps.png' %}" alt="SAGPS">
+
+        <div class="header-title">
+            <h1>Nouveau règlement</h1>
+            <p>Création d'un règlement de facture</p>
+        </div>
+
+    </div>
+
+    <a class="back" href="{% url 'factures' %}">
+        ← Retour aux factures
+    </a>
+
+</div>
+
+
+<div class="container">
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div class="message">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+
+    <div class="card">
+
+        <h2>Créer un règlement</h2>
+
+        <div class="info">
+            Seules les factures validées sont disponibles pour règlement.
+            Le montant ne peut pas dépasser le montant validé de la facture.
+        </div>
+
+        {% if form.errors %}
+
+            <div class="errors">
+                <strong>Veuillez corriger les erreurs :</strong>
+                {{ form.errors }}
+            </div>
+
+        {% endif %}
+
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            {% for field in form %}
+
+                {% if field.name != "numero_reglement" %}
+
+                    <div class="field">
+
+                        {{ field.label_tag }}
+
+                        {{ field }}
+
+                        {% if field.errors %}
+
+                            <div class="errors">
+                                {{ field.errors }}
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                {% endif %}
+
+            {% endfor %}
+
+
+            <div class="actions">
+
+                <button type="submit" class="btn">
+                    Créer le règlement
+                </button>
+
+                <a
+                    href="{% url 'factures' %}"
+                    class="btn btn-secondary"
+                >
+                    Annuler
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2>Factures validées disponibles</h2>
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>ID</th>
+                        <th>N° facture</th>
+                        <th>Prestataire</th>
+                        <th>Date facture</th>
+                        <th>Montant validé</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for f in factures %}
+
+                    <tr>
+
+                        <td>
+                            {{ f.id_facture }}
+                        </td>
+
+                        <td>
+                            <strong>{{ f.numero_facture }}</strong>
+                        </td>
+
+                        <td>
+                            {{ f.id_prestataire.raison_sociale }}
+                        </td>
+
+                        <td>
+                            {{ f.date_facture|date:"d/m/Y" }}
+                        </td>
+
+                        <td class="amount">
+                            {{ f.montant_valide }} DA
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="5" class="empty">
+                            Aucune facture validée disponible.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant SAGPS
+</div>
+
+</body>
+</html>

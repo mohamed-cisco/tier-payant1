@@ -1,0 +1,325 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ titre }} - Tiers Payant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 95px;
+            background: #123b65;
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.10);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+        }
+
+        .brand-text h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .brand-text p {
+            margin: 6px 0 0;
+            font-size: 13px;
+            opacity: .85;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 35px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 32px;
+            border-radius: 14px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 5px 20px rgba(15,23,42,.08);
+        }
+
+        .card-title {
+            margin: 0 0 25px;
+            color: #123b65;
+            font-size: 23px;
+        }
+
+        .field {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: white;
+            color: #1f2937;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #123b65;
+            box-shadow: 0 0 0 3px rgba(18,59,101,.10);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .errorlist {
+            list-style: none;
+            padding: 0;
+            margin: 7px 0 0;
+            color: #b91c1c;
+            font-size: 13px;
+        }
+
+        .form-errors {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .actions {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 11px 18px;
+            border: none;
+            border-radius: 8px;
+            background: #123b65;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background: #0d2d4d;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 25px 15px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 700px) {
+            .header {
+                padding: 15px 20px;
+            }
+
+            .brand img {
+                width: 110px;
+                height: 55px;
+            }
+
+            .brand-text h1 {
+                font-size: 19px;
+            }
+
+            .card {
+                padding: 22px;
+            }
+
+            .actions .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img
+            src="{% static 'core/img/logo-sagps.png' %}"
+            alt="Logo SAGPS"
+        >
+
+        <div class="brand-text">
+            <h1>{{ titre }}</h1>
+            <p>Plateforme Tiers Payant</p>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="container">
+
+    <div class="card">
+
+        <h2 class="card-title">
+            {{ titre }}
+        </h2>
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="form-errors">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="field">
+
+                {{ form.id_prestataire.label_tag }}
+
+                {{ form.id_prestataire }}
+
+                {{ form.id_prestataire.errors }}
+
+            </div>
+
+            <div class="field">
+
+                {{ form.numero_convention.label_tag }}
+
+                {{ form.numero_convention }}
+
+                {{ form.numero_convention.errors }}
+
+            </div>
+
+            <div class="field">
+
+                {{ form.date_debut.label_tag }}
+
+                {{ form.date_debut }}
+
+                {{ form.date_debut.errors }}
+
+            </div>
+
+            <div class="field">
+
+                {{ form.date_fin.label_tag }}
+
+                {{ form.date_fin }}
+
+                {{ form.date_fin.errors }}
+
+            </div>
+
+            <div class="field">
+
+                {{ form.statut.label_tag }}
+
+                {{ form.statut }}
+
+                {{ form.statut.errors }}
+
+            </div>
+
+            <div class="field">
+
+                {{ form.description.label_tag }}
+
+                {{ form.description }}
+
+                {{ form.description.errors }}
+
+            </div>
+
+            <div class="actions">
+
+                <button type="submit" class="btn">
+                    Enregistrer
+                </button>
+
+                <a
+                    href="{% url 'conventions' %}"
+                    class="btn btn-secondary"
+                >
+                    Annuler
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant
+</div>
+
+</body>
+</html>

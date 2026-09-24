@@ -1,0 +1,582 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Conventions - SAGPS</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 95px;
+            background: #123b65;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 3px 12px rgba(0,0,0,.12);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            font-size: 25px;
+        }
+
+        .header-title p {
+            margin: 6px 0 0;
+            font-size: 13px;
+            opacity: .85;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: #1d4f80;
+            padding: 10px 16px;
+            border-radius: 7px;
+            font-weight: bold;
+            transition: .2s;
+        }
+
+        .back:hover {
+            background: #2563eb;
+        }
+
+        .container {
+            padding: 25px 30px 40px;
+            max-width: 1600px;
+            margin: auto;
+        }
+
+        .card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 3px 14px rgba(15, 23, 42, .07);
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            font-size: 20px;
+            color: #123b65;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 16px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 7px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: .2s;
+        }
+
+        .btn:hover {
+            opacity: .9;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: minmax(250px, 2fr) minmax(160px, 1fr) auto;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .field label {
+            font-weight: bold;
+            margin-bottom: 7px;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .field input,
+        .field select {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 7px;
+            background: white;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .field input:focus,
+        .field select:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+            min-width: 1000px;
+        }
+
+        th,
+        td {
+            padding: 13px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            vertical-align: middle;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #334155;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        tbody tr:hover {
+            background: #f8fbff;
+        }
+
+        .numero {
+            color: #123b65;
+            font-weight: bold;
+        }
+
+        .prestataire {
+            font-weight: bold;
+            color: #374151;
+        }
+
+        .code {
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        .statut {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .statut-actif {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .statut-fermee {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .statut-expiree {
+            color: #9a3412;
+            background: #ffedd5;
+        }
+
+        .statut-autre {
+            color: #475569;
+            background: #e2e8f0;
+        }
+
+        .description {
+            max-width: 280px;
+            color: #475569;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .table-actions .btn {
+            padding: 7px 11px;
+            font-size: 12px;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 45px 20px;
+            color: #64748b;
+            font-size: 15px;
+        }
+
+        .footer {
+            text-align: center;
+            color: #64748b;
+            font-size: 12px;
+            padding: 15px 20px 25px;
+        }
+
+        @media (max-width: 800px) {
+            .header {
+                padding: 15px 18px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .container {
+                padding: 18px;
+            }
+
+            .filters {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img src="/static/core/img/logo-sagps.png" alt="SAGPS">
+
+        <div class="header-title">
+            <h1>Gestion des conventions</h1>
+            <p>Gestion des conventions avec les prestataires</p>
+        </div>
+
+    </div>
+
+    <a href="{% url 'accueil' %}" class="back">
+        ← Dashboard
+    </a>
+
+</div>
+
+
+<div class="container">
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h2>Recherche et filtres</h2>
+
+            <div class="actions">
+
+                {% if "CONVENTION_CREATE" in permissions %}
+                    <a href="{% url 'convention_create' %}" class="btn">
+                        + Nouvelle convention
+                    </a>
+                {% endif %}
+
+                <a href="{% url 'conventions' %}" class="btn btn-secondary">
+                    ↻ Actualiser
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <form method="get">
+
+            <div class="filters">
+
+                <div class="field">
+
+                    <label>Recherche</label>
+
+                    <input
+                        type="text"
+                        name="recherche"
+                        value="{{ recherche }}"
+                        placeholder="Numéro, prestataire, description..."
+                    >
+
+                </div>
+
+
+                <div class="field">
+
+                    <label>Statut</label>
+
+                    <select name="statut">
+
+                        <option value="">Tous</option>
+
+                        {% for s in statuts %}
+                            <option
+                                value="{{ s }}"
+                                {% if statut == s %}selected{% endif %}
+                            >
+                                {{ s }}
+                            </option>
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <div>
+
+                    <button type="submit" class="btn">
+                        🔎 Rechercher
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h2>Liste des conventions</h2>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>ID</th>
+                        <th>Numéro</th>
+                        <th>Prestataire</th>
+                        <th>Date début</th>
+                        <th>Date fin</th>
+                        <th>Statut</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for c in conventions %}
+
+                    <tr>
+
+                        <td>
+                            {{ c.id_convention }}
+                        </td>
+
+
+                        <td>
+                            <span class="numero">
+                                {{ c.numero_convention }}
+                            </span>
+                        </td>
+
+
+                        <td>
+
+                            {% if c.id_prestataire %}
+
+                                <div class="prestataire">
+                                    {{ c.id_prestataire.raison_sociale }}
+                                </div>
+
+                                <div class="code">
+                                    {{ c.id_prestataire.code_prestataire }}
+                                </div>
+
+                            {% else %}
+
+                                -
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+                            {{ c.date_debut|date:"d/m/Y" }}
+                        </td>
+
+
+                        <td>
+
+                            {% if c.date_fin %}
+                                {{ c.date_fin|date:"d/m/Y" }}
+                            {% else %}
+                                -
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if c.statut == "ACTIF" %}
+
+                                <span class="statut statut-actif">
+                                    ACTIF
+                                </span>
+
+                            {% elif c.statut == "CLOTUREE" %}
+
+                                <span class="statut statut-fermee">
+                                    CLOTURÉE
+                                </span>
+
+                            {% elif c.statut == "EXPIREE" %}
+
+                                <span class="statut statut-expiree">
+                                    EXPIRÉE
+                                </span>
+
+                            {% else %}
+
+                                <span class="statut statut-autre">
+                                    {{ c.statut }}
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+                            <div class="description">
+                                {{ c.description|default:"-" }}
+                            </div>
+                        </td>
+
+
+                        <td>
+
+                            <div class="table-actions">
+
+                                {% if "CONVENTION_UPDATE" in permissions %}
+
+                                    <a
+                                        href="{% url 'convention_modifier' c.id_convention %}"
+                                        class="btn"
+                                    >
+                                        Modifier
+                                    </a>
+
+                                {% endif %}
+
+
+                                {% if "CONVENTION_DELETE" in permissions and c.statut == "ACTIF" %}
+
+                                    <a
+                                        href="{% url 'convention_cloturer' c.id_convention %}"
+                                        class="btn btn-danger"
+                                    >
+                                        Clôturer
+                                    </a>
+
+                                {% endif %}
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td colspan="8" class="empty">
+                            Aucune convention enregistrée.
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant SAGPS
+</div>
+
+</body>
+</html>

@@ -1,0 +1,356 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>D tail de l'acte</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            background: #123b65;
+            color: white;
+            padding: 25px 30px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            margin: 0 0 8px 0;
+            font-size: 26px;
+        }
+
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: #123b65;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .info {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .info strong {
+            display: block;
+            color: #64748b;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #123b65;
+            color: white;
+            text-align: left;
+            padding: 12px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .actif {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .inactif {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 16px;
+            border-radius: 7px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: #123b65;
+            color: white;
+        }
+
+        .btn-success {
+            background: #198754;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 30px;
+            color: #64748b;
+        }
+
+        @media (max-width: 700px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>{{ acte.libelle }}</h1>
+        <p>
+            D tail de l'acte
+            {% if acte.code_acte %}
+                  {{ acte.code_acte }}
+            {% endif %}
+        </p>
+    </div>
+
+
+    <!-- Informations de l'acte -->
+    <div class="card">
+
+        <h2>Informations de l'acte</h2>
+
+        <div class="info-grid">
+
+            <div class="info">
+                <strong>Code acte</strong>
+                {{ acte.code_acte }}
+            </div>
+
+            <div class="info">
+                <strong>Libell </strong>
+                {{ acte.libelle }}
+            </div>
+
+            <div class="info">
+                <strong>Type de prestation</strong>
+
+                {% if acte.id_type_prestation %}
+                    {{ acte.id_type_prestation.libelle }}
+                {% else %}
+                     
+                {% endif %}
+            </div>
+
+            <div class="info">
+                <strong>Unit </strong>
+                {{ acte.unite|default:" " }}
+            </div>
+
+            <div class="info">
+                <strong>Statut</strong>
+
+                {% if acte.statut == "ACTIF" %}
+                    <span class="badge actif">Actif</span>
+                {% else %}
+                    <span class="badge inactif">
+                        {{ acte.statut }}
+                    </span>
+                {% endif %}
+            </div>
+
+            <div class="info">
+                <strong>Description</strong>
+                {{ acte.description|default:" " }}
+            </div>
+
+        </div>
+
+        <div class="actions">
+
+            {% if "ACTE_UPDATE" in permissions %}
+                <a
+                    href="{% url 'acte_modifier' acte.id_acte %}"
+                    class="btn btn-primary"
+                >
+                    Modifier l'acte
+                </a>
+            {% endif %}
+
+            {% if "ACTE_CREATE" in permissions %}
+                <a
+                    href="{% url 'sous_acte_create' %}?id_acte={{ acte.id_acte }}"
+                    class="btn btn-success"
+                >
+                    + Ajouter un sous-acte
+                </a>
+            {% endif %}
+
+            <a
+                href="{% url 'actes' %}"
+                class="btn btn-secondary"
+            >
+                Retour aux actes
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- Sous-actes -->
+    <div class="card">
+
+        <h2>
+            Sous-actes
+            ({{ sous_actes|length }})
+        </h2>
+
+        {% if sous_actes %}
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Libell </th>
+                        <th>Unit </th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for sous_acte in sous_actes %}
+
+                        <tr>
+
+                            <td>
+                                {{ sous_acte.code_sous_acte }}
+                            </td>
+
+                            <td>
+                                <strong>
+                                    {{ sous_acte.libelle }}
+                                </strong>
+                            </td>
+
+                            <td>
+                                {{ sous_acte.unite|default:" " }}
+                            </td>
+
+                            <td>
+
+                                {% if sous_acte.statut == "ACTIF" %}
+                                    <span class="badge actif">
+                                        Actif
+                                    </span>
+                                {% else %}
+                                    <span class="badge inactif">
+                                        {{ sous_acte.statut }}
+                                    </span>
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if "ACTE_UPDATE" in permissions %}
+    <a
+        href="{% url 'sous_acte_modifier' sous_acte.id_sous_acte %}"
+        class="btn btn-primary"
+    >
+        Modifier
+    </a>
+{% endif %}
+
+<a
+    href="{% url 'tarifs_sous_actes' %}?id_sous_acte={{ sous_acte.id_sous_acte }}"
+    class="btn btn-success"
+>
+    Voir les tarifs
+</a>
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        {% else %}
+
+            <div class="empty">
+                Aucun sous-acte n'est encore associ    cet acte.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+</body>
+</html>

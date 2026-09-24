@@ -1,0 +1,360 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Nouveau recours - Tiers Payant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 95px;
+            background: #123b65;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.10);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+            background: white;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .brand-text h1 {
+            margin: 0;
+            font-size: 23px;
+            font-weight: 700;
+        }
+
+        .brand-text p {
+            margin: 6px 0 0;
+            font-size: 13px;
+            color: #dbeafe;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: #1f5b91;
+            border: 1px solid rgba(255,255,255,.15);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+
+        .back:hover {
+            background: #2874b8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 30px 35px;
+        }
+
+        .page-title {
+            margin-bottom: 22px;
+        }
+
+        .page-title h2 {
+            margin: 0;
+            color: #123b65;
+            font-size: 25px;
+        }
+
+        .page-title p {
+            margin: 7px 0 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 14px;
+            border: 1px solid #e5ebf2;
+            box-shadow: 0 4px 15px rgba(0,0,0,.05);
+        }
+
+        .error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 13px 15px;
+            border-radius: 8px;
+            margin-bottom: 22px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: 700;
+            color: #1f2937;
+            font-size: 14px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 11px 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: white;
+            color: #374151;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .errorlist {
+            color: #dc2626;
+            margin: 6px 0 0;
+            padding-left: 20px;
+            font-size: 13px;
+        }
+
+        .actions {
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid #e5ebf2;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            color: white;
+            background: #123b65;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .btn:hover {
+            background: #1d5d91;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 25px;
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        @media (max-width: 700px) {
+
+            .header {
+                padding: 15px 20px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .brand img {
+                width: 115px;
+                height: 55px;
+            }
+
+            .brand-text h1 {
+                font-size: 18px;
+            }
+
+            .back {
+                width: 100%;
+                text-align: center;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            .card {
+                padding: 22px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .actions .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img
+            src="{% static 'core/img/logo-sagps.png' %}"
+            alt="Logo SAGPS"
+        >
+
+        <div class="brand-text">
+            <h1>Tiers Payant</h1>
+            <p>Gestion des recours</p>
+        </div>
+
+    </div>
+
+    <a href="{% url 'recours' %}" class="back">
+        ← Retour aux recours
+    </a>
+
+</div>
+
+<div class="container">
+
+    <div class="page-title">
+
+        <h2>Nouveau recours</h2>
+
+        <p>
+            Saisissez les informations nécessaires à la création du recours.
+        </p>
+
+    </div>
+
+    <div class="card">
+
+        {% if form.errors %}
+
+            <div class="error">
+                Veuillez corriger les erreurs ci-dessous.
+            </div>
+
+        {% endif %}
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            <div class="form-group">
+                {{ form.id_personne.label_tag }}
+                {{ form.id_personne }}
+                {{ form.id_personne.errors }}
+            </div>
+
+            <div class="form-group">
+                {{ form.type_recours.label_tag }}
+                {{ form.type_recours }}
+                {{ form.type_recours.errors }}
+            </div>
+
+            <div class="form-group">
+                {{ form.date_recours.label_tag }}
+                {{ form.date_recours }}
+                {{ form.date_recours.errors }}
+            </div>
+
+            <div class="form-group">
+                {{ form.objet.label_tag }}
+                {{ form.objet }}
+                {{ form.objet.errors }}
+            </div>
+
+            <div class="form-group">
+                {{ form.motif.label_tag }}
+                {{ form.motif }}
+                {{ form.motif.errors }}
+            </div>
+
+            <div class="form-group">
+                {{ form.observation.label_tag }}
+                {{ form.observation }}
+                {{ form.observation.errors }}
+            </div>
+
+            <div class="actions">
+
+                <button type="submit" class="btn">
+                    Enregistrer
+                </button>
+
+                <a href="{% url 'recours' %}" class="btn btn-secondary">
+                    Annuler
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant SAGPS
+</div>
+
+</body>
+</html>

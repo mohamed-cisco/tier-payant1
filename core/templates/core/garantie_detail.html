@@ -1,0 +1,457 @@
+﻿{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Détail garantie - Tiers Payant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            background: #123b65;
+            color: white;
+            min-height: 95px;
+            padding: 15px 35px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.10);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 25px;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 28px;
+            border-radius: 14px;
+            box-shadow: 0 5px 18px rgba(0,0,0,.08);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 22px;
+        }
+
+        .card h2 {
+            margin: 0 0 22px;
+            color: #123b65;
+            font-size: 21px;
+        }
+
+        .guarantee-title {
+            font-size: 23px;
+            font-weight: 700;
+            color: #123b65;
+            margin-bottom: 25px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 15px;
+        }
+
+        .info {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            padding: 15px;
+            border-radius: 9px;
+        }
+
+        .info strong {
+            display: block;
+            margin-bottom: 7px;
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .info-value {
+            font-size: 15px;
+        }
+
+        .actif {
+            display: inline-block;
+            color: #166534;
+            background: #dcfce7;
+            border: 1px solid #bbf7d0;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .inactif {
+            display: inline-block;
+            color: #991b1b;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .actions {
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 11px 18px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: .2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            opacity: .92;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 850px;
+        }
+
+        th,
+        td {
+            padding: 13px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f1f5f9;
+            color: #374151;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .empty {
+            color: #6b7280;
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 18px;
+            text-align: center;
+        }
+
+        .footer {
+            text-align: center;
+            color: #6b7280;
+            font-size: 13px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 750px) {
+
+            .header {
+                padding: 15px 20px;
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .brand {
+                gap: 15px;
+            }
+
+            .brand img {
+                width: 110px;
+                height: 55px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .header .btn {
+                width: 100%;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img
+            src="{% static 'core/img/logo-sagps.png' %}"
+            alt="SAGPS"
+        >
+
+        <h1>Détail de la garantie</h1>
+
+    </div>
+
+    <a
+        class="btn btn-secondary"
+        href="{% url 'garanties' %}"
+    >
+        ← Retour aux garanties
+    </a>
+
+</div>
+
+<div class="container">
+
+    <!-- Informations garantie -->
+
+    <div class="card">
+
+        <div class="guarantee-title">
+            {{ garantie.code_garantie }} - {{ garantie.libelle }}
+        </div>
+
+        <div class="info-grid">
+
+            <div class="info">
+
+                <strong>Code garantie</strong>
+
+                <div class="info-value">
+                    {{ garantie.code_garantie }}
+                </div>
+
+            </div>
+
+            <div class="info">
+
+                <strong>Libellé</strong>
+
+                <div class="info-value">
+                    {{ garantie.libelle }}
+                </div>
+
+            </div>
+
+            <div class="info">
+
+                <strong>Description</strong>
+
+                <div class="info-value">
+                    {{ garantie.description|default:"-" }}
+                </div>
+
+            </div>
+
+            <div class="info">
+
+                <strong>Statut</strong>
+
+                <div class="info-value">
+
+                    {% if garantie.statut == "ACTIF" %}
+
+                        <span class="actif">
+                            Actif
+                        </span>
+
+                    {% else %}
+
+                        <span class="inactif">
+                            {{ garantie.statut }}
+                        </span>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Actes couverts -->
+
+    <div class="card">
+
+        <h2>Actes couverts</h2>
+
+        {% if "GARANTIE_ACTE_CREATE" in permissions %}
+
+            <div class="actions">
+
+                <a
+                    class="btn"
+                    href="{% url 'garantie_acte_create' %}?id_garantie={{ garantie.id_garantie }}"
+                >
+                    + Ajouter un acte
+                </a>
+
+            </div>
+
+        {% endif %}
+
+        {% if actes %}
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Acte</th>
+                            <th>Taux de prise en charge</th>
+                            <th>Franchise</th>
+                            <th>Date de début</th>
+                            <th>Date de fin</th>
+                            <th>Statut</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for ga in actes %}
+
+                        <tr>
+
+                            <td>
+                                {{ ga.id_acte.code_acte }}
+                                -
+                                {{ ga.id_acte.libelle }}
+                            </td>
+
+                            <td>
+
+                                {% if ga.taux_prise_en_charge != None %}
+
+                                    {{ ga.taux_prise_en_charge }} %
+
+                                {% else %}
+
+                                    -
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ ga.franchise|default:"-" }}
+                            </td>
+
+                            <td>
+                                {{ ga.date_debut }}
+                            </td>
+
+                            <td>
+                                {{ ga.date_fin|default:"-" }}
+                            </td>
+
+                            <td>
+
+                                {% if ga.statut == "ACTIF" %}
+
+                                    <span class="actif">
+                                        Actif
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="inactif">
+                                        {{ ga.statut }}
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% else %}
+
+            <div class="empty">
+                Aucun acte n'est encore associé à cette garantie.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant
+</div>
+
+</body>
+</html>

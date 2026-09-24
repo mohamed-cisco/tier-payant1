@@ -1,0 +1,590 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Détail du recours</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 95px;
+            background: #123b65;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            font-size: 23px;
+        }
+
+        .header-title p {
+            margin: 5px 0 0;
+            font-size: 13px;
+            opacity: .85;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: #1d4f82;
+            padding: 11px 17px;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: .2s;
+            white-space: nowrap;
+        }
+
+        .back:hover {
+            background: #28649e;
+        }
+
+        .container {
+            max-width: 1250px;
+            margin: 0 auto;
+            padding: 30px 25px 40px;
+        }
+
+        .page-title {
+            margin-bottom: 22px;
+        }
+
+        .page-title h2 {
+            margin: 0;
+            color: #123b65;
+            font-size: 24px;
+        }
+
+        .page-title p {
+            margin: 6px 0 0;
+            color: #6b7280;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(15, 23, 42, .07);
+            margin-bottom: 22px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            color: #123b65;
+            font-size: 20px;
+        }
+
+        .recours-number {
+            display: inline-block;
+            background: #eaf2f9;
+            color: #123b65;
+            padding: 8px 13px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .info-item {
+            padding: 15px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            min-width: 0;
+        }
+
+        .info-item.full {
+            grid-column: 1 / -1;
+        }
+
+        .info-item strong {
+            display: block;
+            margin-bottom: 7px;
+            color: #475569;
+            font-size: 13px;
+        }
+
+        .info-item span,
+        .info-item div {
+            color: #1f2937;
+            line-height: 1.5;
+        }
+
+        .statut {
+            display: inline-block;
+            padding: 6px 11px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .actif {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .inactif {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .attente {
+            color: #92400e;
+            background: #fef3c7;
+        }
+
+        .cloture {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .btn-primary {
+            display: inline-block;
+            color: white;
+            background: #123b65;
+            text-decoration: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: .2s;
+        }
+
+        .btn-primary:hover {
+            background: #1d4f82;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        thead {
+            background: #f1f5f9;
+        }
+
+        th {
+            text-align: left;
+            padding: 13px 14px;
+            color: #475569;
+            font-size: 13px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        td {
+            padding: 14px;
+            border-bottom: 1px solid #eef2f7;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .empty {
+            padding: 20px;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 10px;
+            color: #64748b;
+            text-align: center;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 800px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .brand img {
+                width: 125px;
+                height: 55px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .info-item.full {
+                grid-column: auto;
+            }
+
+            .container {
+                padding: 20px 15px 30px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img src="{% static 'core/img/logo-sagps.png' %}" alt="SAGPS">
+
+        <div class="header-title">
+            <h1>Détail du recours</h1>
+            <p>Plateforme Tiers Payant</p>
+        </div>
+
+    </div>
+
+    <a class="back" href="{% url 'recours' %}">
+        ← Retour aux recours
+    </a>
+
+</div>
+
+
+<div class="container">
+
+    <div class="page-title">
+        <h2>Informations du recours</h2>
+        <p>Consultation des informations et des documents associés.</p>
+    </div>
+
+
+    <!-- INFORMATIONS DU RECOURS -->
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h2>Informations générales</h2>
+
+            <span class="recours-number">
+                {{ recours.numero_recours }}
+            </span>
+
+        </div>
+
+
+        <div class="info-grid">
+
+            <div class="info-item">
+
+                <strong>Personne</strong>
+
+                <div>
+                    {{ recours.id_personne.nom }}
+                    {{ recours.id_personne.prenom }}
+                </div>
+
+            </div>
+
+
+            <div class="info-item">
+
+                <strong>Type de recours</strong>
+
+                <div>
+                    {{ recours.type_recours }}
+                </div>
+
+            </div>
+
+
+            <div class="info-item">
+
+                <strong>Date du recours</strong>
+
+                <div>
+                    {{ recours.date_recours|date:"d/m/Y" }}
+                </div>
+
+            </div>
+
+
+            <div class="info-item">
+
+                <strong>Statut</strong>
+
+                <div>
+
+                    {% if recours.statut == "EN_ATTENTE" %}
+
+                        <span class="statut attente">
+                            En attente
+                        </span>
+
+                    {% elif recours.statut == "CLOTURE" %}
+
+                        <span class="statut cloture">
+                            Clôturé
+                        </span>
+
+                    {% else %}
+
+                        <span class="statut actif">
+                            {{ recours.statut }}
+                        </span>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+            <div class="info-item full">
+
+                <strong>Objet</strong>
+
+                <div>
+                    {{ recours.objet }}
+                </div>
+
+            </div>
+
+
+            <div class="info-item full">
+
+                <strong>Motif</strong>
+
+                <div>
+
+                    {% if recours.motif %}
+                        {{ recours.motif }}
+                    {% else %}
+                        -
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+            <div class="info-item">
+
+                <strong>Date de clôture</strong>
+
+                <div>
+
+                    {% if recours.date_cloture %}
+                        {{ recours.date_cloture|date:"d/m/Y" }}
+                    {% else %}
+                        -
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+            <div class="info-item">
+
+                <strong>Utilisateur de création</strong>
+
+                <div>
+
+                    {% if recours.utilisateur_creation %}
+                        {{ recours.utilisateur_creation }}
+                    {% else %}
+                        -
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+            <div class="info-item full">
+
+                <strong>Observation</strong>
+
+                <div>
+
+                    {% if recours.observation %}
+                        {{ recours.observation }}
+                    {% else %}
+                        -
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- DOCUMENTS -->
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h2>Documents joints</h2>
+
+            {% if "DOCUMENT_CREATE" in permissions %}
+
+                <a
+                    href="{% url 'recours_document_create' recours.id_recours %}"
+                    class="btn-primary"
+                >
+                    + Ajouter un document
+                </a>
+
+            {% endif %}
+
+        </div>
+
+
+        {% if documents_lies %}
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Fichier</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Utilisateur</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for rd in documents_lies %}
+
+                            <tr>
+
+                                <td>
+
+                                    <strong>
+                                        {{ rd.id_document.nom_fichier }}
+                                    </strong>
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ rd.type_document|default:"-" }}
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ rd.date_ajout|date:"d/m/Y H:i" }}
+
+                                </td>
+
+
+                                <td>
+
+                                    {% if rd.id_document.id_utilisateur %}
+
+                                        {{ rd.id_document.id_utilisateur.nom_utilisateur }}
+
+                                    {% else %}
+
+                                        -
+
+                                    {% endif %}
+
+                                </td>
+
+                            </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% else %}
+
+            <div class="empty">
+                Aucun document joint à ce recours.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant SAGPS
+</div>
+
+</body>
+</html>

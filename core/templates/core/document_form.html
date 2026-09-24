@@ -1,0 +1,297 @@
+﻿{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ titre }}</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            background: #123b65;
+            color: white;
+            min-height: 95px;
+            padding: 15px 35px;
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.10);
+        }
+
+        .header img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 25px;
+            font-weight: 600;
+        }
+
+        .page {
+            max-width: 850px;
+            margin: 35px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 30px;
+            box-shadow: 0 5px 18px rgba(0,0,0,.08);
+            border: 1px solid #e5e7eb;
+        }
+
+        .card-title {
+            margin: 0 0 8px;
+            font-size: 21px;
+            color: #123b65;
+        }
+
+        .card-subtitle {
+            margin: 0 0 28px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .field {
+            margin-bottom: 23px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px 13px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 14px;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+        }
+
+        .help {
+            color: #6b7280;
+            font-size: 13px;
+            margin-top: 7px;
+        }
+
+        .errorlist {
+            color: #b91c1c;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 7px;
+            margin: 7px 0 0;
+            padding: 8px 12px 8px 28px;
+            font-size: 13px;
+        }
+
+        .form-errors {
+            margin-bottom: 22px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+            padding-top: 22px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 11px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: .2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            opacity: .92;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+            padding: 13px 15px;
+            border-radius: 9px;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        .footer {
+            text-align: center;
+            color: #6b7280;
+            font-size: 13px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 650px) {
+            .header {
+                padding: 15px 20px;
+            }
+
+            .header img {
+                width: 110px;
+                height: 55px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .card {
+                padding: 22px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <img src="{% static 'core/img/logo-sagps.png' %}" alt="SAGPS">
+
+    <h1>{{ titre }}</h1>
+
+</div>
+
+<div class="page">
+
+    <div class="card">
+
+        <h2 class="card-title">Déposer un document</h2>
+
+        <p class="card-subtitle">
+            Ajoutez un document à la plateforme et renseignez ses informations.
+        </p>
+
+        <div class="info-box">
+            📎 Sélectionnez le fichier à déposer puis indiquez son type et son statut.
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+
+            {% csrf_token %}
+
+            <div class="form-errors">
+                {{ form.non_field_errors }}
+            </div>
+
+            <div class="field">
+
+                {{ form.fichier.label_tag }}
+
+                {{ form.fichier }}
+
+                {{ form.fichier.errors }}
+
+                <div class="help">
+                    Sélectionnez le fichier à déposer.
+                </div>
+
+            </div>
+
+            <div class="field">
+
+                {{ form.type_document.label_tag }}
+
+                {{ form.type_document }}
+
+                {{ form.type_document.errors }}
+
+                <div class="help">
+                    Exemple : Ordonnance, Facture, Justificatif...
+                </div>
+
+            </div>
+
+            <div class="field">
+
+                {{ form.statut.label_tag }}
+
+                {{ form.statut }}
+
+                {{ form.statut.errors }}
+
+            </div>
+
+            <div class="actions">
+
+                <button type="submit" class="btn">
+                    📎 Déposer le document
+                </button>
+
+                <a
+                    href="{% url 'documents' %}"
+                    class="btn btn-secondary"
+                >
+                    ← Annuler
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant
+</div>
+
+</body>
+</html>

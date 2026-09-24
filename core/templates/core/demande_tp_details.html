@@ -1,0 +1,622 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Détail demande TP</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 95px;
+            background: #123b65;
+            color: white;
+            padding: 15px 35px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.12);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .header-title p {
+            margin: 6px 0 0;
+            color: #dbeafe;
+            font-size: 13px;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,.12);
+            border: 1px solid rgba(255,255,255,.2);
+            padding: 11px 17px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: .2s;
+        }
+
+        .back:hover {
+            background: rgba(255,255,255,.2);
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 3px 14px rgba(15,23,42,.07);
+            margin-bottom: 22px;
+            border: 1px solid #e5eaf0;
+        }
+
+        .card h2 {
+            margin: 0 0 20px;
+            color: #123b65;
+            font-size: 20px;
+        }
+
+        .request-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 22px;
+        }
+
+        .request-number {
+            font-size: 22px;
+            font-weight: 700;
+            color: #123b65;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            padding: 16px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+
+        .info-item strong {
+            display: block;
+            margin-bottom: 7px;
+            color: #64748b;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+
+        .info-item span,
+        .info-item {
+            font-size: 14px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 11px;
+            border-radius: 20px;
+            background: #e0f2fe;
+            color: #0369a1;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 16px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: .2s;
+        }
+
+        .btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: #15803d;
+        }
+
+        .btn-success:hover {
+            background: #166534;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 850px;
+        }
+
+        th,
+        td {
+            padding: 13px 14px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+
+        tbody tr:hover {
+            background: #f8fbff;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .empty {
+            text-align: center;
+            color: #64748b;
+            padding: 30px !important;
+        }
+
+        .total {
+            text-align: right;
+            font-size: 18px;
+            font-weight: 700;
+            color: #123b65;
+            margin-top: 18px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .document-empty {
+            margin: 0;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 10px;
+            color: #64748b;
+            text-align: center;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        @media (max-width: 1000px) {
+            .info-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 700px) {
+            .header {
+                padding: 15px 20px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .container {
+                padding: 20px 15px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .request-title {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .brand img {
+                width: 125px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img src="{% static 'core/img/logo-sagps.png' %}" alt="SAGPS">
+
+        <div class="header-title">
+            <h1>Détail de la demande TP</h1>
+            <p>Gestion des demandes de tiers payant</p>
+        </div>
+
+    </div>
+
+    <a class="back" href="{% url 'demandes_tp' %}">
+        ← Retour aux demandes
+    </a>
+
+</div>
+
+
+<div class="container">
+
+    <!-- INFORMATIONS DE LA DEMANDE -->
+
+    <div class="card">
+
+        <div class="request-title">
+
+            <div class="request-number">
+                {{ demande.numero_demande }}
+            </div>
+
+            <span class="status">
+                {{ demande.statut }}
+            </span>
+
+        </div>
+
+        <div class="info-grid">
+
+            <div class="info-item">
+                <strong>Bénéficiaire</strong>
+                {{ demande.id_personne_beneficiaire.nom }}
+                {{ demande.id_personne_beneficiaire.prenom }}
+            </div>
+
+            <div class="info-item">
+                <strong>Contrat</strong>
+                {{ demande.id_contrat.numero_contrat }}
+            </div>
+
+            <div class="info-item">
+                <strong>Prestataire</strong>
+                {{ demande.id_prestataire.raison_sociale }}
+            </div>
+
+            <div class="info-item">
+                <strong>Date de la demande</strong>
+                {{ demande.date_demande|date:"d/m/Y H:i" }}
+            </div>
+
+            <div class="info-item">
+                <strong>Montant demandé</strong>
+                {{ demande.montant_demande }} DA
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ACTES -->
+
+    <div class="card">
+
+        <h2>Actes demandés</h2>
+
+        <div class="actions">
+
+            {% if "DEMANDE_CREATE" in permissions %}
+
+                <a
+                    class="btn"
+                    href="{% url 'demande_tp_detail_create' demande.id_demande %}"
+                >
+                    + Ajouter un acte
+                </a>
+
+            {% endif %}
+
+
+            {% if demande.statut == "EN_ATTENTE" %}
+
+                {% if "DEMANDE_VALIDATE" in permissions %}
+
+                    <a
+                        class="btn btn-success"
+                        href="{% url 'demande_tp_valider' demande.id_demande %}"
+                    >
+                        ✓ Valider la demande
+                    </a>
+
+                {% endif %}
+
+            {% endif %}
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Code</th>
+                        <th>Acte</th>
+                        <th>Quantité</th>
+                        <th>Montant unitaire</th>
+                        <th>Montant total</th>
+                        <th>Observation</th>
+                        <th>Action</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for detail in details %}
+
+                    <tr>
+
+                        <td>
+                            <strong>{{ detail.id_acte.code_acte }}</strong>
+                        </td>
+
+                        <td>
+                            {{ detail.id_acte.libelle }}
+                        </td>
+
+                        <td>
+                            {{ detail.quantite }}
+                        </td>
+
+                        <td>
+                            {{ detail.montant_unitaire }} DA
+                        </td>
+
+                        <td>
+                            <strong>{{ detail.montant_total }} DA</strong>
+                        </td>
+
+                        <td>
+                            {{ detail.observation|default:"-" }}
+                        </td>
+
+                        <td>
+
+                            {% if demande.statut == "ACCEPTEE" %}
+
+                                {% for pec_detail in pec_details %}
+
+                                    {% if pec_detail.id_detail_demande.id_detail == detail.id_detail %}
+
+                                        {% if "CONSOMMATION_CREATE" in permissions %}
+
+                                            {% if pec_detail.id_detail_pec not in consommations_existantes %}
+
+                                                <a
+                                                    class="btn"
+                                                    href="{% url 'consommation_create' pec_detail.id_detail_pec %}"
+                                                >
+                                                    Créer une consommation
+                                                </a>
+
+                                            {% else %}
+
+                                                <span style="color:#64748b; font-size:12px;">
+                                                    Consommation déjà créée
+                                                </span>
+
+                                            {% endif %}
+
+                                        {% endif %}
+
+                                    {% endif %}
+
+                                {% endfor %}
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="7" class="empty">
+                            Aucun acte ajouté à cette demande.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <div class="total">
+            Total des actes : {{ montant_total }} DA
+        </div>
+
+    </div>
+
+
+    <!-- PIÈCES JOINTES -->
+
+    <div class="card">
+
+        <h2>Pièces jointes</h2>
+
+        {% if "DOCUMENT_CREATE" in permissions and demande.statut == "EN_ATTENTE" %}
+
+            <div class="actions">
+
+                <a
+                    href="{% url 'demande_tp_document_create' demande.id_demande %}"
+                    class="btn"
+                >
+                    + Ajouter une pièce jointe
+                </a>
+
+            </div>
+
+        {% endif %}
+
+
+        {% if documents_lies %}
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Document</th>
+                            <th>Type</th>
+                            <th>Date d'ajout</th>
+                            <th>Déposé par</th>
+                            <th>Action</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for dd in documents_lies %}
+
+                        <tr>
+
+                            <td>
+                                {{ dd.id_document.nom_fichier }}
+                            </td>
+
+                            <td>
+                                {{ dd.type_document|default:"-" }}
+                            </td>
+
+                            <td>
+                                {{ dd.date_ajout|date:"d/m/Y H:i" }}
+                            </td>
+
+                            <td>
+
+                                {% if dd.id_document.id_utilisateur %}
+
+                                    {{ dd.id_document.id_utilisateur.nom_utilisateur }}
+
+                                {% else %}
+
+                                    -
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                <a
+                                    href="/media/{{ dd.id_document.emplacement }}"
+                                    target="_blank"
+                                    class="btn btn-secondary"
+                                >
+                                    Ouvrir
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% else %}
+
+            <p class="document-empty">
+                Aucune pièce jointe pour cette demande.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant
+</div>
+
+</body>
+</html>

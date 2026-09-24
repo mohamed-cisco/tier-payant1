@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Demandes Tiers Payant - Tiers Payant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 90px;
+            background: #123b65;
+            color: white;
+            padding: 18px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,.10);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .header-left img {
+            width: 125px;
+            height: 55px;
+            object-fit: contain;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            font-size: 25px;
+            font-weight: 700;
+        }
+
+        .header-title p {
+            margin: 5px 0 0;
+            font-size: 13px;
+            opacity: .85;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: #1d527f;
+            padding: 10px 17px;
+            border-radius: 7px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: .2s;
+        }
+
+        .back:hover {
+            background: #286797;
+        }
+
+        .container {
+            padding: 28px;
+        }
+
+        .page-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.07);
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .page-header h2 {
+            margin: 0;
+            color: #123b65;
+            font-size: 21px;
+        }
+
+        .page-header p {
+            margin: 5px 0 0;
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .count-badge {
+            background: #eef4fa;
+            color: #123b65;
+            padding: 8px 13px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 9px;
+        }
+
+        .search-form {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 0;
+        }
+
+        .search-form input,
+        .search-form select {
+            height: 38px;
+            padding: 0 11px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            color: #374151;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .search-form input {
+            width: 320px;
+        }
+
+        .search-form input:focus,
+        .search-form select:focus {
+            border-color: #123b65;
+        }
+
+        .btn {
+            display: inline-block;
+            height: 38px;
+            padding: 0 14px;
+            background: #123b65;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            line-height: 38px;
+            transition: .2s;
+        }
+
+        .btn:hover {
+            background: #1d527f;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .btn-create {
+            background: #123b65;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 9px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 1100px;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f7f9fc;
+            color: #374151;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+            padding: 13px 12px;
+            border-bottom: 2px solid #e5e7eb;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 13px 12px;
+            border-bottom: 1px solid #edf0f3;
+            font-size: 13px;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        tbody tr:hover {
+            background: #f8fbff;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .id {
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .numero {
+            color: #123b65;
+            font-weight: 700;
+        }
+
+        .beneficiaire {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .contrat,
+        .prestataire {
+            color: #374151;
+        }
+
+        .date {
+            color: #4b5563;
+        }
+
+        .montant {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .statut {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .en-attente {
+            color: #92400e;
+            background: #fef3c7;
+        }
+
+        .acceptee {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .rejetee,
+        .annulee {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .actions {
+            white-space: nowrap;
+        }
+
+        .empty {
+            text-align: center;
+            color: #6b7280;
+            padding: 35px !important;
+        }
+
+        .footer {
+            text-align: center;
+            color: #6b7280;
+            font-size: 12px;
+            padding: 20px;
+        }
+
+        @media (max-width: 800px) {
+
+            .header {
+                padding: 15px 18px;
+            }
+
+            .header-left img {
+                width: 95px;
+            }
+
+            .header-title h1 {
+                font-size: 20px;
+            }
+
+            .back {
+                padding: 8px 11px;
+                font-size: 12px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .page-card {
+                padding: 16px;
+            }
+
+            .page-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .toolbar {
+                align-items: stretch;
+            }
+
+            .search-form {
+                width: 100%;
+            }
+
+            .search-form input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="header-left">
+
+        <img
+            src="/static/core/img/logo-sagps.png"
+            alt="SAGPS"
+        >
+
+        <div class="header-title">
+            <h1>Demandes de Tiers Payant</h1>
+            <p>Gestion et suivi des demandes de prise en charge</p>
+        </div>
+
+    </div>
+
+    <a class="back" href="{% url 'accueil' %}">
+        ← Dashboard
+    </a>
+
+</div>
+
+
+<div class="container">
+
+    <div class="page-card">
+
+        <div class="page-header">
+
+            <div>
+                <h2>Liste des demandes</h2>
+                <p>Recherche et suivi des demandes de tiers payant.</p>
+            </div>
+
+            <div class="count-badge">
+                {{ demandes|length }} demande(s)
+            </div>
+
+        </div>
+
+
+        <div class="toolbar">
+
+            <form method="get" class="search-form">
+
+                <input
+                    type="text"
+                    name="recherche"
+                    value="{{ recherche }}"
+                    placeholder="N° demande, bénéficiaire, contrat..."
+                >
+
+                <select name="statut">
+
+                    <option value="">
+                        Tous les statuts
+                    </option>
+
+                    {% for code, libelle in statuts %}
+
+                        <option
+                            value="{{ code }}"
+                            {% if statut == code %}selected{% endif %}
+                        >
+                            {{ libelle }}
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+                <button type="submit" class="btn">
+                    Rechercher
+                </button>
+
+                <a
+                    href="{% url 'demandes_tp' %}"
+                    class="btn btn-secondary"
+                >
+                    Réinitialiser
+                </a>
+
+            </form>
+
+
+            {% if "DEMANDE_CREATE" in permissions %}
+
+                <a
+                    class="btn btn-create"
+                    href="{% url 'demande_tp_create' %}"
+                >
+                    + Nouvelle demande
+                </a>
+
+            {% endif %}
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>ID</th>
+                        <th>N° Demande</th>
+                        <th>Bénéficiaire</th>
+                        <th>Contrat</th>
+                        <th>Prestataire</th>
+                        <th>Date demande</th>
+                        <th>Montant</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for d in demandes %}
+
+                    <tr>
+
+                        <td class="id">
+                            #{{ d.id_demande }}
+                        </td>
+
+                        <td class="numero">
+                            {{ d.numero_demande }}
+                        </td>
+
+                        <td class="beneficiaire">
+                            {{ d.id_personne_beneficiaire.nom }}
+                            {{ d.id_personne_beneficiaire.prenom }}
+                        </td>
+
+                        <td class="contrat">
+                            {{ d.id_contrat.numero_contrat }}
+                        </td>
+
+                        <td class="prestataire">
+                            {{ d.id_prestataire.raison_sociale }}
+                        </td>
+
+                        <td class="date">
+                            {{ d.date_demande|date:"d/m/Y H:i" }}
+                        </td>
+
+                        <td class="montant">
+                            {{ d.montant_demande }} DA
+                        </td>
+
+                        <td>
+
+                            {% if d.statut == "EN_ATTENTE" %}
+
+                                <span class="statut en-attente">
+                                    En attente
+                                </span>
+
+                            {% elif d.statut == "ACCEPTEE" %}
+
+                                <span class="statut acceptee">
+                                    Acceptée
+                                </span>
+
+                            {% elif d.statut == "REJETEE" %}
+
+                                <span class="statut rejetee">
+                                    Rejetée
+                                </span>
+
+                            {% elif d.statut == "ANNULEE" %}
+
+                                <span class="statut annulee">
+                                    Annulée
+                                </span>
+
+                            {% else %}
+
+                                <span class="statut">
+                                    {{ d.statut }}
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td class="actions">
+
+                            <a
+                                href="{% url 'demande_tp_details' d.id_demande %}"
+                                class="btn"
+                            >
+                                Détails
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="9" class="empty">
+                            Aucune demande trouvée.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant
+</div>
+
+</body>
+</html>

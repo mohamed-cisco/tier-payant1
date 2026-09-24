@@ -1,0 +1,506 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Détail de la prise en charge</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 95px;
+            background: #123b65;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.10);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+            background: white;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .header-title p {
+            margin: 6px 0 0;
+            color: #dbeafe;
+            font-size: 14px;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: #1f5b91;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: .2s;
+            white-space: nowrap;
+        }
+
+        .back:hover {
+            background: #2874b8;
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 3px 14px rgba(0,0,0,.07);
+            margin-bottom: 22px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: #123b65;
+            font-size: 21px;
+        }
+
+        .pec-number {
+            font-size: 25px;
+            font-weight: bold;
+            color: #123b65;
+            margin-bottom: 22px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .info-item {
+            padding: 15px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+
+        .info-item strong {
+            display: block;
+            margin-bottom: 7px;
+            color: #475569;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+
+        .info-item span.value {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .statut-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .acceptee {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .rejetee {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .statut-autre {
+            color: #475569;
+            background: #e2e8f0;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 18px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 1100px;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 13px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #f1f5f9;
+            color: #334155;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        td {
+            font-size: 14px;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 9px 13px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 7px;
+            font-weight: bold;
+            font-size: 13px;
+            white-space: nowrap;
+            transition: .2s;
+        }
+
+        .btn:hover {
+            background: #1d4ed8;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 25px;
+            color: #64748b;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 22px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 900px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .back {
+                align-self: stretch;
+                text-align: center;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img src="{% static 'core/img/logo-sagps.png' %}" alt="SAGPS">
+
+        <div class="header-title">
+            <h1>Détail de la prise en charge</h1>
+            <p>Informations et actes pris en charge</p>
+        </div>
+
+    </div>
+
+    <a class="back" href="{% url 'prises_en_charge' %}">
+        ← Retour aux prises en charge
+    </a>
+
+</div>
+
+
+<div class="container">
+
+    <div class="card">
+
+        <div class="pec-number">
+            {{ pec.numero_pec }}
+        </div>
+
+        <div class="info-grid">
+
+            <div class="info-item">
+                <strong>N° Demande</strong>
+                <span class="value">
+                    {{ pec.id_demande.numero_demande }}
+                </span>
+            </div>
+
+            <div class="info-item">
+                <strong>Bénéficiaire</strong>
+                <span class="value">
+                    {{ pec.id_demande.id_personne_beneficiaire.nom }}
+                    {{ pec.id_demande.id_personne_beneficiaire.prenom }}
+                </span>
+            </div>
+
+            <div class="info-item">
+                <strong>Contrat</strong>
+                <span class="value">
+                    {{ pec.id_demande.id_contrat.numero_contrat }}
+                </span>
+            </div>
+
+            <div class="info-item">
+                <strong>Prestataire</strong>
+                <span class="value">
+                    {{ pec.id_demande.id_prestataire.raison_sociale }}
+                </span>
+            </div>
+
+            <div class="info-item">
+                <strong>Date PEC</strong>
+                <span class="value">
+                    {{ pec.date_pec|date:"d/m/Y H:i" }}
+                </span>
+            </div>
+
+            <div class="info-item">
+                <strong>Statut</strong>
+
+                {% if pec.statut == "ACCEPTEE" %}
+
+                    <span class="statut-badge acceptee">
+                        Acceptée
+                    </span>
+
+                {% elif pec.statut == "REJETEE" %}
+
+                    <span class="statut-badge rejetee">
+                        Rejetée
+                    </span>
+
+                {% else %}
+
+                    <span class="statut-badge statut-autre">
+                        {{ pec.statut }}
+                    </span>
+
+                {% endif %}
+
+            </div>
+
+            <div class="info-item">
+                <strong>Montant demandé</strong>
+                <span class="value">
+                    {{ pec.montant_demande }} DA
+                </span>
+            </div>
+
+            <div class="info-item">
+                <strong>Montant accepté</strong>
+                <span class="value">
+                    {{ pec.montant_accepte }} DA
+                </span>
+            </div>
+
+            <div class="info-item">
+                <strong>Montant rejeté</strong>
+                <span class="value">
+                    {{ pec.montant_rejete }} DA
+                </span>
+            </div>
+
+            <div class="info-item">
+                <strong>Date expiration</strong>
+                <span class="value">
+
+                    {% if pec.date_expiration %}
+                        {{ pec.date_expiration|date:"d/m/Y" }}
+                    {% else %}
+                        -
+                    {% endif %}
+
+                </span>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2>Détails des actes pris en charge</h2>
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Code acte</th>
+                        <th>Acte</th>
+                        <th>Quantité</th>
+                        <th>Montant demandé</th>
+                        <th>Montant accordé</th>
+                        <th>Montant rejeté</th>
+                        <th>Taux</th>
+                        <th>Franchise</th>
+                        <th>Statut</th>
+                        <th>Action</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for detail in details %}
+
+                    <tr>
+
+                        <td>
+                            <strong>{{ detail.id_acte.code_acte }}</strong>
+                        </td>
+
+                        <td>
+                            {{ detail.id_acte.libelle }}
+                        </td>
+
+                        <td>
+                            {{ detail.quantite }}
+                        </td>
+
+                        <td>
+                            {{ detail.montant_demande }} DA
+                        </td>
+
+                        <td>
+                            {{ detail.montant_accorde }} DA
+                        </td>
+
+                        <td>
+                            {{ detail.montant_rejete }} DA
+                        </td>
+
+                        <td>
+                            {{ detail.taux_applique }} %
+                        </td>
+
+                        <td>
+                            {{ detail.franchise_appliquee }} DA
+                        </td>
+
+                        <td>
+
+                            {% if detail.statut == "ACCEPTEE" %}
+
+                                <span class="statut-badge acceptee">
+                                    Acceptée
+                                </span>
+
+                            {% elif detail.statut == "REJETEE" %}
+
+                                <span class="statut-badge rejetee">
+                                    Rejetée
+                                </span>
+
+                            {% else %}
+
+                                <span class="statut-badge statut-autre">
+                                    {{ detail.statut }}
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+
+                            {% if detail.statut == "ACCEPTEE" and "CONSOMMATION_CREATE" in permissions %}
+
+                                <a href="{% url 'consommation_create' detail.id_detail_pec %}"
+                                   class="btn">
+                                    Nouvelle consommation
+                                </a>
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="10" class="empty">
+                            Aucun détail de prise en charge trouvé.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant SAGPS
+</div>
+
+</body>
+</html>

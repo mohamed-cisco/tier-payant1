@@ -1,0 +1,761 @@
+﻿# This is an auto-generated Django model module.
+# You'll have to do the following manually to clean this up:
+#   * Rearrange models' order
+#   * Make sure each model has one field with primary_key=True
+#   * Make sure each ForeignKey and OneToOneField has `on_delete` set to the desired behavior
+#   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
+# Feel free to rename the models, but don't rename db_table values or field names.
+from django.db import models
+
+
+class Acte(models.Model):
+    id_acte = models.BigAutoField(primary_key=True)
+    id_type_prestation = models.ForeignKey('TypePrestation', models.DO_NOTHING, db_column='id_type_prestation')
+    code_acte = models.CharField(unique=True, max_length=30)
+    libelle = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    unite = models.CharField(max_length=30, blank=True, null=True)
+    statut = models.CharField(max_length=20)
+
+    class Meta:
+        managed = False
+        db_table = 'acte'
+
+class SousActe(models.Model):
+    id_sous_acte = models.BigAutoField(primary_key=True)
+
+    id_acte = models.ForeignKey(
+        Acte,
+        models.DO_NOTHING,
+        db_column='id_acte'
+    )
+
+    code_sous_acte = models.CharField(
+        max_length=30,
+        unique=True
+    )
+
+    libelle = models.CharField(max_length=200)
+
+    description = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    unite = models.CharField(
+        max_length=30,
+        blank=True,
+        null=True
+    )
+
+    statut = models.CharField(max_length=20)
+
+    class Meta:
+        managed = False
+        db_table = 'sous_acte'
+        unique_together = (('id_acte', 'libelle'),)
+
+class TarifSousActe(models.Model):
+    id_tarif_sous_acte = models.BigAutoField(primary_key=True)
+
+    id_sous_acte = models.ForeignKey(
+        'SousActe',
+        models.DO_NOTHING,
+        db_column='id_sous_acte'
+    )
+
+    id_prestataire = models.ForeignKey(
+        'Prestataire',
+        models.DO_NOTHING,
+        db_column='id_prestataire'
+    )
+
+    montant = models.DecimalField(
+        max_digits=15,
+        decimal_places=2
+    )
+
+    date_debut = models.DateField()
+
+    date_fin = models.DateField(
+        blank=True,
+        null=True
+    )
+
+    statut = models.CharField(max_length=20)
+
+    class Meta:
+        managed = False
+        db_table = 'tarif_sous_acte'
+        unique_together = (
+            ('id_sous_acte', 'id_prestataire', 'date_debut'),
+        )
+
+class Adherent(models.Model):
+    id_adherent = models.BigAutoField(primary_key=True)
+    id_personne = models.OneToOneField('Personne', models.DO_NOTHING, db_column='id_personne')
+    numero_adherent = models.CharField(unique=True, max_length=30)
+    date_creation = models.DateTimeField()
+    statut = models.CharField(max_length=20)
+    date_adhesion = models.DateField(blank=True, null=True)
+    date_radiation = models.DateField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'adherent'
+
+
+class Adhesion(models.Model):
+    id_adhesion = models.BigAutoField(primary_key=True)
+    id_adherent = models.ForeignKey(Adherent, models.DO_NOTHING, db_column='id_adherent')
+    id_contrat = models.ForeignKey('Contrat', models.DO_NOTHING, db_column='id_contrat')
+    numero_adhesion = models.CharField(unique=True, max_length=50)
+    date_debut = models.DateField()
+    date_fin = models.DateField(blank=True, null=True)
+    statut = models.CharField(max_length=20)
+    date_creation = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'adhesion'
+
+
+class AuditLog(models.Model):
+    id_audit = models.BigAutoField(primary_key=True)
+    id_utilisateur = models.ForeignKey('Utilisateur', models.DO_NOTHING, db_column='id_utilisateur', blank=True, null=True)
+    date_action = models.DateTimeField()
+    type_action = models.CharField(max_length=30)
+    module = models.CharField(max_length=100, blank=True, null=True)
+    table_cible = models.CharField(max_length=100, blank=True, null=True)
+    id_enregistrement = models.BigIntegerField(blank=True, null=True)
+    ancienne_valeur = models.TextField(blank=True, null=True)
+    nouvelle_valeur = models.TextField(blank=True, null=True)
+    adresse_ip = models.CharField(max_length=45, blank=True, null=True)
+    poste = models.CharField(max_length=100, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'audit_log'
+
+
+class AuthGroup(models.Model):
+    name = models.CharField(unique=True, max_length=150)
+
+    class Meta:
+        managed = False
+        db_table = 'auth_group'
+
+
+class AuthGroupPermissions(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    group = models.ForeignKey(AuthGroup, models.DO_NOTHING)
+    permission = models.ForeignKey('AuthPermission', models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+        db_table = 'auth_group_permissions'
+        unique_together = (('group', 'permission'),)
+
+
+class AuthPermission(models.Model):
+    name = models.CharField(max_length=255)
+    content_type = models.ForeignKey('DjangoContentType', models.DO_NOTHING)
+    codename = models.CharField(max_length=100)
+
+    class Meta:
+        managed = False
+        db_table = 'auth_permission'
+        unique_together = (('content_type', 'codename'),)
+
+
+class AuthUser(models.Model):
+    password = models.CharField(max_length=128)
+    last_login = models.DateTimeField(blank=True, null=True)
+    is_superuser = models.BooleanField()
+    username = models.CharField(unique=True, max_length=150)
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
+    email = models.CharField(max_length=254)
+    is_staff = models.BooleanField()
+    is_active = models.BooleanField()
+    date_joined = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'auth_user'
+
+
+class AuthUserGroups(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    user = models.ForeignKey(AuthUser, models.DO_NOTHING)
+    group = models.ForeignKey(AuthGroup, models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+        db_table = 'auth_user_groups'
+        unique_together = (('user', 'group'),)
+
+
+class AuthUserUserPermissions(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    user = models.ForeignKey(AuthUser, models.DO_NOTHING)
+    permission = models.ForeignKey(AuthPermission, models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+        db_table = 'auth_user_user_permissions'
+        unique_together = (('user', 'permission'),)
+
+
+class AyantDroit(models.Model):
+    id_ayant_droit = models.BigAutoField(primary_key=True)
+    id_personne = models.OneToOneField('Personne', models.DO_NOTHING, db_column='id_personne')
+    id_adherent = models.ForeignKey(Adherent, models.DO_NOTHING, db_column='id_adherent')
+    type_lien = models.CharField(max_length=30)
+    date_debut = models.DateField()
+    date_fin = models.DateField(blank=True, null=True)
+    statut = models.CharField(max_length=20)
+
+    class Meta:
+        managed = False
+        db_table = 'ayant_droit'
+
+
+class Consommation(models.Model):
+    id_consommation = models.BigAutoField(primary_key=True)
+    id_detail_pec = models.ForeignKey('PriseEnChargeDetail', models.DO_NOTHING, db_column='id_detail_pec')
+    id_personne_beneficiaire = models.ForeignKey('Personne', models.DO_NOTHING, db_column='id_personne_beneficiaire')
+    id_adhesion = models.ForeignKey(Adhesion, models.DO_NOTHING, db_column='id_adhesion')
+    id_acte = models.ForeignKey(Acte, models.DO_NOTHING, db_column='id_acte')
+    id_sous_acte = models.ForeignKey(
+      'SousActe',
+      models.DO_NOTHING,
+      db_column='id_sous_acte',
+      blank=True,
+      null=True
+)
+    id_garantie = models.ForeignKey('Garantie', models.DO_NOTHING, db_column='id_garantie')
+    id_prestataire = models.ForeignKey('Prestataire', models.DO_NOTHING, db_column='id_prestataire')
+    date_prestation = models.DateField()
+    date_validation = models.DateTimeField(blank=True, null=True)
+    quantite = models.DecimalField(max_digits=10, decimal_places=2)
+    montant_base = models.DecimalField(max_digits=15, decimal_places=2)
+    montant_prise_en_charge = models.DecimalField(max_digits=15, decimal_places=2)
+    montant_reste = models.DecimalField(max_digits=15, decimal_places=2)
+    statut = models.CharField(max_length=30)
+    exercice = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'consommation'
+
+
+class Contrat(models.Model):
+    id_contrat = models.BigAutoField(primary_key=True)
+    id_souscripteur = models.ForeignKey('Souscripteur', models.DO_NOTHING, db_column='id_souscripteur')
+    numero_contrat = models.CharField(unique=True, max_length=50)
+    date_debut = models.DateField()
+    date_fin = models.DateField(blank=True, null=True)
+    type_contrat = models.CharField(max_length=50)
+    statut = models.CharField(max_length=20)
+    date_creation = models.DateTimeField()
+    objet = models.CharField(max_length=500, blank=True, null=True)
+    date_signature = models.DateField(blank=True, null=True)
+    date_modification = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'contrat'
+
+
+class ContratGarantie(models.Model):
+    id_contrat_garantie = models.BigAutoField(primary_key=True)
+    id_contrat = models.ForeignKey(Contrat, models.DO_NOTHING, db_column='id_contrat')
+    id_garantie = models.ForeignKey('Garantie', models.DO_NOTHING, db_column='id_garantie')
+    date_debut = models.DateField()
+    date_fin = models.DateField(blank=True, null=True)
+    statut = models.CharField(max_length=20)
+
+    class Meta:
+        managed = False
+        db_table = 'contrat_garantie'
+        unique_together = (('id_contrat', 'id_garantie', 'date_debut'),)
+
+
+class Convention(models.Model):
+    id_convention = models.BigAutoField(primary_key=True)
+    id_prestataire = models.ForeignKey('Prestataire', models.DO_NOTHING, db_column='id_prestataire')
+    numero_convention = models.CharField(unique=True, max_length=50)
+    date_debut = models.DateField()
+    date_fin = models.DateField(blank=True, null=True)
+    statut = models.CharField(max_length=20)
+    description = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'convention'
+
+
+class DecisionRecours(models.Model):
+    id_decision = models.BigAutoField(primary_key=True)
+    id_recours = models.ForeignKey('Recours', models.DO_NOTHING, db_column='id_recours')
+    date_decision = models.DateField()
+    type_decision = models.CharField(max_length=50)
+    motif_decision = models.TextField(blank=True, null=True)
+    montant_accorde = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    observation = models.TextField(blank=True, null=True)
+    utilisateur_decision = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'decision_recours'
+
+
+class DemandeTp(models.Model):
+    id_demande = models.BigAutoField(primary_key=True)
+    numero_demande = models.CharField(unique=True, max_length=50)
+    id_personne_beneficiaire = models.ForeignKey('Personne', models.DO_NOTHING, db_column='id_personne_beneficiaire')
+    id_contrat = models.ForeignKey(Contrat, models.DO_NOTHING, db_column='id_contrat')
+    id_prestataire = models.ForeignKey('Prestataire', models.DO_NOTHING, db_column='id_prestataire')
+    date_demande = models.DateTimeField()
+    montant_demande = models.DecimalField(max_digits=15, decimal_places=2)
+    statut = models.CharField(max_length=30)
+    motif_rejet = models.TextField(blank=True, null=True)
+    date_decision = models.DateTimeField(blank=True, null=True)
+    utilisateur_creation = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'demande_tp'
+
+
+class DemandeTpDetail(models.Model):
+    id_detail = models.BigAutoField(primary_key=True)
+    id_demande = models.ForeignKey(DemandeTp, models.DO_NOTHING, db_column='id_demande')
+    id_acte = models.ForeignKey(Acte, models.DO_NOTHING, db_column='id_acte')
+    quantite = models.DecimalField(max_digits=10, decimal_places=2)
+    montant_unitaire = models.DecimalField(max_digits=15, decimal_places=2)
+    montant_total = models.DecimalField(max_digits=15, decimal_places=2)
+    observation = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'demande_tp_detail'
+
+
+class DetailFacture(models.Model):
+    id_detail_facture = models.BigAutoField(primary_key=True)
+    id_facture = models.ForeignKey('Facture', models.DO_NOTHING, db_column='id_facture')
+    id_consommation = models.ForeignKey(Consommation, models.DO_NOTHING, db_column='id_consommation')
+    id_acte = models.ForeignKey(Acte, models.DO_NOTHING, db_column='id_acte')
+    quantite = models.DecimalField(max_digits=10, decimal_places=2)
+    montant_unitaire = models.DecimalField(max_digits=15, decimal_places=2)
+    montant_total = models.DecimalField(max_digits=15, decimal_places=2)
+    montant_valide = models.DecimalField(max_digits=15, decimal_places=2)
+    montant_rejete = models.DecimalField(max_digits=15, decimal_places=2)
+    statut = models.CharField(max_length=30)
+    id_motif_rejet = models.ForeignKey('MotifRejet', models.DO_NOTHING, db_column='id_motif_rejet', blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'detail_facture'
+
+
+class DjangoAdminLog(models.Model):
+    action_time = models.DateTimeField()
+    object_id = models.TextField(blank=True, null=True)
+    object_repr = models.CharField(max_length=200)
+    action_flag = models.SmallIntegerField()
+    change_message = models.TextField()
+    content_type = models.ForeignKey('DjangoContentType', models.DO_NOTHING, blank=True, null=True)
+    user = models.ForeignKey(AuthUser, models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+        db_table = 'django_admin_log'
+
+
+class DjangoContentType(models.Model):
+    app_label = models.CharField(max_length=100)
+    model = models.CharField(max_length=100)
+
+    class Meta:
+        managed = False
+        db_table = 'django_content_type'
+        unique_together = (('app_label', 'model'),)
+
+
+class DjangoMigrations(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    app = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    applied = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'django_migrations'
+
+
+class DjangoSession(models.Model):
+    session_key = models.CharField(primary_key=True, max_length=40)
+    session_data = models.TextField()
+    expire_date = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'django_session'
+
+
+class Document(models.Model):
+    id_document = models.BigAutoField(primary_key=True)
+    nom_fichier = models.CharField(max_length=255)
+    type_document = models.CharField(max_length=100, blank=True, null=True)
+    extension = models.CharField(max_length=20, blank=True, null=True)
+    taille = models.BigIntegerField(blank=True, null=True)
+    emplacement = models.TextField()
+    hash_fichier = models.CharField(max_length=128, blank=True, null=True)
+    date_depot = models.DateTimeField()
+    id_utilisateur = models.ForeignKey('Utilisateur', models.DO_NOTHING, db_column='id_utilisateur', blank=True, null=True)
+    statut = models.CharField(max_length=20)
+
+    class Meta:
+        managed = False
+        db_table = 'document'
+
+
+class Facture(models.Model):
+    id_facture = models.BigAutoField(primary_key=True)
+    id_prestataire = models.ForeignKey('Prestataire', models.DO_NOTHING, db_column='id_prestataire')
+    numero_facture = models.CharField(unique=True, max_length=50)
+    date_facture = models.DateField()
+    date_reception = models.DateField(blank=True, null=True)
+    montant_total = models.DecimalField(max_digits=15, decimal_places=2)
+    montant_valide = models.DecimalField(max_digits=15, decimal_places=2)
+    montant_rejete = models.DecimalField(max_digits=15, decimal_places=2)
+    statut = models.CharField(max_length=30)
+    date_validation = models.DateTimeField(blank=True, null=True)
+    utilisateur_validation = models.CharField(max_length=100, blank=True, null=True)
+    observation = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'facture'
+
+
+class Garantie(models.Model):
+    id_garantie = models.BigAutoField(primary_key=True)
+    code_garantie = models.CharField(unique=True, max_length=30)
+    libelle = models.CharField(max_length=150)
+    description = models.TextField(blank=True, null=True)
+    statut = models.CharField(max_length=20)
+
+    class Meta:
+        managed = False
+        db_table = 'garantie'
+
+
+class GarantieActe(models.Model):
+    id_garantie_acte = models.BigAutoField(primary_key=True)
+    id_garantie = models.ForeignKey(Garantie, models.DO_NOTHING, db_column='id_garantie')
+    id_acte = models.ForeignKey(Acte, models.DO_NOTHING, db_column='id_acte')
+    taux_prise_en_charge = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    franchise = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    date_debut = models.DateField()
+    date_fin = models.DateField(blank=True, null=True)
+    statut = models.CharField(max_length=20)
+
+    class Meta:
+        managed = False
+        db_table = 'garantie_acte'
+        unique_together = (('id_garantie', 'id_acte', 'date_debut'),)
+
+
+class MotifRejet(models.Model):
+    id_motif_rejet = models.BigAutoField(primary_key=True)
+    code = models.CharField(unique=True, max_length=30)
+    libelle = models.CharField(max_length=150)
+    type_rejet = models.CharField(max_length=50)
+    description = models.TextField(blank=True, null=True)
+    statut = models.CharField(max_length=20)
+
+    class Meta:
+        managed = False
+        db_table = 'motif_rejet'
+
+
+class Permission(models.Model):
+    id_permission = models.BigAutoField(primary_key=True)
+    code_permission = models.CharField(unique=True, max_length=50)
+    libelle = models.CharField(max_length=150)
+    module = models.CharField(max_length=100, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    statut = models.CharField(max_length=20)
+
+    class Meta:
+        managed = False
+        db_table = 'permission'
+
+
+class Personne(models.Model):
+    id_personne = models.BigAutoField(primary_key=True)
+    numero_personne = models.CharField(unique=True, max_length=30, blank=True, null=True)
+    nom = models.CharField(max_length=100)
+    prenom = models.CharField(max_length=100)
+    date_naissance = models.DateField(blank=True, null=True)
+    sexe = models.CharField(max_length=1, blank=True, null=True)
+    adresse = models.CharField(max_length=300, blank=True, null=True)
+    telephone = models.CharField(max_length=30, blank=True, null=True)
+    email = models.CharField(max_length=150, blank=True, null=True)
+    statut = models.CharField(max_length=20)
+    date_creation = models.DateTimeField()
+    date_modification = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'personne'
+
+
+class Plafond(models.Model):
+    id_plafond = models.BigAutoField(primary_key=True)
+    id_garantie_acte = models.ForeignKey(GarantieActe, models.DO_NOTHING, db_column='id_garantie_acte')
+    type_plafond = models.CharField(max_length=30)
+    niveau_application = models.CharField(max_length=30)
+    periode = models.CharField(max_length=30)
+    montant_max = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    quantite_max = models.IntegerField(blank=True, null=True)
+    date_debut = models.DateField()
+    date_fin = models.DateField(blank=True, null=True)
+    statut = models.CharField(max_length=20)
+
+    class Meta:
+        managed = False
+        db_table = 'plafond'
+
+
+class Prestataire(models.Model):
+    id_prestataire = models.BigAutoField(primary_key=True)
+    code_prestataire = models.CharField(unique=True, max_length=30)
+    raison_sociale = models.CharField(max_length=200)
+    type_prestataire = models.CharField(max_length=50)
+    nif = models.CharField(max_length=30, blank=True, null=True)
+    registre_commerce = models.CharField(max_length=50, blank=True, null=True)
+    adresse = models.CharField(max_length=300, blank=True, null=True)
+    telephone = models.CharField(max_length=30, blank=True, null=True)
+    email = models.CharField(max_length=150, blank=True, null=True)
+    statut = models.CharField(max_length=20)
+    date_creation = models.DateTimeField()
+    def __str__(self):
+        return f"{self.code_prestataire} - {self.raison_sociale}"
+
+    class Meta:
+        managed = False
+        db_table = 'prestataire'
+
+
+class PriseEnCharge(models.Model):
+    id_pec = models.BigAutoField(primary_key=True)
+    numero_pec = models.CharField(unique=True, max_length=50)
+    id_demande = models.OneToOneField(DemandeTp, models.DO_NOTHING, db_column='id_demande')
+    date_pec = models.DateTimeField()
+    montant_demande = models.DecimalField(max_digits=15, decimal_places=2)
+    montant_accepte = models.DecimalField(max_digits=15, decimal_places=2)
+    montant_rejete = models.DecimalField(max_digits=15, decimal_places=2)
+    statut = models.CharField(max_length=30)
+    date_expiration = models.DateField(blank=True, null=True)
+    utilisateur_validation = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'prise_en_charge'
+
+
+class PriseEnChargeDetail(models.Model):
+    id_detail_pec = models.BigAutoField(primary_key=True)
+    id_pec = models.ForeignKey(PriseEnCharge, models.DO_NOTHING, db_column='id_pec')
+    id_detail_demande = models.ForeignKey(DemandeTpDetail, models.DO_NOTHING, db_column='id_detail_demande')
+    id_acte = models.ForeignKey(Acte, models.DO_NOTHING, db_column='id_acte')
+    quantite = models.DecimalField(max_digits=10, decimal_places=2)
+    montant_demande = models.DecimalField(max_digits=15, decimal_places=2)
+    montant_accorde = models.DecimalField(max_digits=15, decimal_places=2)
+    montant_rejete = models.DecimalField(max_digits=15, decimal_places=2)
+    taux_applique = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    franchise_appliquee = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    statut = models.CharField(max_length=30)
+    motif_rejet = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'prise_en_charge_detail'
+
+
+class Recours(models.Model):
+    id_recours = models.BigAutoField(primary_key=True)
+    numero_recours = models.CharField(unique=True, max_length=50)
+    id_personne = models.ForeignKey(Personne, models.DO_NOTHING, db_column='id_personne')
+    type_recours = models.CharField(max_length=50)
+    date_recours = models.DateField()
+    objet = models.CharField(max_length=300)
+    motif = models.TextField(blank=True, null=True)
+    statut = models.CharField(max_length=30)
+    date_cloture = models.DateField(blank=True, null=True)
+    observation = models.TextField(blank=True, null=True)
+    utilisateur_creation = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'recours'
+class DemandeTpDocument(models.Model):
+    pk = models.CompositePrimaryKey(
+        'id_demande',
+        'id_document'
+    )
+
+    id_demande = models.ForeignKey(
+        DemandeTp,
+        models.DO_NOTHING,
+        db_column='id_demande'
+    )
+
+    id_document = models.ForeignKey(
+        Document,
+        models.DO_NOTHING,
+        db_column='id_document'
+    )
+
+    type_document = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True
+    )
+
+    date_ajout = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'demande_tp_document'
+
+class RecoursDocument(models.Model):
+    pk = models.CompositePrimaryKey('id_recours', 'id_document')
+    id_recours = models.ForeignKey(Recours, models.DO_NOTHING, db_column='id_recours')
+    id_document = models.ForeignKey(Document, models.DO_NOTHING, db_column='id_document')
+    type_document = models.CharField(max_length=50, blank=True, null=True)
+    date_ajout = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'recours_document'
+
+class Reglement(models.Model):
+    id_reglement = models.BigAutoField(primary_key=True)
+    id_facture = models.ForeignKey(Facture, models.DO_NOTHING, db_column='id_facture'
+)
+    numero_reglement = models.CharField(unique=True, max_length=50
+)
+    date_reglement = models.DateField()
+    montant = models.DecimalField(max_digits=15, decimal_places=2
+)
+    mode_reglement = models.CharField(max_length=30
+)
+    reference_reglement = models.CharField(max_length=100, blank=True, null=True
+)
+    statut = models.CharField(max_length=30
+)
+    observation = models.TextField(blank=True, null=True
+)
+
+    class Meta:
+        managed = False
+        db_table = 'reglement'
+
+
+class Role(models.Model):
+    id_role = models.BigAutoField(primary_key=True)
+    code_role = models.CharField(unique=True, max_length=30)
+    libelle = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    statut = models.CharField(max_length=20)
+
+    class Meta:
+        managed = False
+        db_table = 'role'
+
+
+class RolePermission(models.Model):
+    pk = models.CompositePrimaryKey('id_role', 'id_permission')
+    id_role = models.ForeignKey(Role, models.DO_NOTHING, db_column='id_role')
+    id_permission = models.ForeignKey(Permission, models.DO_NOTHING, db_column='id_permission')
+
+    class Meta:
+        managed = False
+        db_table = 'role_permission'
+
+
+class Souscripteur(models.Model):
+    id_souscripteur = models.BigAutoField(primary_key=True)
+    code_souscripteur = models.CharField(unique=True, max_length=30)
+    raison_sociale = models.CharField(max_length=200)
+    type_souscripteur = models.CharField(max_length=50)
+    nif = models.CharField(max_length=30, blank=True, null=True)
+    registre_commerce = models.CharField(max_length=50, blank=True, null=True)
+    adresse = models.CharField(max_length=300, blank=True, null=True)
+    telephone = models.CharField(max_length=30, blank=True, null=True)
+    email = models.CharField(max_length=150, blank=True, null=True)
+    statut = models.CharField(max_length=20)
+    date_creation = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'souscripteur'
+
+
+class TypePrestation(models.Model):
+    id_type_prestation = models.BigAutoField(primary_key=True)
+    code_type = models.CharField(unique=True, max_length=30)
+    libelle = models.CharField(max_length=150)
+    description = models.TextField(blank=True, null=True)
+    statut = models.CharField(max_length=20)
+
+    class Meta:
+        managed = False
+        db_table = 'type_prestation'
+
+
+class Utilisateur(models.Model):
+    id_utilisateur = models.BigAutoField(primary_key=True)
+    nom_utilisateur = models.CharField(unique=True, max_length=50)
+    mot_de_passe_hash = models.CharField(max_length=255)
+    nom = models.CharField(max_length=100)
+    prenom = models.CharField(max_length=100)
+    email = models.CharField(unique=True, max_length=150, blank=True, null=True)
+    telephone = models.CharField(max_length=30, blank=True, null=True)
+    statut = models.CharField(max_length=20)
+    date_creation = models.DateTimeField()
+    derniere_connexion = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'utilisateur'
+class UtilisateurRole(models.Model):
+    pk = models.CompositePrimaryKey('id_utilisateur', 'id_role')
+
+    id_utilisateur = models.ForeignKey(
+        Utilisateur,
+        models.DO_NOTHING,
+        db_column='id_utilisateur'
+    )
+
+    id_role = models.ForeignKey(
+        Role,
+        models.DO_NOTHING,
+        db_column='id_role'
+    )
+
+    date_debut = models.DateField()
+    date_fin = models.DateField(blank=True, null=True)
+    statut = models.CharField(max_length=20)
+
+    class Meta:
+        managed = False
+        db_table = 'utilisateur_role'
+

@@ -1,0 +1,642 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Détail contrat - Tiers Payant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 95px;
+            background: #123b65;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.10);
+            gap: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+        }
+
+        .brand-text h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .brand-text p {
+            margin: 6px 0 0;
+            font-size: 13px;
+            opacity: .85;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 35px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 28px;
+            border-radius: 14px;
+            box-shadow: 0 5px 20px rgba(15,23,42,.08);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 22px;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            margin-bottom: 22px;
+            color: #123b65;
+            font-size: 22px;
+        }
+
+        .contract-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .contract-number {
+            font-size: 25px;
+            font-weight: bold;
+            color: #123b65;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 15px;
+        }
+
+        .info {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 16px;
+            border-radius: 10px;
+        }
+
+        .info strong {
+            display: block;
+            margin-bottom: 7px;
+            color: #475569;
+            font-size: 13px;
+        }
+
+        .info span,
+        .info-value {
+            color: #1f2937;
+            font-size: 15px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .actif {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .inactif {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 16px;
+            background: #123b65;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background: #0d2d4d;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .section-header h2 {
+            margin-bottom: 0;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 650px;
+        }
+
+        th,
+        td {
+            padding: 13px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        td {
+            font-size: 14px;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .empty {
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            padding: 18px;
+            border-radius: 10px;
+            color: #64748b;
+            margin-top: 20px;
+        }
+
+        .actions {
+            margin-top: 25px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 25px 15px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 750px) {
+            .header {
+                padding: 15px 20px;
+                align-items: flex-start;
+            }
+
+            .brand img {
+                width: 110px;
+                height: 55px;
+            }
+
+            .brand-text h1 {
+                font-size: 19px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 22px;
+            }
+
+            .section-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img
+            src="{% static 'core/img/logo-sagps.png' %}"
+            alt="Logo SAGPS"
+        >
+
+        <div class="brand-text">
+            <h1>Détail du contrat</h1>
+            <p>Plateforme Tiers Payant</p>
+        </div>
+
+    </div>
+
+    <a
+        class="btn btn-secondary"
+        href="{% url 'contrats' %}"
+    >
+        ← Retour aux contrats
+    </a>
+
+</div>
+
+<div class="container">
+
+    <!-- Informations du contrat -->
+
+    <div class="card">
+
+        <div class="contract-title">
+
+            <div class="contract-number">
+                {{ contrat.numero_contrat }}
+            </div>
+
+            {% if contrat.statut == "ACTIF" %}
+                <span class="status actif">Actif</span>
+            {% else %}
+                <span class="status inactif">
+                    {{ contrat.statut }}
+                </span>
+            {% endif %}
+
+        </div>
+
+        <div class="info-grid">
+
+            <div class="info">
+                <strong>Souscripteur</strong>
+                <div class="info-value">
+                    {{ contrat.id_souscripteur.raison_sociale }}
+                </div>
+            </div>
+
+            <div class="info">
+                <strong>Type de contrat</strong>
+                <div class="info-value">
+                    {{ contrat.type_contrat }}
+                </div>
+            </div>
+
+            <div class="info">
+                <strong>Date de début</strong>
+                <div class="info-value">
+                    {{ contrat.date_debut|default:"-" }}
+                </div>
+            </div>
+
+            <div class="info">
+                <strong>Date de fin</strong>
+                <div class="info-value">
+                    {{ contrat.date_fin|default:"-" }}
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Garanties -->
+
+    <div class="card">
+
+        <div class="section-header">
+
+            <h2>Garanties du contrat</h2>
+
+            {% if "CONTRAT_UPDATE" in permissions %}
+
+                <a
+                    class="btn"
+                    href="{% url 'contrat_garantie_create' contrat.id_contrat %}"
+                >
+                    + Ajouter une garantie
+                </a>
+
+            {% endif %}
+
+        </div>
+
+        {% if garanties %}
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Garantie</th>
+                            <th>Date de début</th>
+                            <th>Date de fin</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for cg in garanties %}
+
+                        <tr>
+
+                            <td>
+                                {{ cg.id_garantie.code_garantie }}
+                                -
+                                {{ cg.id_garantie.libelle }}
+                            </td>
+
+                            <td>
+                                {{ cg.date_debut }}
+                            </td>
+
+                            <td>
+                                {{ cg.date_fin|default:"-" }}
+                            </td>
+
+                            <td>
+
+                                {% if cg.statut == "ACTIF" %}
+                                    <span class="status actif">
+                                        Actif
+                                    </span>
+                                {% else %}
+                                    <span class="status inactif">
+                                        {{ cg.statut }}
+                                    </span>
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% else %}
+
+            <div class="empty">
+                Aucune garantie n'est encore associée à ce contrat.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+    <!-- Adhésions -->
+
+    <div class="card">
+
+        <div class="section-header">
+
+            <h2>Adhésions du contrat</h2>
+
+            {% if "ADHESION_CREATE" in permissions %}
+
+                <a
+                    class="btn"
+                    href="{% url 'adhesion_create' %}?id_contrat={{ contrat.id_contrat }}"
+                >
+                    + Ajouter une adhésion
+                </a>
+
+            {% endif %}
+
+        </div>
+
+        {% if adhesions %}
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Adhérent</th>
+                            <th>N° adhésion</th>
+                            <th>Date de début</th>
+                            <th>Date de fin</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for a in adhesions %}
+
+                        <tr>
+
+                            <td>
+                                {{ a.id_adherent.numero_adherent }}
+                            </td>
+
+                            <td>
+                                {{ a.numero_adhesion }}
+                            </td>
+
+                            <td>
+                                {{ a.date_debut }}
+                            </td>
+
+                            <td>
+                                {{ a.date_fin|default:"-" }}
+                            </td>
+
+                            <td>
+
+                                {% if a.statut == "ACTIF" %}
+                                    <span class="status actif">
+                                        Actif
+                                    </span>
+                                {% else %}
+                                    <span class="status inactif">
+                                        {{ a.statut }}
+                                    </span>
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% else %}
+
+            <div class="empty">
+                Aucune adhésion n'est encore associée à ce contrat.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+    <!-- Demandes de prise en charge -->
+
+    <div class="card">
+
+        <div class="section-header">
+
+            <h2>Demandes de prise en charge</h2>
+
+            {% if "DEMANDE_CREATE" in permissions %}
+
+                <a
+                    class="btn"
+                    href="{% url 'demande_tp_create' %}?id_contrat={{ contrat.id_contrat }}"
+                >
+                    + Nouvelle demande
+                </a>
+
+            {% endif %}
+
+        </div>
+
+        {% if demandes_tp %}
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>N° demande</th>
+                            <th>Bénéficiaire</th>
+                            <th>Prestataire</th>
+                            <th>Montant demandé</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for d in demandes_tp %}
+
+                        <tr>
+
+                            <td>
+                                {{ d.numero_demande }}
+                            </td>
+
+                            <td>
+                                {{ d.id_personne_beneficiaire.nom }}
+                                {{ d.id_personne_beneficiaire.prenom }}
+                            </td>
+
+                            <td>
+                                {{ d.id_prestataire.raison_sociale }}
+                            </td>
+
+                            <td>
+                                {{ d.montant_demande }}
+                            </td>
+
+                            <td>
+
+                                {% if d.statut == "ACCEPTEE" %}
+                                    <span class="status actif">
+                                        Acceptée
+                                    </span>
+                                {% elif d.statut == "REJETEE" %}
+                                    <span class="status inactif">
+                                        Rejetée
+                                    </span>
+                                {% else %}
+                                    <span class="status">
+                                        {{ d.statut }}
+                                    </span>
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% else %}
+
+            <div class="empty">
+                Aucune demande de prise en charge n'est encore associée à ce contrat.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant
+</div>
+
+</body>
+</html>

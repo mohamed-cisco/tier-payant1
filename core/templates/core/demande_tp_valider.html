@@ -1,0 +1,850 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Validation demande TP</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 95px;
+            background: #123b65;
+            color: white;
+            padding: 15px 35px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.12);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .header-title p {
+            margin: 6px 0 0;
+            color: #dbeafe;
+            font-size: 13px;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,.12);
+            border: 1px solid rgba(255,255,255,.2);
+            padding: 11px 17px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: .2s;
+        }
+
+        .back:hover {
+            background: rgba(255,255,255,.2);
+        }
+
+        .container {
+            max-width: 1250px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 3px 14px rgba(15,23,42,.07);
+            border: 1px solid #e5eaf0;
+            margin-bottom: 22px;
+        }
+
+        .card h2 {
+            margin: 0 0 20px;
+            color: #123b65;
+            font-size: 20px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            padding: 16px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+
+        .info-item strong {
+            display: block;
+            margin-bottom: 7px;
+            color: #64748b;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+
+        .info-item p {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+
+        .request-number {
+            font-size: 23px;
+            font-weight: 700;
+            color: #123b65;
+            margin-bottom: 20px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 11px;
+            border-radius: 20px;
+            background: #e0f2fe;
+            color: #0369a1;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .warning {
+            background: #fff7ed;
+            color: #9a3412;
+            padding: 16px 18px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #fed7aa;
+            line-height: 1.6;
+        }
+
+        .error-message {
+            background: #fef2f2;
+            color: #b91c1c;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #fecaca;
+            font-weight: 600;
+        }
+
+        .plafond-box {
+            margin-top: 15px;
+            padding: 16px;
+            background: #f8fafc;
+            border-left: 4px solid #2563eb;
+            border-radius: 8px;
+        }
+
+        .plafond-box p {
+            margin: 8px 0;
+        }
+
+        .calculation {
+            padding: 18px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .calculation:last-child {
+            margin-bottom: 0;
+        }
+
+        .calculation-title {
+            color: #123b65;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .accepted {
+            color: #15803d;
+            font-weight: 700;
+        }
+
+        .rejected {
+            color: #dc2626;
+            font-weight: 700;
+        }
+
+        .totals {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .total-box {
+            padding: 16px;
+            border-radius: 10px;
+            background: #f8fafc;
+        }
+
+        .total-box strong {
+            display: block;
+            color: #64748b;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 7px;
+        }
+
+        .total-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #123b65;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 750px;
+        }
+
+        th,
+        td {
+            padding: 13px 14px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+
+        tbody tr:hover {
+            background: #f8fbff;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .empty {
+            text-align: center;
+            color: #64748b;
+            padding: 30px !important;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 11px 18px;
+            background: #15803d;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: .2s;
+        }
+
+        .btn:hover {
+            background: #166534;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .notifications {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .notification {
+            min-width: 320px;
+            max-width: 500px;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,.18);
+            font-weight: 500;
+        }
+
+        .notification.error {
+            border-left: 5px solid #dc3545;
+            color: #842029;
+        }
+
+        .notification.success {
+            border-left: 5px solid #198754;
+            color: #0f5132;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        @media (max-width: 750px) {
+
+            .header {
+                padding: 15px 20px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .container {
+                padding: 20px 15px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .brand img {
+                width: 125px;
+            }
+
+            .info-grid,
+            .totals {
+                grid-template-columns: 1fr;
+            }
+
+            .notifications {
+                left: 15px;
+                right: 15px;
+                top: 15px;
+            }
+
+            .notification {
+                min-width: auto;
+                width: 100%;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+{% if messages %}
+
+    <div class="notifications">
+
+        {% for message in messages %}
+
+            <div class="notification {{ message.tags }}">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+    <script>
+        setTimeout(function () {
+
+            document.querySelectorAll('.notification').forEach(function (notification) {
+                notification.style.display = 'none';
+            });
+
+        }, 5000);
+    </script>
+
+{% endif %}
+
+
+<div class="header">
+
+    <div class="brand">
+
+        <img
+            src="{% static 'core/img/logo-sagps.png' %}"
+            alt="SAGPS"
+        >
+
+        <div class="header-title">
+
+            <h1>Validation de la demande TP</h1>
+
+            <p>
+                Contrôle des garanties et création de la prise en charge
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <a
+        class="back"
+        href="{% url 'demande_tp_details' demande.id_demande %}"
+    >
+        ← Retour à la demande
+    </a>
+
+</div>
+
+
+<div class="container">
+
+
+    <!-- INFORMATIONS DE LA DEMANDE -->
+
+    <div class="card">
+
+        <div class="request-number">
+            {{ demande.numero_demande }}
+        </div>
+
+        <div class="info-grid">
+
+            <div class="info-item">
+
+                <strong>Bénéficiaire</strong>
+
+                {{ demande.id_personne_beneficiaire.nom }}
+                {{ demande.id_personne_beneficiaire.prenom }}
+
+            </div>
+
+
+            <div class="info-item">
+
+                <strong>Contrat</strong>
+
+                {{ demande.id_contrat.numero_contrat }}
+
+            </div>
+
+
+            <div class="info-item">
+
+                <strong>Prestataire</strong>
+
+                {{ demande.id_prestataire.raison_sociale }}
+
+            </div>
+
+
+            <div class="info-item">
+
+                <strong>Montant demandé</strong>
+
+                {{ demande.montant_demande }} DA
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ACTES -->
+
+    <div class="card">
+
+        <h2>Actes de la demande</h2>
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Acte</th>
+                        <th>Quantité</th>
+                        <th>Montant unitaire</th>
+                        <th>Montant total</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for detail in details %}
+
+                    <tr>
+
+                        <td>
+                            <strong>{{ detail.id_acte.code_acte }}</strong>
+                            -
+                            {{ detail.id_acte.libelle }}
+                        </td>
+
+                        <td>
+                            {{ detail.quantite }}
+                        </td>
+
+                        <td>
+                            {{ detail.montant_unitaire }} DA
+                        </td>
+
+                        <td>
+                            <strong>{{ detail.montant_total }} DA</strong>
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td colspan="4" class="empty">
+                            Aucun acte dans cette demande.
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <!-- CONTROLE AVANT VALIDATION -->
+
+    <div class="card">
+
+        <h2>Contrôle avant validation</h2>
+
+        <div class="warning">
+
+            Vérifiez les garanties, le taux de prise en charge,
+            la franchise et les éventuels plafonds avant de créer
+            la prise en charge.
+
+        </div>
+
+
+        {% for calcul in calculs %}
+
+        <div class="calculation">
+
+            <div class="calculation-title">
+
+                {{ calcul.detail.id_acte.code_acte }}
+                -
+                {{ calcul.detail.id_acte.libelle }}
+
+            </div>
+
+
+            <p>
+                <strong>Montant demandé :</strong>
+                {{ calcul.montant_demande }} DA
+            </p>
+
+
+            <p>
+                <strong>Taux appliqué :</strong>
+                {{ calcul.taux }} %
+            </p>
+
+
+            <p>
+                <strong>Franchise :</strong>
+                {{ calcul.franchise }} DA
+            </p>
+
+
+            {% if calcul.plafond_details %}
+
+            <div class="plafond-box">
+
+                <p>
+
+                    <strong>
+                        Montant avant plafond :
+                    </strong>
+
+                    {{ calcul.montant_accorde_avant_plafond }} DA
+
+                </p>
+
+
+                {% for pd in calcul.plafond_details %}
+
+                    {% if pd.plafond.montant_max %}
+
+                    <p>
+
+                        <strong>
+                            Plafond :
+                        </strong>
+
+                        {{ pd.plafond.montant_max }} DA
+
+                    </p>
+
+
+                    <p>
+
+                        <strong>
+                            Déjà consommé :
+                        </strong>
+
+                        {{ pd.montant_consomme }} DA
+
+                    </p>
+
+
+                    <p>
+
+                        <strong>
+                            Reste du plafond :
+                        </strong>
+
+                        {{ pd.reste_montant }} DA
+
+                    </p>
+
+                    {% endif %}
+
+                {% endfor %}
+
+            </div>
+
+            {% endif %}
+
+
+            {% if calcul.erreur %}
+
+                <div class="error-message">
+                    {{ calcul.erreur }}
+                </div>
+
+            {% else %}
+
+                <p class="accepted">
+
+                    Montant accordé :
+                    {{ calcul.montant_accorde }} DA
+
+                </p>
+
+
+                <p>
+
+                    <strong>
+                        Montant rejeté :
+                    </strong>
+
+                    {{ calcul.montant_rejete }} DA
+
+                </p>
+
+
+                <p>
+
+                    <strong>
+                        Statut :
+                    </strong>
+
+                    <span class="status">
+                        ACCEPTEE
+                    </span>
+
+                </p>
+
+            {% endif %}
+
+        </div>
+
+        {% endfor %}
+
+
+        <div class="totals">
+
+            <div class="total-box">
+
+                <strong>
+                    Montant accepté total
+                </strong>
+
+                <div class="total-value">
+                    {{ montant_accepte_total }} DA
+                </div>
+
+            </div>
+
+
+            <div class="total-box">
+
+                <strong>
+                    Montant rejeté total
+                </strong>
+
+                <div class="total-value">
+                    {{ montant_rejete_total }} DA
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            <div class="actions">
+
+                <button
+                    type="submit"
+                    class="btn"
+                    onclick="return confirm('Confirmer la validation et la création de la prise en charge ?');"
+                >
+                    ✓ Valider et créer la prise en charge
+                </button>
+
+
+                <a
+                    href="{% url 'demande_tp_details' demande.id_demande %}"
+                    class="btn btn-secondary"
+                >
+                    Annuler
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <!-- RAPPEL -->
+
+    <div class="card">
+
+        <h2>Résumé</h2>
+
+        <div class="warning">
+
+            Vérifiez les garanties, le taux de prise en charge,
+            la franchise et les éventuels plafonds avant de créer
+            la prise en charge.
+
+        </div>
+
+
+        <div class="info-grid">
+
+            <div class="info-item">
+
+                <strong>Statut actuel</strong>
+
+                <span class="status">
+                    {{ demande.statut }}
+                </span>
+
+            </div>
+
+
+            <div class="info-item">
+
+                <strong>Montant demandé</strong>
+
+                {{ demande.montant_demande }} DA
+
+            </div>
+
+        </div>
+
+
+        <p style="margin-top:20px; color:#64748b; line-height:1.6;">
+
+            La création automatique de la prise en charge sera
+            effectuée après validation des règles de couverture.
+
+        </p>
+
+    </div>
+
+
+    <div class="card">
+
+        <a
+            href="{% url 'demande_tp_details' demande.id_demande %}"
+            class="btn btn-secondary"
+        >
+            ← Retour
+        </a>
+
+    </div>
+
+</div>
+
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant
+</div>
+
+</body>
+</html>

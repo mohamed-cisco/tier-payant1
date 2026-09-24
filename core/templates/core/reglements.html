@@ -1,0 +1,515 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Règlements - Tiers Payant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 95px;
+            background: #123b65;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            font-size: 23px;
+        }
+
+        .header-title p {
+            margin: 5px 0 0;
+            font-size: 13px;
+            opacity: .85;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: #1d4f82;
+            padding: 11px 17px;
+            border-radius: 8px;
+            font-weight: bold;
+            white-space: nowrap;
+            transition: .2s;
+        }
+
+        .back:hover {
+            background: #28649e;
+        }
+
+        .container {
+            max-width: 1450px;
+            margin: 0 auto;
+            padding: 30px 25px 40px;
+        }
+
+        .page-title {
+            margin-bottom: 20px;
+        }
+
+        .page-title h2 {
+            margin: 0;
+            color: #123b65;
+            font-size: 24px;
+        }
+
+        .page-title p {
+            margin: 6px 0 0;
+            color: #64748b;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(15, 23, 42, .07);
+            border: 1px solid #e5e7eb;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            color: #123b65;
+            font-size: 20px;
+        }
+
+        .actions {
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 15px;
+            background: #123b65;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            transition: .2s;
+        }
+
+        .btn:hover {
+            background: #1d4f82;
+        }
+
+        .btn-success {
+            background: #15803d;
+        }
+
+        .btn-success:hover {
+            background: #166534;
+        }
+
+        .message {
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            border-radius: 9px;
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            font-weight: bold;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+        thead {
+            background: #f1f5f9;
+        }
+
+        th {
+            padding: 13px 12px;
+            text-align: left;
+            color: #475569;
+            font-size: 13px;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 13px 12px;
+            border-bottom: 1px solid #eef2f7;
+            font-size: 13px;
+            color: #374151;
+            vertical-align: middle;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .montant {
+            text-align: right;
+            white-space: nowrap;
+            font-weight: bold;
+        }
+
+        .statut {
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .statut span {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .attente {
+            color: #92400e;
+            background: #fef3c7;
+        }
+
+        .validee {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .rejetee,
+        .annulee {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 30px !important;
+            color: #64748b;
+        }
+
+        .actions-cell {
+            white-space: nowrap;
+        }
+
+        .actions-cell form {
+            display: inline;
+        }
+
+        .actions-cell .btn {
+            margin-right: 5px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 800px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .brand img {
+                width: 125px;
+                height: 55px;
+            }
+
+            .container {
+                padding: 20px 15px 30px;
+            }
+
+            .card {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img
+            src="{% static 'core/img/logo-sagps.png' %}"
+            alt="SAGPS"
+        >
+
+        <div class="header-title">
+            <h1>Règlements</h1>
+            <p>Plateforme Tiers Payant</p>
+        </div>
+
+    </div>
+
+    <a class="back" href="{% url 'accueil' %}">
+        ← Retour au Dashboard
+    </a>
+
+</div>
+
+
+<div class="container">
+
+    <div class="page-title">
+        <h2>Gestion des règlements</h2>
+        <p>Suivi des paiements effectués et des montants restant à payer.</p>
+    </div>
+
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div class="message">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h2>Liste des règlements</h2>
+
+            {% if "REGLEMENT_CREATE" in permissions %}
+
+                <a
+                    class="btn"
+                    href="{% url 'reglement_create' %}"
+                >
+                    + Nouveau règlement
+                </a>
+
+            {% endif %}
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>ID</th>
+                        <th>N° règlement</th>
+                        <th>Facture</th>
+                        <th>Prestataire</th>
+                        <th>Date règlement</th>
+                        <th>Montant</th>
+                        <th>Reste à payer</th>
+                        <th>Mode</th>
+                        <th>Référence</th>
+                        <th>Statut</th>
+                        <th>Observation</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for r in reglements %}
+
+                        <tr>
+
+                            <td>
+                                {{ r.id_reglement }}
+                            </td>
+
+                            <td>
+                                <strong>{{ r.numero_reglement }}</strong>
+                            </td>
+
+                            <td>
+                                {{ r.id_facture.numero_facture }}
+                            </td>
+
+                            <td>
+                                {{ r.id_facture.id_prestataire.raison_sociale }}
+                            </td>
+
+                            <td>
+                                {{ r.date_reglement|date:"d/m/Y" }}
+                            </td>
+
+                            <td class="montant">
+                                {{ r.montant }} DA
+                            </td>
+
+                            <td class="montant">
+                                {{ r.reste_a_payer }} DA
+                            </td>
+
+                            <td>
+                                {{ r.mode_reglement }}
+                            </td>
+
+                            <td>
+                                {{ r.reference_reglement|default:"-" }}
+                            </td>
+
+                            <td class="statut">
+
+                                {% if r.statut == "EN_ATTENTE" %}
+
+                                    <span class="attente">
+                                        En attente
+                                    </span>
+
+                                {% elif r.statut == "VALIDEE" %}
+
+                                    <span class="validee">
+                                        Validé
+                                    </span>
+
+                                {% elif r.statut == "REJETEE" %}
+
+                                    <span class="rejetee">
+                                        Rejeté
+                                    </span>
+
+                                {% elif r.statut == "ANNULEE" %}
+
+                                    <span class="annulee">
+                                        Annulé
+                                    </span>
+
+                                {% else %}
+
+                                    {{ r.statut }}
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ r.observation|default:"-" }}
+                            </td>
+
+                            <td class="actions-cell">
+
+                                {% if r.statut == "EN_ATTENTE" %}
+
+                                    {% if "REGLEMENT_VALIDATE" in permissions %}
+
+                                        <form
+                                            method="post"
+                                            action="{% url 'reglement_valider' r.id_reglement %}"
+                                        >
+
+                                            {% csrf_token %}
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-success"
+                                                onclick="return confirm('Voulez-vous valider ce règlement ?');"
+                                            >
+                                                Valider
+                                            </button>
+
+                                        </form>
+
+                                    {% endif %}
+
+                                {% endif %}
+
+
+                                <a
+                                    class="btn"
+                                    href="{% url 'reglement_detail' r.id_reglement %}"
+                                >
+                                    Détails
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                    {% empty %}
+
+                        <tr>
+
+                            <td colspan="12" class="empty">
+                                Aucun règlement trouvé.
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant SAGPS
+</div>
+
+</body>
+</html>

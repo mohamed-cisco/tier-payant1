@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Consommations - Tiers Payant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 90px;
+            background: #123b65;
+            color: white;
+            padding: 18px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,.10);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .header-left img {
+            width: 125px;
+            height: 55px;
+            object-fit: contain;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            font-size: 25px;
+            font-weight: 700;
+        }
+
+        .header-title p {
+            margin: 5px 0 0;
+            font-size: 13px;
+            opacity: .85;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: #1d527f;
+            padding: 10px 17px;
+            border-radius: 7px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: .2s;
+        }
+
+        .back:hover {
+            background: #286797;
+        }
+
+        .container {
+            padding: 28px;
+        }
+
+        .message {
+            padding: 13px 16px;
+            margin-bottom: 18px;
+            border-radius: 8px;
+            background: #fee2e2;
+            color: #991b1b;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(0,0,0,.05);
+        }
+
+        .page-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.07);
+            overflow-x: auto;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+
+        .page-header h2 {
+            margin: 0;
+            color: #123b65;
+            font-size: 21px;
+        }
+
+        .page-header p {
+            margin: 5px 0 0;
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .count-badge {
+            background: #eef4fa;
+            color: #123b65;
+            padding: 8px 13px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 9px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 1250px;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f7f9fc;
+            color: #374151;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+            padding: 13px 12px;
+            border-bottom: 2px solid #e5e7eb;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 13px 12px;
+            border-bottom: 1px solid #edf0f3;
+            font-size: 13px;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        tbody tr:hover {
+            background: #f8fbff;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .id {
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .beneficiaire {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .acte {
+            color: #123b65;
+            font-weight: 600;
+        }
+
+        .prestataire {
+            color: #374151;
+        }
+
+        .date {
+            color: #4b5563;
+        }
+
+        .montant {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .statut {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .a-traiter {
+            color: #92400e;
+            background: #fef3c7;
+        }
+
+        .validee {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .annulee {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn {
+            border: none;
+            cursor: pointer;
+            display: inline-block;
+            padding: 8px 12px;
+            background: #123b65;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            transition: .2s;
+        }
+
+        .btn:hover {
+            background: #1d527f;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .empty {
+            text-align: center;
+            color: #6b7280;
+            padding: 35px !important;
+        }
+
+        .footer {
+            text-align: center;
+            color: #6b7280;
+            font-size: 12px;
+            padding: 20px;
+        }
+
+        @media (max-width: 800px) {
+
+            .header {
+                padding: 15px 18px;
+            }
+
+            .header-left img {
+                width: 95px;
+            }
+
+            .header-title h1 {
+                font-size: 20px;
+            }
+
+            .back {
+                padding: 8px 11px;
+                font-size: 12px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .page-card {
+                padding: 16px;
+            }
+
+            .page-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="header-left">
+
+        <img
+            src="/static/core/img/logo-sagps.png"
+            alt="SAGPS"
+        >
+
+        <div class="header-title">
+            <h1>Consommations</h1>
+            <p>Suivi des prestations consommées dans le tiers payant</p>
+        </div>
+
+    </div>
+
+    <a class="back" href="{% url 'accueil' %}">
+        ← Dashboard
+    </a>
+
+</div>
+
+
+<div class="container">
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div class="message">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+
+    <div class="page-card">
+
+        <div class="page-header">
+
+            <div>
+                <h2>Liste des consommations</h2>
+                <p>Suivi des prestations, montants et statuts.</p>
+            </div>
+
+            <div class="count-badge">
+                {{ consommations|length }} consommation(s)
+            </div>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>ID</th>
+                        <th>Bénéficiaire</th>
+                        <th>Adhésion</th>
+                        <th>Acte</th>
+                        <th>Prestataire</th>
+                        <th>Date prestation</th>
+                        <th>Montant base</th>
+                        <th>Prise en charge</th>
+                        <th>Reste</th>
+                        <th>Statut</th>
+                        <th>Exercice</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for c in consommations %}
+
+                    <tr>
+
+                        <td class="id">
+                            #{{ c.id_consommation }}
+                        </td>
+
+                        <td class="beneficiaire">
+                            {{ c.id_personne_beneficiaire.nom }}
+                            {{ c.id_personne_beneficiaire.prenom }}
+                        </td>
+
+                        <td>
+                            {{ c.id_adhesion.numero_adhesion }}
+                        </td>
+
+                        <td class="acte">
+                            {{ c.id_acte.code_acte }}
+                            -
+                            {{ c.id_acte.libelle }}
+                        </td>
+
+                        <td class="prestataire">
+                            {{ c.id_prestataire.raison_sociale }}
+                        </td>
+
+                        <td class="date">
+                            {{ c.date_prestation|date:"d/m/Y" }}
+                        </td>
+
+                        <td class="montant">
+                            {{ c.montant_base }} DA
+                        </td>
+
+                        <td class="montant">
+                            {{ c.montant_prise_en_charge }} DA
+                        </td>
+
+                        <td class="montant">
+                            {{ c.montant_reste }} DA
+                        </td>
+
+                        <td>
+
+                            {% if c.statut == "A_TRAITER" %}
+
+                                <span class="statut a-traiter">
+                                    À traiter
+                                </span>
+
+                            {% elif c.statut == "VALIDEE" %}
+
+                                <span class="statut validee">
+                                    Validée
+                                </span>
+
+                            {% elif c.statut == "ANNULEE" %}
+
+                                <span class="statut annulee">
+                                    Annulée
+                                </span>
+
+                            {% else %}
+
+                                <span class="statut">
+                                    {{ c.statut }}
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+                            {{ c.exercice }}
+                        </td>
+
+                        <td>
+
+                            {% if c.statut == "A_TRAITER" %}
+
+                                <div class="actions">
+
+                                    {% if "CONSOMMATION_VALIDATE" in permissions %}
+
+                                        <form
+                                            method="post"
+                                            action="{% url 'consommation_valider' c.id_consommation %}"
+                                        >
+                                            {% csrf_token %}
+
+                                            <button
+                                                type="submit"
+                                                class="btn"
+                                                onclick="return confirm('Voulez-vous valider cette consommation ?');"
+                                            >
+                                                Valider
+                                            </button>
+
+                                        </form>
+
+                                    {% endif %}
+
+
+                                    {% if "CONSOMMATION_CANCEL" in permissions %}
+
+                                        <form
+                                            method="post"
+                                            action="{% url 'consommation_annuler' c.id_consommation %}"
+                                        >
+                                            {% csrf_token %}
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-danger"
+                                                onclick="return confirm('Voulez-vous annuler cette consommation ?');"
+                                            >
+                                                Annuler
+                                            </button>
+
+                                        </form>
+
+                                    {% endif %}
+
+                                </div>
+
+                            {% else %}
+
+                                <span style="color:#9ca3af;">—</span>
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td colspan="12" class="empty">
+                            Aucune consommation trouvée.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant
+</div>
+
+</body>
+</html>

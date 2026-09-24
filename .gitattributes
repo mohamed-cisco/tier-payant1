@@ -1,0 +1,36 @@
+# Normalisation des fins de ligne.
+#
+# core.autocrlf=true est actif au niveau systeme sur cette machine : sans ce
+# fichier, Git convertirait deploy/update_production.sh en CRLF au prochain
+# checkout, et le script deviendrait inexécutable sur le serveur Linux
+# (« /bin/bash^M: bad interpreter »).
+
+# Dans le dépôt, tout le texte est stocké en LF.
+* text=auto
+
+# Ces fichiers doivent rester en LF aussi dans la copie de travail.
+*.sh    text eol=lf
+*.py    text eol=lf
+*.html  text eol=lf
+*.css   text eol=lf
+*.js    text eol=lf
+*.txt   text eol=lf
+*.md    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+.env.example text eol=lf
+.gitignore   text eol=lf
+
+# Binaires : ne jamais tenter de conversion ni de diff textuel.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.pdf   binary
+*.xlsx  binary
+*.xls   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary

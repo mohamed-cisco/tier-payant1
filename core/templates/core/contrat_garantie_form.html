@@ -1,0 +1,302 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Ajouter une garantie au contrat</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 95px;
+            background: #123b65;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 30px;
+            gap: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.10);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+        }
+
+        .brand-text h1 {
+            margin: 0;
+            font-size: 23px;
+        }
+
+        .brand-text p {
+            margin: 6px 0 0;
+            font-size: 13px;
+            opacity: .85;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 35px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 32px;
+            border-radius: 14px;
+            box-shadow: 0 5px 20px rgba(15,23,42,.08);
+            border: 1px solid #e5e7eb;
+        }
+
+        .card-title {
+            margin: 0 0 8px;
+            color: #123b65;
+            font-size: 23px;
+        }
+
+        .contract-info {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 14px 16px;
+            border-radius: 9px;
+            margin-bottom: 25px;
+            color: #475569;
+        }
+
+        .contract-info strong {
+            color: #123b65;
+        }
+
+        .field {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: white;
+            color: #1f2937;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #123b65;
+            box-shadow: 0 0 0 3px rgba(18,59,101,.10);
+        }
+
+        .errors {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .field .errors {
+            margin-top: 7px;
+            margin-bottom: 0;
+        }
+
+        .actions {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 11px 18px;
+            background: #123b65;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background: #0d2d4d;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 25px 15px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 700px) {
+            .header {
+                padding: 15px 20px;
+                align-items: flex-start;
+            }
+
+            .brand img {
+                width: 110px;
+                height: 55px;
+            }
+
+            .brand-text h1 {
+                font-size: 19px;
+            }
+
+            .card {
+                padding: 22px;
+            }
+
+            .actions .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img
+            src="{% static 'core/img/logo-sagps.png' %}"
+            alt="Logo SAGPS"
+        >
+
+        <div class="brand-text">
+            <h1>Ajouter une garantie au contrat</h1>
+            <p>Plateforme Tiers Payant</p>
+        </div>
+
+    </div>
+
+    <a
+        class="btn btn-secondary"
+        href="{% url 'contrat_detail' contrat.id_contrat %}"
+    >
+        ← Retour au contrat
+    </a>
+
+</div>
+
+<div class="container">
+
+    <div class="card">
+
+        <h2 class="card-title">
+            Ajouter une garantie
+        </h2>
+
+        <div class="contract-info">
+            <strong>Contrat :</strong>
+            {{ contrat.numero_contrat }}
+        </div>
+
+        {% if form.errors %}
+            <div class="errors">
+                <strong>Veuillez corriger les erreurs :</strong>
+                {{ form.errors }}
+            </div>
+        {% endif %}
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            {% for field in form %}
+
+                <div class="field">
+
+                    {{ field.label_tag }}
+
+                    {{ field }}
+
+                    {% if field.errors %}
+                        <div class="errors">
+                            {{ field.errors }}
+                        </div>
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
+
+            <div class="actions">
+
+                <button type="submit" class="btn">
+                    Enregistrer
+                </button>
+
+                <a
+                    href="{% url 'contrat_detail' contrat.id_contrat %}"
+                    class="btn btn-secondary"
+                >
+                    Annuler
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant
+</div>
+
+</body>
+</html>

@@ -1,0 +1,27 @@
+# --- Secrets : ne jamais commiter ---
+.env
+
+# --- Environnement virtuel ---
+venv/
+.venv/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# --- Base de donnees locale ---
+db.sqlite3
+
+# --- Fichiers collectes par collectstatic (regenerables) ---
+staticfiles/
+
+# --- Televersements des utilisateurs ---
+media/documents/
+
+# --- Sauvegardes et fichiers residuels ---
+*.bak
+*.backup
+*.zip
+*.sql
+*.dump

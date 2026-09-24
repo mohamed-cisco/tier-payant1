@@ -1,0 +1,424 @@
+﻿{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Adhérent - Tiers Payant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            background: #123b65;
+            color: white;
+            min-height: 95px;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 3px 12px rgba(0,0,0,.12);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+        }
+
+        .brand-text h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .brand-text p {
+            margin: 5px 0 0;
+            font-size: 13px;
+            opacity: .85;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: #1d4f7d;
+            padding: 10px 17px;
+            border-radius: 7px;
+            font-size: 14px;
+            transition: .2s;
+        }
+
+        .back:hover {
+            background: #25618f;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 18px rgba(0,0,0,.07);
+        }
+
+        .card-header {
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 18px;
+            margin-bottom: 25px;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            color: #123b65;
+            font-size: 24px;
+        }
+
+        .card-header p {
+            margin: 7px 0 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 7px;
+            color: #374151;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 11px 13px;
+            border: 1px solid #d1d5db;
+            border-radius: 7px;
+            font-size: 15px;
+            background: white;
+            color: #1f2937;
+            transition: .2s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+        }
+
+        textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .message {
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border-radius: 7px;
+            font-size: 14px;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .message.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .error {
+            color: #dc2626;
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        .non-field-error {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 12px 15px;
+            border-radius: 7px;
+            margin-bottom: 20px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 11px 19px;
+            border: none;
+            border-radius: 7px;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: .2s;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 25px;
+            margin-top: 30px;
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        @media (max-width: 700px) {
+            .header {
+                padding: 15px 18px;
+            }
+
+            .brand img {
+                width: 110px;
+                height: 55px;
+            }
+
+            .brand-text h1 {
+                font-size: 18px;
+            }
+
+            .back {
+                padding: 8px 11px;
+                font-size: 12px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full {
+                grid-column: auto;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img src="{% static 'core/img/logo-sagps.png' %}" alt="SAGPS">
+
+        <div class="brand-text">
+            <h1>Gestion des adhérents</h1>
+            <p>Plateforme Tiers Payant</p>
+        </div>
+
+    </div>
+
+    <a class="back" href="{% url 'adherents' %}">
+        ← Retour à la liste
+    </a>
+
+</div>
+
+<div class="container">
+
+    <div class="card">
+
+        <div class="card-header">
+            <h2>{{ titre }}</h2>
+            <p>Renseignez les informations de l'adhérent.</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message {{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if form.non_field_errors %}
+            <div class="non-field-error">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            <div class="form-row">
+
+                <div class="form-group">
+                    {{ form.nom.label_tag }}
+                    {{ form.nom }}
+
+                    {% for error in form.nom.errors %}
+                        <div class="error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.prenom.label_tag }}
+                    {{ form.prenom }}
+
+                    {% for error in form.prenom.errors %}
+                        <div class="error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.date_naissance.label_tag }}
+                    {{ form.date_naissance }}
+
+                    {% for error in form.date_naissance.errors %}
+                        <div class="error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.sexe.label_tag }}
+                    {{ form.sexe }}
+
+                    {% for error in form.sexe.errors %}
+                        <div class="error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.telephone.label_tag }}
+                    {{ form.telephone }}
+
+                    {% for error in form.telephone.errors %}
+                        <div class="error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.email.label_tag }}
+                    {{ form.email }}
+
+                    {% for error in form.email.errors %}
+                        <div class="error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.date_adhesion.label_tag }}
+                    {{ form.date_adhesion }}
+
+                    {% for error in form.date_adhesion.errors %}
+                        <div class="error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.statut.label_tag }}
+                    {{ form.statut }}
+
+                    {% for error in form.statut.errors %}
+                        <div class="error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group full">
+                    {{ form.adresse.label_tag }}
+                    {{ form.adresse }}
+
+                    {% for error in form.adresse.errors %}
+                        <div class="error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+            </div>
+
+            <div class="buttons">
+
+                <button type="submit" class="btn btn-primary">
+                    ✓ Enregistrer l'adhérent
+                </button>
+
+                <a href="{% url 'adherents' %}" class="btn btn-secondary">
+                    Annuler
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant
+</div>
+
+</body>
+</html>

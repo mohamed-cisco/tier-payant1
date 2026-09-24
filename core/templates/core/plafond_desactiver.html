@@ -1,0 +1,397 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Désactiver le plafond - Tiers Payant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 95px;
+            background: #123b65;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.10);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+            background: white;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .brand-text h1 {
+            margin: 0;
+            font-size: 23px;
+            font-weight: 700;
+        }
+
+        .brand-text p {
+            margin: 6px 0 0;
+            font-size: 13px;
+            color: #dbeafe;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: #1f5b91;
+            border: 1px solid rgba(255,255,255,.15);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+
+        .back:hover {
+            background: #2874b8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px 35px;
+        }
+
+        .page-title {
+            margin-bottom: 22px;
+        }
+
+        .page-title h2 {
+            margin: 0;
+            color: #123b65;
+            font-size: 25px;
+        }
+
+        .page-title p {
+            margin: 7px 0 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 14px;
+            border: 1px solid #e5ebf2;
+            box-shadow: 0 4px 15px rgba(0,0,0,.05);
+        }
+
+        .warning {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 15px 18px;
+            border-radius: 9px;
+            margin-bottom: 22px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .info {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 22px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .info-row {
+            display: grid;
+            grid-template-columns: 210px 1fr;
+            gap: 15px;
+            padding: 11px 0;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 700;
+            color: #123b65;
+        }
+
+        .info-value {
+            color: #374151;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 20px;
+            background: #dcfce7;
+            color: #166534;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            padding-top: 20px;
+            border-top: 1px solid #e5ebf2;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            cursor: pointer;
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+            transform: translateY(-1px);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 25px;
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        @media (max-width: 700px) {
+
+            .header {
+                padding: 15px 20px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .brand img {
+                width: 115px;
+                height: 55px;
+            }
+
+            .brand-text h1 {
+                font-size: 18px;
+            }
+
+            .back {
+                width: 100%;
+                text-align: center;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            .card {
+                padding: 22px;
+            }
+
+            .info-row {
+                grid-template-columns: 1fr;
+                gap: 5px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .actions .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img
+            src="{% static 'core/img/logo-sagps.png' %}"
+            alt="Logo SAGPS"
+        >
+
+        <div class="brand-text">
+            <h1>Tiers Payant</h1>
+            <p>Gestion des plafonds</p>
+        </div>
+
+    </div>
+
+    <a class="back" href="{% url 'plafonds' %}">
+        ← Retour aux plafonds
+    </a>
+
+</div>
+
+<div class="container">
+
+    <div class="page-title">
+
+        <h2>Désactiver le plafond</h2>
+
+        <p>
+            Vérifiez les informations avant de confirmer la désactivation.
+        </p>
+
+    </div>
+
+    <div class="card">
+
+        <div class="warning">
+            ⚠ Voulez-vous vraiment désactiver ce plafond ?
+        </div>
+
+        <div class="info">
+
+            <div class="info-row">
+                <div class="info-label">Garantie</div>
+                <div class="info-value">
+                    {{ plafond.id_garantie_acte.id_garantie.code_garantie }}
+                    -
+                    {{ plafond.id_garantie_acte.id_garantie.libelle }}
+                </div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Acte</div>
+                <div class="info-value">
+                    {{ plafond.id_garantie_acte.id_acte.code_acte }}
+                    -
+                    {{ plafond.id_garantie_acte.id_acte.libelle }}
+                </div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Type</div>
+                <div class="info-value">
+                    {{ plafond.type_plafond }}
+                </div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Période</div>
+                <div class="info-value">
+                    {{ plafond.periode }}
+                </div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Montant maximum</div>
+                <div class="info-value">
+                    {% if plafond.montant_max %}
+                        {{ plafond.montant_max }} DA
+                    {% else %}
+                        -
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Quantité maximum</div>
+                <div class="info-value">
+                    {% if plafond.quantite_max %}
+                        {{ plafond.quantite_max }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Statut actuel</div>
+                <div class="info-value">
+                    <span class="status">
+                        {{ plafond.statut }}
+                    </span>
+                </div>
+            </div>
+
+        </div>
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            <div class="actions">
+
+                <button
+                    type="submit"
+                    class="btn btn-danger"
+                >
+                    ⚠ Confirmer la désactivation
+                </button>
+
+                <a
+                    href="{% url 'plafonds' %}"
+                    class="btn btn-secondary"
+                >
+                    Annuler
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant SAGPS
+</div>
+
+</body>
+</html>

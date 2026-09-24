@@ -1,0 +1,444 @@
+﻿{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Détail adhérent - Tiers Payant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            background: #123b65;
+            color: white;
+            min-height: 95px;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 3px 12px rgba(0,0,0,.12);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+        }
+
+        .brand-text h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .brand-text p {
+            margin: 5px 0 0;
+            font-size: 13px;
+            opacity: .85;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 17px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 7px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: .2s;
+        }
+
+        .btn:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background: #1d4f7d;
+        }
+
+        .btn-secondary:hover {
+            background: #25618f;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 28px;
+            border-radius: 12px;
+            box-shadow: 0 4px 18px rgba(0,0,0,.07);
+            margin-bottom: 22px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 22px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            color: #123b65;
+            font-size: 21px;
+        }
+
+        .card-header p {
+            margin: 5px 0 0;
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 15px;
+        }
+
+        .info {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        .info strong {
+            display: block;
+            margin-bottom: 7px;
+            color: #374151;
+            font-size: 13px;
+        }
+
+        .info-value {
+            color: #111827;
+            font-size: 15px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .actif {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .inactif {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+            min-width: 750px;
+        }
+
+        th,
+        td {
+            padding: 13px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #374151;
+            font-weight: bold;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .empty {
+            padding: 25px;
+            text-align: center;
+            color: #6b7280;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 25px;
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        @media (max-width: 700px) {
+            .header {
+                padding: 15px 18px;
+            }
+
+            .brand img {
+                width: 110px;
+                height: 55px;
+            }
+
+            .brand-text h1 {
+                font-size: 18px;
+            }
+
+            .btn {
+                padding: 9px 12px;
+                font-size: 12px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .card-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img src="{% static 'core/img/logo-sagps.png' %}" alt="SAGPS">
+
+        <div class="brand-text">
+            <h1>Détail adhérent</h1>
+            <p>Plateforme Tiers Payant</p>
+        </div>
+
+    </div>
+
+    <a class="btn btn-secondary" href="{% url 'adherents' %}">
+        ← Retour aux adhérents
+    </a>
+
+</div>
+
+<div class="container">
+
+    <div class="card">
+
+        <div class="card-header">
+            <div>
+                <h2>
+                    {{ adherent.id_personne.nom }}
+                    {{ adherent.id_personne.prenom }}
+                </h2>
+                <p>Informations générales de l'adhérent</p>
+            </div>
+        </div>
+
+        <div class="info-grid">
+
+            <div class="info">
+                <strong>N° adhérent</strong>
+                <div class="info-value">
+                    {{ adherent.numero_adherent }}
+                </div>
+            </div>
+
+            <div class="info">
+                <strong>N° personne</strong>
+                <div class="info-value">
+                    {{ adherent.id_personne.numero_personne|default:"-" }}
+                </div>
+            </div>
+
+            <div class="info">
+                <strong>Téléphone</strong>
+                <div class="info-value">
+                    {{ adherent.id_personne.telephone|default:"-" }}
+                </div>
+            </div>
+
+            <div class="info">
+                <strong>Email</strong>
+                <div class="info-value">
+                    {{ adherent.id_personne.email|default:"-" }}
+                </div>
+            </div>
+
+            <div class="info">
+                <strong>Date d'adhésion</strong>
+                <div class="info-value">
+                    {{ adherent.date_adhesion|default:"-" }}
+                </div>
+            </div>
+
+            <div class="info">
+                <strong>Statut</strong>
+
+                {% if adherent.statut == "ACTIF" %}
+                    <span class="status actif">Actif</span>
+                {% else %}
+                    <span class="status inactif">
+                        {{ adherent.statut }}
+                    </span>
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+                <h2>Ayants droit</h2>
+                <p>Personnes rattachées à cet adhérent</p>
+            </div>
+
+            {% if "AYANT_DROIT_CREATE" in permissions %}
+                <a
+                    class="btn"
+                    href="{% url 'ayant_droit_create' %}?id_adherent={{ adherent.id_adherent }}"
+                >
+                    + Ajouter un ayant droit
+                </a>
+            {% endif %}
+
+        </div>
+
+        {% if ayants_droit %}
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Personne</th>
+                            <th>N° Personne</th>
+                            <th>Type de lien</th>
+                            <th>Date de début</th>
+                            <th>Date de fin</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for ad in ayants_droit %}
+
+                        <tr>
+
+                            <td>
+                                <strong>
+                                    {{ ad.id_personne.nom }}
+                                    {{ ad.id_personne.prenom }}
+                                </strong>
+                            </td>
+
+                            <td>
+                                {{ ad.id_personne.numero_personne|default:"-" }}
+                            </td>
+
+                            <td>
+                                {% if ad.type_lien == "ENFANT" %}
+                                    Enfant
+                                {% elif ad.type_lien == "CONJOINT" %}
+                                    Conjoint(e)
+                                {% else %}
+                                    Autre
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {{ ad.date_debut }}
+                            </td>
+
+                            <td>
+                                {{ ad.date_fin|default:"-" }}
+                            </td>
+
+                            <td>
+
+                                {% if ad.statut == "ACTIF" %}
+                                    <span class="status actif">
+                                        Actif
+                                    </span>
+                                {% else %}
+                                    <span class="status inactif">
+                                        {{ ad.statut }}
+                                    </span>
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% else %}
+
+            <div class="empty">
+                Aucun ayant droit enregistré pour cet adhérent.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant
+</div>
+
+</body>
+</html>

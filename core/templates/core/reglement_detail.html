@@ -1,0 +1,388 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Détail du règlement - Tiers Payant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 95px;
+            background: #123b65;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.10);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+            background: white;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .header-title p {
+            margin: 6px 0 0;
+            color: #dbeafe;
+            font-size: 14px;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: #1f5b91;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            white-space: nowrap;
+            transition: .2s;
+        }
+
+        .back:hover {
+            background: #2874b8;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .message {
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            border-radius: 9px;
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            font-weight: bold;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 3px 14px rgba(0,0,0,.07);
+            margin-bottom: 22px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            margin-bottom: 22px;
+            color: #123b65;
+            font-size: 21px;
+        }
+
+        .reglement-number {
+            font-size: 25px;
+            font-weight: bold;
+            color: #123b65;
+            margin-bottom: 22px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .info-item {
+            padding: 15px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            min-height: 70px;
+        }
+
+        .info-item strong {
+            display: block;
+            margin-bottom: 7px;
+            color: #475569;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+        }
+
+        .value {
+            font-size: 15px;
+        }
+
+        .montant {
+            font-size: 21px;
+            font-weight: bold;
+            color: #123b65;
+        }
+
+        .statut-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .attente {
+            color: #92400e;
+            background: #fef3c7;
+        }
+
+        .validee {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .rejetee,
+        .annulee {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .statut-autre {
+            color: #475569;
+            background: #e2e8f0;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 22px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 800px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .back {
+                align-self: stretch;
+                text-align: center;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img src="{% static 'core/img/logo-sagps.png' %}" alt="SAGPS">
+
+        <div class="header-title">
+            <h1>Détail du règlement</h1>
+            <p>Informations sur le règlement et la facture associée</p>
+        </div>
+
+    </div>
+
+    <a class="back" href="{% url 'reglements' %}">
+        ← Retour aux règlements
+    </a>
+
+</div>
+
+
+<div class="container">
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div class="message">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+
+    <div class="card">
+
+        <div class="reglement-number">
+            {{ reglement.numero_reglement }}
+        </div>
+
+        <div class="info-grid">
+
+            <div class="info-item">
+                <strong>Facture</strong>
+                <span class="value">
+                    {{ reglement.id_facture.numero_facture }}
+                </span>
+            </div>
+
+            <div class="info-item">
+                <strong>Prestataire</strong>
+                <span class="value">
+                    {{ reglement.id_facture.id_prestataire.raison_sociale }}
+                </span>
+            </div>
+
+            <div class="info-item">
+                <strong>Date du règlement</strong>
+                <span class="value">
+                    {{ reglement.date_reglement|date:"d/m/Y" }}
+                </span>
+            </div>
+
+            <div class="info-item">
+                <strong>Montant</strong>
+                <span class="montant">
+                    {{ reglement.montant }} DA
+                </span>
+            </div>
+
+            <div class="info-item">
+                <strong>Mode de règlement</strong>
+                <span class="value">
+                    {{ reglement.mode_reglement }}
+                </span>
+            </div>
+
+            <div class="info-item">
+                <strong>Référence</strong>
+                <span class="value">
+                    {{ reglement.reference_reglement|default:"-" }}
+                </span>
+            </div>
+
+            <div class="info-item">
+                <strong>Statut</strong>
+
+                {% if reglement.statut == "EN_ATTENTE" %}
+
+                    <span class="statut-badge attente">
+                        En attente
+                    </span>
+
+                {% elif reglement.statut == "VALIDEE" %}
+
+                    <span class="statut-badge validee">
+                        Validé
+                    </span>
+
+                {% elif reglement.statut == "REJETEE" %}
+
+                    <span class="statut-badge rejetee">
+                        Rejeté
+                    </span>
+
+                {% elif reglement.statut == "ANNULEE" %}
+
+                    <span class="statut-badge annulee">
+                        Annulé
+                    </span>
+
+                {% else %}
+
+                    <span class="statut-badge statut-autre">
+                        {{ reglement.statut }}
+                    </span>
+
+                {% endif %}
+
+            </div>
+
+            <div class="info-item">
+                <strong>Observation</strong>
+                <span class="value">
+                    {{ reglement.observation|default:"-" }}
+                </span>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2>Informations de la facture</h2>
+
+        <div class="info-grid">
+
+            <div class="info-item">
+                <strong>N° facture</strong>
+                <span class="value">
+                    {{ reglement.id_facture.numero_facture }}
+                </span>
+            </div>
+
+            <div class="info-item">
+                <strong>Date facture</strong>
+                <span class="value">
+                    {{ reglement.id_facture.date_facture|date:"d/m/Y" }}
+                </span>
+            </div>
+
+            <div class="info-item">
+                <strong>Montant total</strong>
+                <span class="montant">
+                    {{ reglement.id_facture.montant_total }} DA
+                </span>
+            </div>
+
+            <div class="info-item">
+                <strong>Montant validé</strong>
+                <span class="montant">
+                    {{ reglement.id_facture.montant_valide }} DA
+                </span>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant SAGPS
+</div>
+
+</body>
+</html>

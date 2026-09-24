@@ -1,0 +1,390 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ titre }}</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 95px;
+            background: #123b65;
+            color: white;
+            padding: 15px 35px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.12);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .header-title p {
+            margin: 6px 0 0;
+            color: #dbeafe;
+            font-size: 13px;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,.12);
+            border: 1px solid rgba(255,255,255,.2);
+            padding: 11px 17px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: .2s;
+        }
+
+        .back:hover {
+            background: rgba(255,255,255,.2);
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 14px;
+            box-shadow: 0 3px 14px rgba(15,23,42,.07);
+            border: 1px solid #e5eaf0;
+        }
+
+        .card h2 {
+            margin: 0 0 22px;
+            color: #123b65;
+            font-size: 22px;
+        }
+
+        .info {
+            background: #eff6ff;
+            color: #1e40af;
+            padding: 17px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border: 1px solid #dbeafe;
+            line-height: 1.7;
+        }
+
+        .info strong {
+            color: #123b65;
+        }
+
+        .field {
+            margin-bottom: 21px;
+        }
+
+        label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 7px;
+            color: #334155;
+            font-size: 14px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            color: #1f2937;
+            outline: none;
+            transition: .2s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            background: #f8fafc;
+        }
+
+        .help {
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 7px;
+            line-height: 1.5;
+        }
+
+        .errorlist {
+            color: #b91c1c;
+            margin: 7px 0 0;
+            padding: 10px 14px 10px 30px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .non-field-errors {
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 13px 16px;
+            margin-bottom: 20px;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 11px 18px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: .2s;
+        }
+
+        .btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        @media (max-width: 700px) {
+
+            .header {
+                padding: 15px 20px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .container {
+                padding: 20px 15px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .brand img {
+                width: 125px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img
+            src="{% static 'core/img/logo-sagps.png' %}"
+            alt="SAGPS"
+        >
+
+        <div class="header-title">
+
+            <h1>{{ titre }}</h1>
+
+            <p>
+                Gestion des pièces jointes des demandes TP
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <a
+        class="back"
+        href="{% url 'demande_tp_details' demande.id_demande %}"
+    >
+        ← Retour à la demande
+    </a>
+
+</div>
+
+
+<div class="container">
+
+    <div class="card">
+
+        <h2>Ajouter une pièce jointe</h2>
+
+
+        <div class="info">
+
+            <strong>Demande :</strong>
+            {{ demande.numero_demande }}
+
+            <br>
+
+            <strong>Statut :</strong>
+            {{ demande.statut }}
+
+        </div>
+
+
+        {% if form.non_field_errors %}
+
+            <div class="non-field-errors">
+
+                {{ form.non_field_errors }}
+
+            </div>
+
+        {% endif %}
+
+
+        <form
+            method="post"
+            enctype="multipart/form-data"
+        >
+
+            {% csrf_token %}
+
+
+            <div class="field">
+
+                {{ form.fichier.label_tag }}
+
+                {{ form.fichier }}
+
+                {{ form.fichier.errors }}
+
+                <div class="help">
+                    Exemple : ordonnance.pdf, justificatif.pdf, document.jpg
+                </div>
+
+            </div>
+
+
+            <div class="field">
+
+                {{ form.type_document.label_tag }}
+
+                {{ form.type_document }}
+
+                {{ form.type_document.errors }}
+
+                <div class="help">
+                    Exemple : Ordonnance médicale, Justificatif, Analyse...
+                </div>
+
+            </div>
+
+
+            <div class="field">
+
+                {{ form.statut.label_tag }}
+
+                {{ form.statut }}
+
+                {{ form.statut.errors }}
+
+            </div>
+
+
+            <div class="actions">
+
+                <button
+                    type="submit"
+                    class="btn"
+                >
+                    Ajouter la pièce jointe
+                </button>
+
+
+                <a
+                    href="{% url 'demande_tp_details' demande.id_demande %}"
+                    class="btn btn-secondary"
+                >
+                    Annuler
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant
+</div>
+
+</body>
+</html>

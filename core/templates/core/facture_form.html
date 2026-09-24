@@ -1,0 +1,505 @@
+﻿{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Nouvelle facture - Tiers Payant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            background: #123b65;
+            color: white;
+            min-height: 95px;
+            padding: 15px 35px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.10);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 25px;
+            font-weight: 600;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: #1f4f7d;
+            padding: 11px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: .2s;
+        }
+
+        .back:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .container {
+            max-width: 1250px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 28px;
+            border-radius: 14px;
+            box-shadow: 0 5px 18px rgba(0,0,0,.08);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 22px;
+        }
+
+        .card h2 {
+            margin: 0 0 10px;
+            color: #123b65;
+            font-size: 21px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 14px;
+            margin: 0 0 25px;
+        }
+
+        .info {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+            padding: 15px 17px;
+            border-radius: 9px;
+            margin-bottom: 24px;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .message {
+            padding: 14px 16px;
+            border-radius: 9px;
+            margin-bottom: 20px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+            font-weight: 600;
+        }
+
+        .form-errors {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+            padding: 14px;
+            border-radius: 9px;
+            margin-bottom: 22px;
+            font-size: 14px;
+        }
+
+        .field {
+            margin-bottom: 22px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 13px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+            color: #1f2937;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+        }
+
+        .field .errors {
+            margin-top: 7px;
+        }
+
+        .errorlist {
+            color: #b91c1c;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 7px;
+            padding: 8px 12px 8px 28px;
+            margin: 7px 0 0;
+            font-size: 13px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 28px;
+            padding-top: 22px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 11px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: .2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            opacity: .92;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+
+        th,
+        td {
+            padding: 13px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f1f5f9;
+            color: #374151;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .amount {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 30px;
+            color: #6b7280;
+        }
+
+        .footer {
+            text-align: center;
+            color: #6b7280;
+            font-size: 13px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 750px) {
+
+            .header {
+                padding: 15px 20px;
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .brand {
+                gap: 15px;
+            }
+
+            .brand img {
+                width: 110px;
+                height: 55px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .back {
+                width: 100%;
+                text-align: center;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img
+            src="{% static 'core/img/logo-sagps.png' %}"
+            alt="SAGPS"
+        >
+
+        <h1>Nouvelle facture</h1>
+
+    </div>
+
+    <a
+        class="back"
+        href="{% url 'consommations' %}"
+    >
+        ← Retour aux consommations
+    </a>
+
+</div>
+
+<div class="container">
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div class="message">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+
+    <!-- Création facture -->
+
+    <div class="card">
+
+        <h2>Créer une facture</h2>
+
+        <p class="subtitle">
+            Sélectionnez le prestataire concerné pour générer la facture.
+        </p>
+
+        <div class="info">
+            📄 La facture sera construite automatiquement à partir des
+            consommations validées du prestataire sélectionné.
+        </div>
+
+        {% if form.errors %}
+
+            <div class="form-errors">
+
+                <strong>Veuillez corriger les erreurs :</strong>
+
+                {{ form.errors }}
+
+            </div>
+
+        {% endif %}
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            {% for field in form %}
+
+                {% if field.name != "numero_facture" %}
+
+                    <div class="field">
+
+                        {{ field.label_tag }}
+
+                        {{ field }}
+
+                        {% if field.errors %}
+
+                            <div class="errors">
+                                {{ field.errors }}
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                {% endif %}
+
+            {% endfor %}
+
+            <div class="actions">
+
+                <button type="submit" class="btn">
+                    📄 Créer la facture
+                </button>
+
+                <a
+                    href="{% url 'consommations' %}"
+                    class="btn btn-secondary"
+                >
+                    ← Annuler
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <!-- Consommations disponibles -->
+
+    <div class="card">
+
+        <h2>Consommations validées disponibles</h2>
+
+        <p class="subtitle">
+            Consommations pouvant être intégrées dans une nouvelle facture.
+        </p>
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>ID</th>
+                        <th>Bénéficiaire</th>
+                        <th>Acte</th>
+                        <th>Prestataire</th>
+                        <th>Date</th>
+                        <th>Montant</th>
+                        <th>Prise en charge</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for c in consommations %}
+
+                    <tr>
+
+                        <td>
+                            {{ c.id_consommation }}
+                        </td>
+
+                        <td>
+                            {{ c.id_personne_beneficiaire.nom }}
+                            {{ c.id_personne_beneficiaire.prenom }}
+                        </td>
+
+                        <td>
+                            {{ c.id_acte.code_acte }}
+                            -
+                            {{ c.id_acte.libelle }}
+                        </td>
+
+                        <td>
+                            {{ c.id_prestataire.raison_sociale }}
+                        </td>
+
+                        <td>
+                            {{ c.date_prestation|date:"d/m/Y" }}
+                        </td>
+
+                        <td class="amount">
+                            {{ c.montant_base }} DA
+                        </td>
+
+                        <td class="amount">
+                            {{ c.montant_prise_en_charge }} DA
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td colspan="7" class="empty">
+                            Aucune consommation validée disponible.
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant
+</div>
+
+</body>
+</html>

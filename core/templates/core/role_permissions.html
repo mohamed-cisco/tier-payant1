@@ -1,0 +1,450 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Permissions - Tiers Payant</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .header {
+            min-height: 95px;
+            background: #123b65;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.10);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 150px;
+            height: 65px;
+            object-fit: contain;
+            background: white;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .header-title p {
+            margin: 6px 0 0;
+            color: #dbeafe;
+            font-size: 14px;
+        }
+
+        .back {
+            color: white;
+            text-decoration: none;
+            background: #1f5b91;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .back:hover {
+            background: #2874b8;
+        }
+
+        .container {
+            max-width: 1050px;
+            margin: 0 auto;
+            padding: 30px 25px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 14px;
+            box-shadow: 0 3px 14px rgba(0,0,0,.07);
+            border: 1px solid #e5e7eb;
+        }
+
+        .role-info {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .role-info h2 {
+            margin: 0 0 18px;
+            color: #123b65;
+            font-size: 24px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            padding: 13px 15px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 9px;
+        }
+
+        .info-item strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #475569;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .messages {
+            margin-bottom: 22px;
+        }
+
+        .message {
+            padding: 13px 15px;
+            border-radius: 8px;
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            font-weight: bold;
+        }
+
+        .permissions-title {
+            margin: 0 0 18px;
+            color: #123b65;
+            font-size: 20px;
+        }
+
+        .module {
+            margin-top: 24px;
+            margin-bottom: 0;
+            padding: 13px 16px;
+            background: #eaf2fb;
+            color: #123b65;
+            border-left: 5px solid #2563eb;
+            border-radius: 8px 8px 0 0;
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .permission {
+            padding: 14px 16px;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+            background: white;
+            transition: .2s;
+        }
+
+        .permission:last-of-type {
+            border-radius: 0 0 8px 8px;
+        }
+
+        .permission:hover {
+            background: #f8fafc;
+        }
+
+        .permission label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .permission input {
+            width: 17px;
+            height: 17px;
+            cursor: pointer;
+            accent-color: #2563eb;
+        }
+
+        .permission strong {
+            color: #334155;
+            font-size: 14px;
+        }
+
+        .description {
+            color: #64748b;
+            font-size: 13px;
+            margin: 7px 0 0 27px;
+            line-height: 1.5;
+        }
+
+        .empty {
+            padding: 25px;
+            text-align: center;
+            color: #64748b;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+            padding-top: 22px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .btn {
+            border: none;
+            padding: 11px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 22px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 700px) {
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .back {
+                width: 100%;
+                text-align: center;
+            }
+
+            .container {
+                padding: 20px 15px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="brand">
+
+        <img src="{% static 'core/img/logo-sagps.png' %}" alt="SAGPS">
+
+        <div class="header-title">
+
+            <h1>Gestion des permissions</h1>
+
+            <p>
+                Attribution des permissions au rôle
+            </p>
+
+        </div>
+
+    </div>
+
+    <a class="back" href="{% url 'roles' %}">
+        ← Retour aux rôles
+    </a>
+
+</div>
+
+
+<div class="container">
+
+    <div class="card">
+
+        <div class="role-info">
+
+            <h2>
+                Rôle : {{ role.libelle }}
+            </h2>
+
+            <div class="info-grid">
+
+                <div class="info-item">
+
+                    <strong>Code du rôle</strong>
+
+                    {{ role.code_role }}
+
+                </div>
+
+                <div class="info-item">
+
+                    <strong>Description</strong>
+
+                    {{ role.description|default:"-" }}
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        {% if messages %}
+
+            <div class="messages">
+
+                {% for message in messages %}
+
+                    <div class="message">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        {% endif %}
+
+
+        <h3 class="permissions-title">
+            Permissions disponibles
+        </h3>
+
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            {% regroup permissions by module as permissions_par_module %}
+
+            {% for groupe in permissions_par_module %}
+
+                <div class="module">
+                    {{ groupe.grouper }}
+                </div>
+
+                {% for permission in groupe.list %}
+
+                    <div class="permission">
+
+                        <label>
+
+                            <input
+                                type="checkbox"
+                                name="permissions"
+                                value="{{ permission.id_permission }}"
+
+                                {% if permission.id_permission in permissions_role %}
+                                    checked
+                                {% endif %}
+                            >
+
+                            <strong>
+                                {{ permission.libelle }}
+                            </strong>
+
+                        </label>
+
+                        {% if permission.description %}
+
+                            <div class="description">
+                                {{ permission.description }}
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                {% endfor %}
+
+            {% empty %}
+
+                <div class="empty">
+                    Aucune permission disponible.
+                </div>
+
+            {% endfor %}
+
+
+            <div class="buttons">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    Enregistrer les permissions
+                </button>
+
+                <a
+                    href="{% url 'roles' %}"
+                    class="btn btn-secondary"
+                >
+                    Annuler
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<div class="footer">
+    © 2026 — Plateforme Tiers Payant SAGPS
+</div>
+
+</body>
+</html>
