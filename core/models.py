@@ -45,7 +45,7 @@ class Acte(models.Model):
     statut = models.CharField(max_length=20)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'acte'
 
 class SousActe(models.Model):
@@ -78,7 +78,7 @@ class SousActe(models.Model):
     statut = models.CharField(max_length=20)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'sous_acte'
         unique_together = (('id_acte', 'libelle'),)
 
@@ -112,7 +112,7 @@ class TarifSousActe(models.Model):
     statut = models.CharField(max_length=20)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'tarif_sous_acte'
         unique_together = (
             ('id_sous_acte', 'id_prestataire', 'date_debut'),
@@ -128,7 +128,7 @@ class Adherent(models.Model):
     date_radiation = models.DateField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'adherent'
 
 
@@ -143,7 +143,7 @@ class Adhesion(models.Model):
     date_creation = models.DateTimeField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'adhesion'
 
 
@@ -162,7 +162,7 @@ class AuditLog(models.Model):
     description = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'audit_log'
 
 
@@ -178,7 +178,7 @@ class AyantDroit(models.Model):
     statut = models.CharField(max_length=20)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'ayant_droit'
 
 
@@ -207,7 +207,7 @@ class Consommation(models.Model):
     exercice = models.IntegerField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'consommation'
 
 
@@ -225,7 +225,7 @@ class Contrat(models.Model):
     date_modification = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'contrat'
 
 
@@ -238,7 +238,7 @@ class ContratGarantie(models.Model):
     statut = models.CharField(max_length=20)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'contrat_garantie'
         unique_together = (('id_contrat', 'id_garantie', 'date_debut'),)
 
@@ -253,7 +253,7 @@ class Convention(models.Model):
     description = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'convention'
 
 
@@ -268,7 +268,7 @@ class DecisionRecours(models.Model):
     utilisateur_decision = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'decision_recours'
 
 
@@ -286,7 +286,7 @@ class DemandeTp(models.Model):
     utilisateur_creation = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'demande_tp'
 
 
@@ -300,7 +300,7 @@ class DemandeTpDetail(models.Model):
     observation = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'demande_tp_detail'
 
 
@@ -318,7 +318,7 @@ class DetailFacture(models.Model):
     id_motif_rejet = models.ForeignKey('MotifRejet', models.DO_NOTHING, db_column='id_motif_rejet', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'detail_facture'
 
 
@@ -336,7 +336,7 @@ class Document(models.Model):
     statut = models.CharField(max_length=20)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'document'
 
 
@@ -355,7 +355,7 @@ class Facture(models.Model):
     observation = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'facture'
 
 
@@ -367,7 +367,7 @@ class Garantie(models.Model):
     statut = models.CharField(max_length=20)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'garantie'
 
 
@@ -382,7 +382,7 @@ class GarantieActe(models.Model):
     statut = models.CharField(max_length=20)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'garantie_acte'
         unique_together = (('id_garantie', 'id_acte', 'date_debut'),)
 
@@ -396,7 +396,7 @@ class MotifRejet(models.Model):
     statut = models.CharField(max_length=20)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'motif_rejet'
 
 
@@ -409,7 +409,7 @@ class Permission(models.Model):
     statut = models.CharField(max_length=20)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'permission'
 
 
@@ -428,7 +428,7 @@ class Personne(models.Model):
     date_modification = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'personne'
 
 
@@ -445,7 +445,7 @@ class Plafond(models.Model):
     statut = models.CharField(max_length=20)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'plafond'
 
 
@@ -465,7 +465,7 @@ class Prestataire(models.Model):
         return f"{self.code_prestataire} - {self.raison_sociale}"
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'prestataire'
 
 
@@ -482,7 +482,7 @@ class PriseEnCharge(models.Model):
     utilisateur_validation = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'prise_en_charge'
 
 
@@ -501,7 +501,7 @@ class PriseEnChargeDetail(models.Model):
     motif_rejet = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'prise_en_charge_detail'
 
 
@@ -519,7 +519,7 @@ class Recours(models.Model):
     utilisateur_creation = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'recours'
 class DemandeTpDocument(models.Model):
     pk = models.CompositePrimaryKey(
@@ -548,7 +548,7 @@ class DemandeTpDocument(models.Model):
     date_ajout = models.DateTimeField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'demande_tp_document'
 
 class RecoursDocument(models.Model):
@@ -559,7 +559,7 @@ class RecoursDocument(models.Model):
     date_ajout = models.DateTimeField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'recours_document'
 
 class Reglement(models.Model):
@@ -581,7 +581,7 @@ class Reglement(models.Model):
 )
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'reglement'
 
 
@@ -593,7 +593,7 @@ class Role(models.Model):
     statut = models.CharField(max_length=20)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'role'
 
 
@@ -603,7 +603,7 @@ class RolePermission(models.Model):
     id_permission = models.ForeignKey(Permission, models.DO_NOTHING, db_column='id_permission')
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'role_permission'
 
 
@@ -621,7 +621,7 @@ class Souscripteur(models.Model):
     date_creation = models.DateTimeField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'souscripteur'
 
 
@@ -633,7 +633,7 @@ class TypePrestation(models.Model):
     statut = models.CharField(max_length=20)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'type_prestation'
 
 
@@ -650,7 +650,7 @@ class Utilisateur(models.Model):
     derniere_connexion = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'utilisateur'
 class UtilisateurRole(models.Model):
     pk = models.CompositePrimaryKey('id_utilisateur', 'id_role')
@@ -672,6 +672,6 @@ class UtilisateurRole(models.Model):
     statut = models.CharField(max_length=20)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'utilisateur_role'
 
