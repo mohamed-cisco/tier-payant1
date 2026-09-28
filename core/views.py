@@ -13,6 +13,8 @@ from django.http import FileResponse, JsonResponse
 from django import forms
 from django.db.models import Q, Sum, Count
 from django.db.models.functions import TruncMonth
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 
 from .forms import (
     LoginForm,
@@ -257,6 +259,13 @@ def accueil(request):
         }
     )
 def connexion(request):
+    # Si l'utilisateur est déjà connecté via Django ET a un id_utilisateur en session
+    if (
+        request.user.is_authenticated
+        and request.session.get("id_utilisateur")
+    ):
+        return redirect("accueil")
+
     if request.method == "POST":
         form = LoginForm(request.POST)
 
@@ -264,28 +273,20 @@ def connexion(request):
             nom_utilisateur = form.cleaned_data["nom_utilisateur"]
             mot_de_passe = form.cleaned_data["mot_de_passe"]
 
-            try:
-                utilisateur = Utilisateur.objects.get(
-                    nom_utilisateur=nom_utilisateur
-                )
-            except Utilisateur.DoesNotExist:
-                utilisateur = None
+            utilisateur = authenticate(
+                request,
+                username=nom_utilisateur,
+                password=mot_de_passe,
+            )
 
-            if (
-                utilisateur
-                and utilisateur.statut == "ACTIF"
-                and check_password(
-                    mot_de_passe,
-                    utilisateur.mot_de_passe_hash
-                )
-            ):
-                request.session["id_utilisateur"] = (
-                    utilisateur.id_utilisateur
-                )
+            if utilisateur is not None and utilisateur.statut == "ACTIF":
+                login(request, utilisateur)
 
-                request.session["nom_utilisateur"] = (
-                    utilisateur.nom_utilisateur
-                )
+                # ⚠️ TRÈS IMPORTANT : on pose AUSSI les variables de session
+                # custom pour que les vues existantes (accueil, etc.) continuent
+                # de fonctionner.
+                request.session["id_utilisateur"] = utilisateur.id_utilisateur
+                request.session["nom_utilisateur"] = utilisateur.nom_utilisateur
 
                 return redirect("accueil")
 
@@ -293,7 +294,6 @@ def connexion(request):
                 request,
                 "Nom utilisateur ou mot de passe incorrect."
             )
-
     else:
         form = LoginForm()
 
@@ -304,7 +304,7 @@ def connexion(request):
     )
 
 def deconnexion(request):
-    request.session.flush()
+    logout(request)
     return redirect("connexion")
 
 
