@@ -4,6 +4,7 @@ from .views import (
     accueil,
     connexion,
     deconnexion,
+    types_prestation,
     adherents,
     adherent_detail,
     adherent_create,
@@ -293,6 +294,12 @@ path(
     "tarifs-sous-actes/<int:id_tarif_sous_acte>/radier/",
     tarif_sous_acte_radier,
     name="tarif_sous_acte_radier",
+),
+
+path(
+    'types-prestation/',
+    types_prestation,
+    name='types_prestation'
 ),
 
 path(

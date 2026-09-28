@@ -1228,3 +1228,29 @@ class TarifSousActeForm(forms.Form):
         initial="ACTIF",
         widget=forms.HiddenInput()
     )
+class TypePrestationForm(forms.Form):
+
+    code_type = forms.CharField(
+        label="Code du type",
+        max_length=30
+    )
+
+    libelle = forms.CharField(
+        label="Libellé",
+        max_length=150
+    )
+
+    description = forms.CharField(
+        label="Description",
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3})
+    )
+
+    statut = forms.ChoiceField(
+        label="Statut",
+        choices=[
+            ("ACTIF", "Actif"),
+            ("INACTIF", "Inactif"),
+        ],
+        initial="ACTIF"
+    )

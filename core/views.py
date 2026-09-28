@@ -8982,6 +8982,9 @@ def consommation_create(request, id_detail_pec):
     if not request.session.get("id_utilisateur"):
         return redirect("connexion")
 
+def types_prestation(request):
+    return render(request, 'core/types_prestation.html')
+
 def tarif_sous_acte_ajax(request, id_detail_pec):
     if not request.session.get("id_utilisateur"):
         return JsonResponse(

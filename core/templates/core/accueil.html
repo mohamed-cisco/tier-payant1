@@ -759,6 +759,12 @@
         </a>
         {% endif %}
 
+        {% if "TYPE_PRESTATION_VIEW" in permissions %}
+        <a href="{% url 'types_prestation' %}">
+        Types de prestation
+        </a>
+        {% endif %}
+
         {% if "USER_VIEW" in permissions %}
         <a href="{% url 'utilisateurs' %}">
             👤 Utilisateurs

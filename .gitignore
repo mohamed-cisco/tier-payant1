@@ -1,27 +1,43 @@
-# --- Secrets : ne jamais commiter ---
-.env
-
-# --- Environnement virtuel ---
+﻿# Environnement virtuel
 venv/
+env/
 .venv/
 
-# --- Python ---
+# Python
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+.Python
 *.egg-info/
 
-# --- Base de donnees locale ---
+# Django
+*.log
 db.sqlite3
+db.sqlite3-journal
+/media/
+/staticfiles/
 
-# --- Fichiers collectes par collectstatic (regenerables) ---
-staticfiles/
+# Variables d'environnement (SECRETS - NE PAS PARTAGER)
+.env
+.env.local
 
-# --- Televersements des utilisateurs ---
-media/documents/
+# IDE
+.vscode/
+.idea/
+*.swp
 
-# --- Sauvegardes et fichiers residuels ---
+# Système
+.DS_Store
+Thumbs.db
+
+# Sauvegardes
 *.bak
 *.backup
+_backups/
+
+# Archives ZIP et backups
 *.zip
-*.sql
-*.dump
+*_BACKUP*
+*.bak
+CLAUDE.md
