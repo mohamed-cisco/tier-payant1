@@ -34,3 +34,17 @@
 ### Prochaine étape
 - Adapter progressivement les vues : @login_required au lieu de if session
 - Mapper Role → Group Django
+
+## Session 3 (date) — Migration @login_required
+
+### À faire
+- Ajouter helper session_utilisateur(request)
+- Remplacer if not request.session.get("id_utilisateur")
+  par @login_required (progressivement)
+- Tester chaque modification
+
+### Commandes utiles au démarrage
+cd /c/Projet_Tiers_Payant
+source venv/Scripts/activate
+git status
+python manage.py check
