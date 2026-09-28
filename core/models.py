@@ -7,6 +7,33 @@
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
 
+# ============================================================
+# ÉNUMÉRATIONS (TextChoices) — valeurs autorisées pour les statuts
+# ============================================================
+
+class Statut(models.TextChoices):
+    """Statuts génériques pour toutes les entités (cycle de vie)."""
+    ACTIF = "ACTIF", "Actif"
+    INACTIF = "INACTIF", "Inactif"
+    RADIE = "RADIE", "Radié"
+
+
+class StatutValidation(models.TextChoices):
+    """Statuts de validation (demandes, factures, prises en charge)."""
+    EN_ATTENTE = "EN_ATTENTE", "En attente"
+    ACCEPTEE = "ACCEPTEE", "Acceptée"
+    VALIDEE = "VALIDEE", "Validée"
+    REJETEE = "REJETEE", "Rejetée"
+    ANNULEE = "ANNULEE", "Annulée"
+    PAYEE = "PAYEE", "Payée"
+
+
+class StatutRecours(models.TextChoices):
+    """Statuts spécifiques aux recours."""
+    EN_COURS = "EN_COURS", "En cours"
+    TRAITE = "TRAITE", "Traité"
+    CLOTURE = "CLOTURE", "Clôturé"
+    REJETE = "REJETE", "Rejeté"
 
 class Acte(models.Model):
     id_acte = models.BigAutoField(primary_key=True)
