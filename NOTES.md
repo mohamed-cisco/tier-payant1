@@ -84,3 +84,32 @@ documents, plafonds
 ### Prochaine session
 - Migrer roles.py + adherents.py + souscripteurs.py
 - Puis contrats.py + garanties.py
+
+## Session 5 (29/09/2026) — Migration 5 modules
+
+### Fait
+- Migration de 5 modules (34 fonctions) :
+  - roles.py (5 fonctions)
+  - adherents.py (7 fonctions)
+  - souscripteurs.py (5 fonctions)
+  - contrats.py (7 fonctions)
+  - garanties.py (10 fonctions, en 2 blocs)
+
+### Méthode validée
+1. Extraire le corps avec sed
+2. Créer le fichier avec les imports
+3. python manage.py check
+4. Supprimer de views_old.py
+5. Mettre à jour __init__.py
+6. Tester
+7. Commit
+
+### Progression
+- 8 modules / 19 migrés
+- 41 fonctions migrées
+- views_old.py passe de 9668 → ~5800 lignes
+
+### À retenir
+- Attention aux décorateurs (parfois laissés dans views_old.py)
+- Supprimer les blocs du bas en premier (sinon décalage)
+- Toujours tester après chaque étape
