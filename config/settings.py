@@ -95,7 +95,9 @@ DATABASES = {
 }
 
 AUTH_USER_MODEL = 'core.Utilisateur'
-
+LOGIN_URL = 'connexion'
+LOGIN_REDIRECT_URL = 'accueil'
+LOGOUT_REDIRECT_URL = 'connexion'
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},

@@ -15,6 +15,7 @@ from django.db.models import Q, Sum, Count
 from django.db.models.functions import TruncMonth
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from .auth_utils import utilisateur_courant, session_utilisateur_required
 
 from .forms import (
     LoginForm,
@@ -108,15 +109,11 @@ def enregistrer_audit(
         description=description,
     )
 
+@session_utilisateur_required
 def accueil(request):
-    if not request.session.get("id_utilisateur"):
-        return redirect("connexion")
-
-    id_utilisateur = request.session["id_utilisateur"]
-
-    utilisateur = Utilisateur.objects.get(
-        id_utilisateur=id_utilisateur
-    )
+    
+    utilisateur = request.utilisateur
+    id_utilisateur = utilisateur.id_utilisateur
 
     roles = (
         UtilisateurRole.objects
@@ -308,15 +305,12 @@ def deconnexion(request):
     return redirect("connexion")
 
 
+
+@session_utilisateur_required
 def utilisateurs(request):
-    if not request.session.get("id_utilisateur"):
-        return redirect("connexion")
-
-    id_utilisateur = request.session["id_utilisateur"]
-
-    utilisateur = Utilisateur.objects.get(
-        id_utilisateur=id_utilisateur
-    )
+    
+    utilisateur = request.utilisateur
+    id_utilisateur = utilisateur.id_utilisateur
 
     permissions = set(
         RolePermission.objects
@@ -932,11 +926,10 @@ def role_modifier(request, id_role):
             "role": role,
         }
     )
+@session_utilisateur_required
 def adherents(request):
-    if not request.session.get("id_utilisateur"):
-        return redirect("connexion")
-
-    id_utilisateur = request.session["id_utilisateur"]
+    utilisateur = request.utilisateur
+    id_utilisateur = utilisateur.id_utilisateur
 
     permissions = set(
         RolePermission.objects
