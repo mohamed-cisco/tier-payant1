@@ -27,6 +27,12 @@ from .adherents import (  # noqa
     adherent_modifier,
     adherent_radier,
 )
+from .souscripteurs import (  # noqa
+    souscripteurs,
+    souscripteur_create,
+    souscripteur_modifier,
+    souscripteur_radier,
+)
 
 # Vues pas encore migrées (réexport depuis views_old)
 from core.views_old import *  # noqa
