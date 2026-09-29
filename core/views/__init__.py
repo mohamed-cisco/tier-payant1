@@ -33,6 +33,14 @@ from .souscripteurs import (  # noqa
     souscripteur_modifier,
     souscripteur_radier,
 )
+from .contrats import (  # noqa
+    contrats,
+    contrat_detail,
+    contrat_garantie_create,
+    contrat_create,
+    contrat_modifier,
+    contrat_radier,
+)
 
 # Vues pas encore migrées (réexport depuis views_old)
 from core.views_old import *  # noqa
