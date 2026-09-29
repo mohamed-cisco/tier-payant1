@@ -52,6 +52,21 @@ from .garanties import (  # noqa
     garantie_acte_modifier,
     garantie_acte_radier,
 )
+from .actes import (  # noqa
+    actes,
+    acte_detail,
+    acte_create,
+    acte_modifier,
+    acte_radier,
+    sous_actes,
+    sous_acte_create,
+    sous_acte_modifier,
+    sous_acte_radier,
+    tarifs_sous_actes,
+    tarif_sous_acte_create,
+    tarif_sous_acte_modifier,
+    tarif_sous_acte_radier,
+)
 
 # Vues pas encore migrées (réexport depuis views_old)
 from core.views_old import *  # noqa
