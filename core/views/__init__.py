@@ -1,9 +1,11 @@
 """Package des vues de l'application core.
 
-Pendant la migration, toutes les vues sont réexportées depuis
-views_old.py. Une fois la migration terminée, ce fichier importera
-les vues depuis leurs modules respectifs.
+Pendant la migration, les vues migrées sont importées depuis leur
+module, et les autres sont encore réexportées depuis views_old.py.
 """
 
-# Pour l'instant, on réexporte TOUT depuis views_old
+# Vues migrées (ordre : les plus spécifiques en premier)
+from .auth import connexion, deconnexion  # noqa
+
+# Vues pas encore migrées (réexport depuis views_old)
 from core.views_old import *  # noqa
