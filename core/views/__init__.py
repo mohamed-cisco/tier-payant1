@@ -13,6 +13,13 @@ from .utilisateurs import (  # noqa
     utilisateur_modifier,
     utilisateur_roles,
 )
+from .roles import (  # noqa
+    roles,
+    role_create,
+    role_detail,
+    role_permissions,
+    role_modifier,
+)
 
 # Vues pas encore migrées (réexport depuis views_old)
 from core.views_old import *  # noqa

@@ -255,11 +255,10 @@ def accueil(request):
             "prestation_totaux": prestation_totaux,
         }
     )
-def roles(request):
-    if not request.session.get("id_utilisateur"):
-        return redirect("connexion")
-
-    id_utilisateur = request.session["id_utilisateur"]
+def utilisateurs(request):
+    
+    utilisateur = request.utilisateur
+    id_utilisateur = utilisateur.id_utilisateur
 
     permissions = set(
         RolePermission.objects
@@ -274,24 +273,30 @@ def roles(request):
         )
     )
 
-    if "ROLE_VIEW" not in permissions:
+    if "USER_VIEW" not in permissions:
         messages.error(
             request,
-            "Vous n'avez pas l'autorisation de consulter les rÃ´les."
+            "Vous n'avez pas l'autorisation de consulter les utilisateurs."
         )
         return redirect("accueil")
 
-    roles = Role.objects.all().order_by("libelle")
+    utilisateurs = Utilisateur.objects.all().order_by(
+        "nom",
+        "prenom"
+    )
 
     return render(
         request,
-        "core/roles.html",
+        "core/utilisateurs.html",
         {
-            "roles": roles,
-"permissions": permissions,
+            "utilisateur": utilisateur,
+            "utilisateurs": utilisateurs,
+            "permissions": permissions,
         }
     )
-def role_create(request):
+
+
+def utilisateur_create(request):
     if not request.session.get("id_utilisateur"):
         return redirect("connexion")
 
@@ -310,61 +315,60 @@ def role_create(request):
         )
     )
 
-    if "ROLE_CREATE" not in permissions:
+    if "USER_CREATE" not in permissions:
         messages.error(
             request,
-            "Vous n'avez pas l'autorisation de crÃ©er un rÃ´le."
+            "Vous n'avez pas l'autorisation de crÃ©er un utilisateur."
         )
-        return redirect("roles")
+        return redirect("utilisateurs")
 
     if request.method == "POST":
-        code_role = request.POST.get("code_role", "").strip()
-        libelle = request.POST.get("libelle", "").strip()
-        description = request.POST.get("description", "").strip()
-        statut = request.POST.get("statut", "ACTIF")
+        form = UtilisateurForm(request.POST)
 
-        if not code_role or not libelle:
-            messages.error(
-                request,
-                "Le code du rÃ´le et le libellÃ© sont obligatoires."
-            )
-        elif Role.objects.filter(code_role=code_role).exists():
-            messages.error(
-                request,
-                "Ce code de rÃ´le existe dÃ©jÃ ."
-            )
-        else:
-            Role.objects.create(
-                code_role=code_role,
-                libelle=libelle,
-                description=description or None,
-                statut=statut
+        if form.is_valid():
+            Utilisateur.objects.create(
+                nom_utilisateur=form.cleaned_data["nom_utilisateur"],
+                mot_de_passe_hash=make_password(
+                    form.cleaned_data["mot_de_passe"]
+                ),
+                nom=form.cleaned_data["nom"],
+                prenom=form.cleaned_data["prenom"],
+                email=form.cleaned_data["email"] or None,
+                telephone=form.cleaned_data["telephone"] or None,
+                statut=form.cleaned_data["statut"],
+                date_creation=timezone.now()
             )
 
             messages.success(
                 request,
-                "RÃ´le crÃ©Ã© avec succÃ¨s."
+                "Utilisateur crÃ©Ã© avec succÃ¨s."
             )
 
-            return redirect("roles")
+            return redirect("utilisateurs")
+
+    else:
+        form = UtilisateurForm()
 
     return render(
         request,
-        "core/role_form.html",
+        "core/utilisateur_form.html",
         {
-            "titre": "Nouveau rÃ´le",
+            "form": form,
+            "titre": "Nouvel utilisateur",
         }
     )
-def role_detail(request, id_role):
+
+
+def utilisateur_modifier(request, id_utilisateur):
     if not request.session.get("id_utilisateur"):
         return redirect("connexion")
 
-    id_utilisateur = request.session["id_utilisateur"]
+    id_connecte = request.session["id_utilisateur"]
 
-    permissions_utilisateur = set(
+    permissions = set(
         RolePermission.objects
         .filter(
-            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__id_utilisateur=id_connecte,
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
@@ -374,215 +378,175 @@ def role_detail(request, id_role):
         )
     )
 
-    if "ROLE_VIEW" not in permissions_utilisateur:
+    if "USER_UPDATE" not in permissions:
         messages.error(
             request,
-            "Vous n'avez pas l'autorisation de consulter les rÃ´les."
+            "Vous n'avez pas l'autorisation de modifier un utilisateur."
         )
-        return redirect("accueil")
+        return redirect("utilisateurs")
 
     try:
-        role = Role.objects.get(id_role=id_role)
-    except Role.DoesNotExist:
+        utilisateur = Utilisateur.objects.get(
+            id_utilisateur=id_utilisateur
+        )
+    except Utilisateur.DoesNotExist:
         messages.error(
             request,
-            "RÃ´le introuvable."
+            "Utilisateur introuvable."
         )
-        return redirect("roles")
-
-    permissions_role = (
-        RolePermission.objects
-        .filter(
-            id_role=role,
-            id_permission__statut="ACTIF"
-        )
-        .select_related("id_permission")
-        .order_by("id_permission__code_permission")
-    )
-
-    return render(
-        request,
-        "core/role_detail.html",
-        {
-            "role": role,
-            "permissions_role": permissions_role,
-        }
-    )
-def role_permissions(request, id_role):
-    if not request.session.get("id_utilisateur"):
-        return redirect("connexion")
-
-    id_utilisateur = request.session["id_utilisateur"]
-
-    permissions_utilisateur = set(
-        RolePermission.objects
-        .filter(
-            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
-            id_role__utilisateurrole__statut="ACTIF",
-            id_permission__statut="ACTIF"
-        )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
-    )
-
-    if "ROLE_PERMISSION" not in permissions_utilisateur:
-        messages.error(
-            request,
-            "Vous n'avez pas l'autorisation de gÃ©rer les permissions."
-        )
-        return redirect("roles")
-
-    try:
-        role = Role.objects.get(id_role=id_role)
-    except Role.DoesNotExist:
-        messages.error(
-            request,
-            "RÃ´le introuvable."
-        )
-        return redirect("roles")
-
-    permissions = Permission.objects.filter(
-        statut="ACTIF"
-    ).order_by(
-        "module",
-        "libelle"
-    )
-
-    permissions_role = set(
-        RolePermission.objects
-        .filter(
-            id_role=role
-        )
-        .values_list(
-            "id_permission_id",
-            flat=True
-        )
-    )
+        return redirect("utilisateurs")
 
     if request.method == "POST":
-
-        permissions_selectionnees = request.POST.getlist(
-            "permissions"
+        form = UtilisateurForm(
+            request.POST,
+            instance=utilisateur
         )
 
-        RolePermission.objects.filter(
-            id_role=role
-        ).delete()
+        if form.is_valid():
+            utilisateur.nom_utilisateur = (
+                form.cleaned_data["nom_utilisateur"]
+            )
 
-        for id_permission in permissions_selectionnees:
+            utilisateur.nom = form.cleaned_data["nom"]
+            utilisateur.prenom = form.cleaned_data["prenom"]
+            utilisateur.email = (
+                form.cleaned_data["email"] or None
+            )
+            utilisateur.telephone = (
+                form.cleaned_data["telephone"] or None
+            )
+            utilisateur.statut = form.cleaned_data["statut"]
+
+            mot_de_passe = form.cleaned_data["mot_de_passe"]
+
+            if mot_de_passe:
+                utilisateur.mot_de_passe_hash = make_password(
+                    mot_de_passe
+                )
+
+            utilisateur.save()
+
+            messages.success(
+                request,
+                "Utilisateur modifiÃ© avec succÃ¨s."
+            )
+
+            return redirect("utilisateurs")
+
+    else:
+        form = UtilisateurForm(
+            instance=utilisateur
+        )
+
+    return render(
+        request,
+        "core/utilisateur_form.html",
+        {
+            "form": form,
+            "titre": "Modifier l'utilisateur",
+        }
+    )
+def utilisateur_roles(request, id_utilisateur):
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_connecte = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_connecte,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list(
+            "id_permission__code_permission",
+            flat=True
+        )
+    )
+
+    if "USER_UPDATE" not in permissions:
+        messages.error(
+            request,
+            "Vous n'avez pas l'autorisation de modifier les rÃ´les."
+        )
+        return redirect("utilisateurs")
+
+    try:
+        utilisateur = Utilisateur.objects.get(
+            id_utilisateur=id_utilisateur
+        )
+    except Utilisateur.DoesNotExist:
+        messages.error(
+            request,
+            "Utilisateur introuvable."
+        )
+        return redirect("utilisateurs")
+
+    roles = Role.objects.filter(
+        statut="ACTIF"
+    ).order_by("libelle")
+
+    if request.method == "POST":
+        roles_selectionnes = request.POST.getlist("roles")
+
+        # DÃ©sactiver les rÃ´les actuellement actifs
+        UtilisateurRole.objects.filter(
+            id_utilisateur=utilisateur,
+            statut="ACTIF"
+        ).update(
+            statut="INACTIF",
+            date_fin=timezone.now().date()
+        )
+
+        # Ajouter les rÃ´les sÃ©lectionnÃ©s
+        for id_role in roles_selectionnes:
             try:
-                permission = Permission.objects.get(
-                    id_permission=int(id_permission),
+                role = Role.objects.get(
+                    id_role=id_role,
                     statut="ACTIF"
                 )
-
-                RolePermission.objects.create(
-                    id_role=role,
-                    id_permission=permission
-                )
-
-            except (Permission.DoesNotExist, ValueError):
+            except Role.DoesNotExist:
                 continue
+
+            UtilisateurRole.objects.update_or_create(
+                id_utilisateur=utilisateur,
+                id_role=role,
+                defaults={
+                    "date_debut": timezone.now().date(),
+                    "date_fin": None,
+                    "statut": "ACTIF",
+                }
+            )
 
         messages.success(
             request,
-            "Permissions du rÃ´le mises Ã  jour avec succÃ¨s."
+            "Les rÃ´les de l'utilisateur ont Ã©tÃ© modifiÃ©s avec succÃ¨s."
         )
 
-        return redirect(
-            "role_permissions",
-            id_role=role.id_role
-        )
+        return redirect("utilisateurs")
 
-    return render(
-        request,
-        "core/role_permissions.html",
-        {
-            "role": role,
-            "permissions": permissions,
-            "permissions_role": permissions_role,
-        }
-    )
-def role_modifier(request, id_role):
-    if not request.session.get("id_utilisateur"):
-        return redirect("connexion")
-
-    id_utilisateur = request.session["id_utilisateur"]
-
-    permissions = set(
-        RolePermission.objects
+    roles_actuels = set(
+        UtilisateurRole.objects
         .filter(
-            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
-            id_role__utilisateurrole__statut="ACTIF",
-            id_permission__statut="ACTIF"
+            id_utilisateur=utilisateur,
+            statut="ACTIF"
         )
         .values_list(
-            "id_permission__code_permission",
+            "id_role_id",
             flat=True
         )
     )
 
-    if "ROLE_UPDATE" not in permissions:
-        messages.error(
-            request,
-            "Vous n'avez pas l'autorisation de modifier un rÃ´le."
-        )
-        return redirect("roles")
-
-    try:
-        role = Role.objects.get(id_role=id_role)
-    except Role.DoesNotExist:
-        messages.error(
-            request,
-            "RÃ´le introuvable."
-        )
-        return redirect("roles")
-
-    if request.method == "POST":
-        code_role = request.POST.get("code_role", "").strip()
-        libelle = request.POST.get("libelle", "").strip()
-        description = request.POST.get("description", "").strip()
-        statut = request.POST.get("statut", "ACTIF")
-
-        if not code_role or not libelle:
-            messages.error(
-                request,
-                "Le code du rÃ´le et le libellÃ© sont obligatoires."
-            )
-        elif Role.objects.filter(
-            code_role=code_role
-        ).exclude(
-            id_role=id_role
-        ).exists():
-            messages.error(
-                request,
-                "Ce code de rÃ´le existe dÃ©jÃ ."
-            )
-        else:
-            role.code_role = code_role
-            role.libelle = libelle
-            role.description = description or None
-            role.statut = statut
-            role.save()
-
-            messages.success(
-                request,
-                "RÃ´le modifiÃ© avec succÃ¨s."
-            )
-
-            return redirect("roles")
-
     return render(
         request,
-        "core/role_form.html",
+        "core/utilisateur_roles.html",
         {
-            "titre": "Modifier le rÃ´le",
-            "role": role,
+            "utilisateur": utilisateur,
+            "roles": roles,
+            "roles_actuels": roles_actuels,
         }
     )
-@session_utilisateur_required
 def adherents(request):
     utilisateur = request.utilisateur
     id_utilisateur = utilisateur.id_utilisateur
