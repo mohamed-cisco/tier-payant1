@@ -41,6 +41,17 @@ from .contrats import (  # noqa
     contrat_modifier,
     contrat_radier,
 )
+from .garanties import (  # noqa
+    garanties,
+    garantie_detail,
+    garantie_create,
+    garantie_modifier,
+    garantie_radier,
+    garantie_actes,
+    garantie_acte_create,
+    garantie_acte_modifier,
+    garantie_acte_radier,
+)
 
 # Vues pas encore migrées (réexport depuis views_old)
 from core.views_old import *  # noqa
