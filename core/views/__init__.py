@@ -20,6 +20,13 @@ from .roles import (  # noqa
     role_permissions,
     role_modifier,
 )
+from .adherents import (  # noqa
+    adherents,
+    adherent_detail,
+    adherent_create,
+    adherent_modifier,
+    adherent_radier,
+)
 
 # Vues pas encore migrées (réexport depuis views_old)
 from core.views_old import *  # noqa
