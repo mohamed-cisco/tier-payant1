@@ -7612,20 +7612,22 @@ def demande_tp_detail_create(request, id_demande):
 
         # Prestataires : si un sous-acte est sélectionné, ne charger que ceux avec tarif
         id_sous_acte_selectionne = None
-        if request.method == "POST":
-            id_sous_acte_selectionne = request.POST.get("id_sous_acte")
-        else:
-            id_sous_acte_selectionne = request.GET.get("id_sous_acte")
-            # Auto-sélection du premier sous-acte si aucun dans l'URL
-            if not id_sous_acte_selectionne and id_acte_selectionne:
-                premier = (
-                    SousActe.objects
-                    .filter(id_acte_id=id_acte_selectionne, statut="ACTIF")
-                    .order_by("libelle")
-                    .first()
-                )
-                if premier:
-                    id_sous_acte_selectionne = str(premier.id_sous_acte)
+if request.method == "POST":
+    id_sous_acte_selectionne = request.POST.get("id_sous_acte")
+else:
+    id_sous_acte_selectionne = request.GET.get("id_sous_acte")
+    # Si aucun sous-acte n'est dans l'URL mais qu'un seul existe pour cet acte,
+    # on le sélectionne automatiquement
+    if not id_sous_acte_selectionne and id_acte_selectionne:
+        premier_sous_acte = (
+            SousActe.objects
+            .filter(id_acte_id=id_acte_selectionne, statut="ACTIF")
+            .order_by("libelle")
+            .first()
+        )
+        if premier_sous_acte:
+            id_sous_acte_selectionne = str(premier_sous_acte.id_sous_acte)
+
         if id_sous_acte_selectionne:
             date_aujourdhui = timezone.now().date()
             tarifs = (

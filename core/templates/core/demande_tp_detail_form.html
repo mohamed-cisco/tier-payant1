@@ -429,9 +429,12 @@
 </div>
 
 <script>
+alert("DEBUG 1 : Script démarré");
+
 document.addEventListener("DOMContentLoaded", function () {
 
-    // Récupère l'ID de la demande pour préserver le contexte
+    alert("DEBUG 2 : DOM chargé");
+
     const idDemande = "{{ demande.id_demande }}";
 
     const champActe = document.getElementById("id_id_acte");
@@ -439,9 +442,16 @@ document.addEventListener("DOMContentLoaded", function () {
     const champPrestataire = document.getElementById("id_id_prestataire");
     const champMontantUnitaire = document.getElementById("id_id_montant_unitaire");
 
-    // === Changement d'ACTE ===
+    alert("DEBUG 3 : " + 
+        "Acte=" + (champActe ? "OK" : "NON") + ", " +
+        "Sous-acte=" + (champSousActe ? "OK" : "NON") + ", " +
+        "Prestataire=" + (champPrestataire ? "OK" : "NON")
+    );
+
+    // Changement ACTE
     if (champActe) {
         champActe.addEventListener("change", function () {
+            alert("DEBUG 4 : Changement d'acte");
             const idActe = this.value;
             if (idActe) {
                 window.location.href = "/demandes-tp/" + idDemande + "/details/nouveau/?id_acte=" + idActe;
@@ -449,9 +459,10 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // === Changement de SOUS-ACTE ===
+    // Changement SOUS-ACTE
     if (champSousActe) {
         champSousActe.addEventListener("change", function () {
+            alert("DEBUG 5 : Changement de sous-acte");
             const idActe = champActe ? champActe.value : "";
             const idSousActe = this.value;
             if (idSousActe) {
@@ -460,14 +471,14 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // === Changement de PRESTATAIRE → charge le tarif en AJAX ===
-    if (champPrestataire && champSousActe && champMontantUnitaire) {
+    // Changement PRESTATAIRE
+    if (champPrestataire) {
         champPrestataire.addEventListener("change", function () {
+            alert("DEBUG 6 : Changement de prestataire");
             const idPrestataire = this.value;
-            const idSousActe = champSousActe.value;
+            const idSousActe = champSousActe ? champSousActe.value : "";
 
             if (!idSousActe || !idPrestataire) {
-                champMontantUnitaire.value = "";
                 return;
             }
 
@@ -475,14 +486,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     if (data.tarif) {
-                        champMontantUnitaire.value = data.tarif;
-                    } else {
-                        champMontantUnitaire.value = "";
-                        alert("Aucun tarif actif pour ce sous-acte chez ce prestataire.");
+                        if (champMontantUnitaire) {
+                            champMontantUnitaire.value = data.tarif;
+                        }
                     }
-                })
-                .catch(function (err) {
-                    console.error("Erreur AJAX :", err);
                 });
         });
     }
