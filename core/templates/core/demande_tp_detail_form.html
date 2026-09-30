@@ -279,16 +279,57 @@
     </div>
 
     <script>
-        setTimeout(function () {
+document.addEventListener("DOMContentLoaded", function () {
 
-            document.querySelectorAll('.notification').forEach(function (notification) {
+    const idDemande = "{{ demande.id_demande }}";
 
-                notification.style.display = 'none';
+    const champActe = document.getElementById("id_id_acte");
+    const champSousActe = document.getElementById("id_id_sous_acte");
+    const champPrestataire = document.getElementById("id_id_prestataire");
+    const champMontantUnitaire = document.getElementById("id_montant_unitaire");
 
-            });
+    // Changement ACTE
+    if (champActe) {
+        champActe.addEventListener("change", function () {
+            const idActe = this.value;
+            if (idActe) {
+                window.location.href = "/demandes-tp/" + idDemande + "/details/nouveau/?id_acte=" + idActe;
+            }
+        });
+    }
 
-        }, 5000);
-    </script>
+    // Changement SOUS-ACTE
+    if (champSousActe) {
+        champSousActe.addEventListener("change", function () {
+            const idActe = champActe ? champActe.value : "";
+            const idSousActe = this.value;
+            if (idSousActe) {
+                window.location.href = "/demandes-tp/" + idDemande + "/details/nouveau/?id_acte=" + idActe + "&id_sous_acte=" + idSousActe;
+            }
+        });
+    }
+
+    // Changement PRESTATAIRE → charge le tarif
+    if (champPrestataire) {
+        champPrestataire.addEventListener("change", function () {
+            const idPrestataire = this.value;
+            const idSousActe = champSousActe ? champSousActe.value : "";
+
+            if (!idSousActe || !idPrestataire) {
+                return;
+            }
+
+            fetch("/ajax/tarif/?id_sous_acte=" + idSousActe + "&id_prestataire=" + idPrestataire)
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.tarif && champMontantUnitaire) {
+                        champMontantUnitaire.value = data.tarif;
+                    }
+                });
+        });
+    }
+});
+</script>
 
 {% endif %}
 
@@ -440,7 +481,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const champActe = document.getElementById("id_id_acte");
     const champSousActe = document.getElementById("id_id_sous_acte");
     const champPrestataire = document.getElementById("id_id_prestataire");
-    const champMontantUnitaire = document.getElementById("id_id_montant_unitaire");
+    const champMontantUnitaire = document.getElementById("id_montant_unitaire");
 
     alert("DEBUG 3 : " + 
         "Acte=" + (champActe ? "OK" : "NON") + ", " +
@@ -472,24 +513,47 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Changement PRESTATAIRE
-    if (champPrestataire) {
+        if (champPrestataire) {
         champPrestataire.addEventListener("change", function () {
-            alert("DEBUG 6 : Changement de prestataire");
+            alert("ÉTAPE 1 : Changement détecté");
+            
             const idPrestataire = this.value;
             const idSousActe = champSousActe ? champSousActe.value : "";
-
+            
+            alert("ÉTAPE 2 : Prestataire=" + idPrestataire + ", Sous-acte=" + idSousActe);
+            
             if (!idSousActe || !idPrestataire) {
+                alert("ÉTAPE 3 : Manque une valeur, on arrête");
                 return;
             }
-
-            fetch("/ajax/tarif/?id_sous_acte=" + idSousActe + "&id_prestataire=" + idPrestataire)
-                .then(function (r) { return r.json(); })
+            
+            const url = "/ajax/tarif/?id_sous_acte=" + idSousActe + "&id_prestataire=" + idPrestataire;
+            alert("ÉTAPE 4 : Appel URL = " + url);
+            
+            fetch(url)
+                .then(function (r) { 
+                    alert("ÉTAPE 5 : Réponse reçue, status = " + r.status);
+                    return r.json(); 
+                })
                 .then(function (data) {
+                    alert("ÉTAPE 6 : Données = " + JSON.stringify(data));
+                    
                     if (data.tarif) {
-                        if (champMontantUnitaire) {
-                            champMontantUnitaire.value = data.tarif;
+                        alert("ÉTAPE 7 : Tarif trouvé = " + data.tarif);
+                        
+                        const champ = document.getElementById("id_montant_unitaire");
+                        alert("ÉTAPE 8 : Champ trouvé = " + (champ ? "OUI" : "NON"));
+                        
+                        if (champ) {
+                            champ.value = data.tarif;
+                            alert("ÉTAPE 9 : Valeur assignée = " + champ.value);
                         }
+                    } else {
+                        alert("ÉTAPE 7bis : Aucun tarif dans la réponse");
                     }
+                })
+                .catch(function (err) {
+                    alert("ERREUR : " + err);
                 });
         });
     }
