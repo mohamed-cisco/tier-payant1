@@ -476,6 +476,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const champActe = document.getElementById("id_id_acte");
     const champSousActe = document.getElementById("id_id_sous_acte");
+    
+    // Si l'acte est pré-sélectionné mais absent de l'URL, recharger automatiquement
+    if (champActe && champActe.value) {
+        const params = new URLSearchParams(window.location.search);
+        if (!params.has("id_acte")) {
+            window.location.href = "/demandes-tp/" + idDemande + "/details/nouveau/?id_acte=" + champActe.value;
+        }
+    }
+
     const champPrestataire = document.getElementById("id_id_prestataire");
     const champMontantUnitaire = document.getElementById("id_montant_unitaire");
 

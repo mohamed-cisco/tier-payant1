@@ -2071,7 +2071,7 @@ def contrat_create(request):
                     statut="ACTIF"
                 )
 
-                Contrat.objects.create(
+                contrat = Contrat.objects.create(
                     id_souscripteur=souscripteur,
                     numero_contrat=_generer_numero_contrat(),
                     date_debut=form.cleaned_data["date_debut"],
@@ -2084,9 +2084,24 @@ def contrat_create(request):
                     date_modification=None,
                 )
 
+                # Lier automatiquement toutes les garanties actives à ce contrat
+                garanties_actives = Garantie.objects.filter(statut="ACTIF")
+
+                for garantie in garanties_actives:
+                    ContratGarantie.objects.get_or_create(
+                        id_contrat=contrat,
+                        id_garantie=garantie,
+                        defaults={
+                            "date_debut": contrat.date_debut,
+                            "date_fin": contrat.date_fin,
+                            "statut": "ACTIF",
+                        }
+                    )
+
                 messages.success(
                     request,
-                    "Contrat crÃ©Ã© avec succÃ¨s."
+                    f"Contrat créé avec succès. "
+                    f"{garanties_actives.count()} garanties liées automatiquement."
                 )
 
                 return redirect("contrats")

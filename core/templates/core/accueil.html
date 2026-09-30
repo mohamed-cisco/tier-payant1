@@ -699,6 +699,19 @@
         </a>
         {% endif %}
 
+        
+        {% if "ACTE_VIEW" in permissions %}
+        <a href="{% url 'sous_actes' %}">
+            📊 Sous-actes
+        </a>
+        {% endif %}
+
+        {% if "ACTE_VIEW" in permissions %}
+        <a href="{% url 'tarifs_sous_actes' %}">
+            💰 Tarifs sous-actes
+        </a>
+        {% endif %}
+
         {% if "ADHESION_VIEW" in permissions %}
         <a href="{% url 'adhesions' %}">
             📋 Adhésions
@@ -759,7 +772,7 @@
         </a>
         {% endif %}
 
-        {% if "TYPE_PRESTATION_VIEW" in permissions %}
+        {% if "ACTE_VIEW" in permissions %}
         <a href="{% url 'types_prestation' %}">
         Types de prestation
         </a>
