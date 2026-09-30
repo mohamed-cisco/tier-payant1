@@ -113,3 +113,37 @@ documents, plafonds
 - Attention aux décorateurs (parfois laissés dans views_old.py)
 - Supprimer les blocs du bas en premier (sinon décalage)
 - Toujours tester après chaque étape
+
+## Session 6 (29/09/2026) — Refactor avorté + Restauration
+
+### État final
+- views.py = 11498 lignes (monolithe restauré depuis tag v0.3-login-required)
+- Git : tout commité et poussé
+- Site : fonctionnel
+- Base : OK
+- Auth Django native : OK
+- 67 permissions + rôle ADMIN : OK
+
+### Leçon
+- Refactor par sed sur 10 000+ lignes : très risqué
+- Git tags = filet de sécurité
+- Savoir abandonner une mauvaise direction
+
+### Prochaine session (Session 7)
+Objectif : PASSER AU MÉTIER
+
+1. Tester le workflow complet :
+   Demande TP → Validation → Prise en charge → Consommation → Facture → Règlement
+   
+2. Créer des rôles métier (AGENT, COMPTABLE, GESTIONNAIRE)
+   avec permissions adaptées
+   
+3. Créer des données de test (adhérents, contrats, actes...)
+   
+4. Vérifier les calculs :
+   - Ticket modérateur
+   - Plafonds annuels
+   - Cumuls par exercice
+   - Contrôle du taux de prise en charge
+
+5. Tester les exports PDF/Excel

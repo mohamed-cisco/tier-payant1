@@ -377,53 +377,25 @@
             {% for field in form %}
 
 
-                {% if field.name == "id_contrat" and contrat_preselectionne %}
+                {% if field.name != "numero_demande" %}
 
-                    <div class="field">
+    <div class="field">
 
-                        <label>Contrat :</label>
+        {{ field.label_tag }}
 
-                        <input
-                            type="text"
-                            value="{{ contrat_preselectionne.numero_contrat }}"
-                            readonly
-                        >
+        {{ field }}
 
-                        <input
-                            type="hidden"
-                            name="id_contrat"
-                            value="{{ contrat_preselectionne.id_contrat }}"
-                        >
+        {% if field.errors %}
 
-                    </div>
+            <div class="errors">
+                {{ field.errors }}
+            </div>
 
+        {% endif %}
 
-                {% else %}
+    </div>
 
-
-                    {% if field.name != "numero_demande" %}
-
-                        <div class="field">
-
-                            {{ field.label_tag }}
-
-                            {{ field }}
-
-
-                            {% if field.errors %}
-
-                                <div class="errors">
-                                    {{ field.errors }}
-                                </div>
-
-                            {% endif %}
-
-                        </div>
-
-                    {% endif %}
-
-
-                {% endif %}
+{% endif %}
 
 
             {% endfor %}
@@ -461,31 +433,21 @@
 
 
 <script>
-
 document.addEventListener("DOMContentLoaded", function () {
-
     const contrat = document.getElementById("id_id_contrat");
-
-    if (!contrat) {
-        return;
-    }
-
+    
+    if (!contrat) return;
+    
     contrat.addEventListener("change", function () {
-
         const idContrat = this.value;
-
+        
         if (idContrat) {
-
-            window.location.href =
-                "{% url 'demande_tp_create' %}?id_contrat="
-                + idContrat;
-
+            // Recharger la page avec le contrat sélectionné
+            // pour charger les bénéficiaires correspondants
+            window.location.href = "{% url 'demande_tp_create' %}?id_contrat=" + idContrat;
         }
-
     });
-
 });
-
 </script>
 
 </body>
