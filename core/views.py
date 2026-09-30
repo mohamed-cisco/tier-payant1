@@ -44,6 +44,7 @@ from .forms import (
     ConventionForm,
     PlafondForm,
     ImportAdherentForm,
+    TypePrestationForm,
 )
 from .models import (
     Utilisateur,
@@ -2899,10 +2900,10 @@ def sous_acte_create(request):
 
             return redirect("sous_actes")
 
-        else:
-            id_acte_preselectionne = request.GET.get("id_acte", "").strip()
+    else:
+        id_acte_preselectionne = request.GET.get("id_acte", "").strip()
 
-            form = SousActeForm(
+        form = SousActeForm(
             initial={
                 "id_acte": id_acte_preselectionne
             }
@@ -8976,7 +8977,146 @@ def consommation_create(request, id_detail_pec):
         return redirect("connexion")
 
 def types_prestation(request):
-    return render(request, 'core/types_prestation.html')
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    recherche = request.GET.get("recherche", "").strip()
+    statut = request.GET.get("statut", "").strip()
+
+    types_prestation_liste = (
+        TypePrestation.objects
+        .all()
+        .order_by("-id_type_prestation")
+    )
+
+    if recherche:
+        types_prestation_liste = types_prestation_liste.filter(
+            Q(code_type__icontains=recherche)
+            | Q(libelle__icontains=recherche)
+        )
+
+    if statut:
+        types_prestation_liste = types_prestation_liste.filter(
+            statut=statut
+        )
+
+    return render(
+        request,
+        "core/types_prestation.html",
+        {
+            "types_prestation": types_prestation_liste,
+            "recherche": recherche,
+            "statut": statut,
+            "permissions": permissions,
+        }
+    )
+
+
+def type_prestation_create(request):
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    if request.method == "POST":
+        form = TypePrestationForm(request.POST)
+
+        if form.is_valid():
+            try:
+                TypePrestation.objects.create(
+                    code_type=form.cleaned_data["code_type"].upper(),
+                    libelle=form.cleaned_data["libelle"],
+                    description=form.cleaned_data["description"],
+                    statut=form.cleaned_data["statut"],
+                )
+                messages.success(
+                    request,
+                    "Type de prestation créé avec succès."
+                )
+                return redirect("types_prestation")
+            except Exception as e:
+                messages.error(request, f"Erreur : {e}")
+    else:
+        form = TypePrestationForm()
+
+    return render(
+        request,
+        "core/types_prestation_form.html",
+        {
+            "form": form,
+            "titre": "Nouveau type de prestation",
+        }
+    )
+
+
+def type_prestation_modifier(request, id_type_prestation):
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    type_prestation = get_object_or_404(
+        TypePrestation,
+        id_type_prestation=id_type_prestation
+    )
+
+    if request.method == "POST":
+        form = TypePrestationForm(request.POST)
+
+        if form.is_valid():
+            type_prestation.code_type = form.cleaned_data["code_type"].upper()
+            type_prestation.libelle = form.cleaned_data["libelle"]
+            type_prestation.description = form.cleaned_data["description"]
+            type_prestation.statut = form.cleaned_data["statut"]
+            type_prestation.save()
+
+            messages.success(
+                request,
+                "Type de prestation modifié avec succès."
+            )
+            return redirect("types_prestation")
+    else:
+        form = TypePrestationForm(initial={
+            "code_type": type_prestation.code_type,
+            "libelle": type_prestation.libelle,
+            "description": type_prestation.description,
+            "statut": type_prestation.statut,
+        })
+
+    return render(
+        request,
+        "core/types_prestation_form.html",
+        {
+            "form": form,
+            "titre": "Modifier le type de prestation",
+        }
+    )
+
+
+def type_prestation_radier(request, id_type_prestation):
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    type_prestation = get_object_or_404(
+        TypePrestation,
+        id_type_prestation=id_type_prestation
+    )
+    type_prestation.statut = "INACTIF"
+    type_prestation.save()
+
+    messages.success(
+        request,
+        "Type de prestation désactivé avec succès."
+    )
+    return redirect("types_prestation")
 
 def tarif_sous_acte_ajax(request, id_detail_pec):
     if not request.session.get("id_utilisateur"):

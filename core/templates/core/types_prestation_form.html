@@ -1,0 +1,52 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titre }} - Tiers Payant</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #f3f6fa; }
+        .header { background: #123b65; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { margin: 0; font-size: 20px; }
+        .btn-retour { color: white; text-decoration: none; background: rgba(255,255,255,0.15); padding: 8px 15px; border-radius: 6px; }
+        .container { max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        h2 { margin-top: 0; color: #123b65; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; color: #374151; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+        textarea { resize: vertical; }
+        .btn { padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; text-decoration: none; }
+        .btn-primary { background: #10b981; color: white; }
+        .btn-secondary { background: #6b7280; color: white; margin-left: 10px; }
+        .errorlist { color: #dc2626; font-size: 13px; margin-top: 5px; list-style: none; padding: 0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ titre }}</h1>
+        <a href="{% url 'types_prestation' %}" class="btn-retour">← Retour</a>
+    </div>
+    <div class="container">
+        <div class="card">
+            <h2>{{ titre }}</h2>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                    <ul class="errorlist">{% for err in field.errors %}<li>{{ err }}</li>{% endfor %}</ul>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+                <a href="{% url 'types_prestation' %}" class="btn btn-secondary">Annuler</a>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

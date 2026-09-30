@@ -5,6 +5,9 @@ from .views import (
     connexion,
     deconnexion,
     types_prestation,
+    type_prestation_create,
+    type_prestation_modifier,
+    type_prestation_radier,
     adherents,
     adherent_detail,
     adherent_create,
@@ -297,9 +300,24 @@ path(
 ),
 
 path(
-    'types-prestation/',
+    "types-prestation/",
     types_prestation,
-    name='types_prestation'
+    name="types_prestation"
+),
+path(
+    "types-prestation/nouveau/",
+    type_prestation_create,
+    name="type_prestation_create"
+),
+path(
+    "types-prestation/<int:id_type_prestation>/modifier/",
+    type_prestation_modifier,
+    name="type_prestation_modifier"
+),
+path(
+    "types-prestation/<int:id_type_prestation>/radier/",
+    type_prestation_radier,
+    name="type_prestation_radier"
 ),
 
 path(
