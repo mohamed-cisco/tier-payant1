@@ -44,6 +44,8 @@ from .views import (
     tarif_sous_acte_create,
     tarif_sous_acte_modifier,
     tarif_sous_acte_radier,
+    ajax_tarif_sous_acte,
+    ajax_prestataires_par_sous_acte,
     acte_create,
     acte_modifier,
     acte_radier,
@@ -652,6 +654,16 @@ path(
     role_detail,
     name="role_detail",
 ),
+    path(
+        "ajax/tarif/",
+        ajax_tarif_sous_acte,
+        name="ajax_tarif_sous_acte"
+    ),
+    path(
+        "ajax/prestataires/",
+        ajax_prestataires_par_sous_acte,
+        name="ajax_prestataires_par_sous_acte"
+    ),
 ]
 
 

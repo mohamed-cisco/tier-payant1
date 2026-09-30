@@ -295,10 +295,13 @@ class DemandeTp(models.Model):
         db_table = 'demande_tp'
 
 
+
 class DemandeTpDetail(models.Model):
     id_detail = models.BigAutoField(primary_key=True)
     id_demande = models.ForeignKey(DemandeTp, models.DO_NOTHING, db_column='id_demande')
     id_acte = models.ForeignKey(Acte, models.DO_NOTHING, db_column='id_acte')
+    id_sous_acte = models.ForeignKey('SousActe', models.DO_NOTHING, db_column='id_sous_acte', blank=True, null=True)
+    id_prestataire = models.ForeignKey('Prestataire', models.DO_NOTHING, db_column='id_prestataire', blank=True, null=True)
     quantite = models.DecimalField(max_digits=10, decimal_places=2)
     montant_unitaire = models.DecimalField(max_digits=15, decimal_places=2)
     montant_total = models.DecimalField(max_digits=15, decimal_places=2)

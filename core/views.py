@@ -7557,46 +7557,98 @@ def demande_tp_detail_create(request, id_demande):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
 
     if "DEMANDE_CREATE" not in permissions:
         messages.error(
             request,
-            "Vous n'avez pas l'autorisation d'ajouter un dÃ©tail Ã  une demande."
+            "Vous n'avez pas l'autorisation d'ajouter un détail à une demande."
         )
         return redirect("demandes_tp")
 
     try:
-        demande = DemandeTp.objects.get(
-            id_demande=id_demande
-        )
+        demande = DemandeTp.objects.get(id_demande=id_demande)
     except DemandeTp.DoesNotExist:
-        messages.error(
-            request,
-            "Demande de tiers payant introuvable."
-        )
+        messages.error(request, "Demande de tiers payant introuvable.")
         return redirect("demandes_tp")
 
-    actes = (
-        Acte.objects
-        .filter(statut="ACTIF")
-        .order_by("libelle")
-    )
+    # Récupérer l'acte parent de la demande (via le 1er détail s'il existe)
+    # Sinon, on charge tous les actes actifs
+    actes = Acte.objects.filter(statut="ACTIF").order_by("libelle")
+
+    def _remplir_choices(form):
+        """Remplit les choices des champs du formulaire."""
+    def _remplir_choices(form):
+        """Remplit les choices des champs du formulaire."""
+        print("===== _REMPLIR_CHOICES =====")
+        print("method:", request.method)
+        print("GET id_acte:", request.GET.get("id_acte"))
+        print("GET id_sous_acte:", request.GET.get("id_sous_acte"))
+        form.fields["id_acte"].choices = [
+            (str(a.id_acte), f"{a.code_acte} - {a.libelle}")
+            for a in actes
+        ]
+
+        # Si un acte est déjà sélectionné, charger ses sous-actes
+        id_acte_selectionne = None
+        if request.method == "POST":
+            id_acte_selectionne = request.POST.get("id_acte")
+        else:
+            id_acte_selectionne = request.GET.get("id_acte")
+
+        if id_acte_selectionne:
+            sous_actes = (
+                SousActe.objects
+                .filter(id_acte_id=id_acte_selectionne, statut="ACTIF")
+                .order_by("libelle")
+            )
+            form.fields["id_sous_acte"].choices = [
+                (str(s.id_sous_acte), f"{s.code_sous_acte} - {s.libelle}")
+                for s in sous_actes
+            ]
+        else:
+            form.fields["id_sous_acte"].choices = []
+
+        # Prestataires : si un sous-acte est sélectionné, ne charger que ceux avec tarif
+        id_sous_acte_selectionne = None
+        if request.method == "POST":
+            id_sous_acte_selectionne = request.POST.get("id_sous_acte")
+        else:
+            id_sous_acte_selectionne = request.GET.get("id_sous_acte")
+
+        if id_sous_acte_selectionne:
+            date_aujourdhui = timezone.now().date()
+            tarifs = (
+                TarifSousActe.objects
+                .filter(
+                    id_sous_acte_id=id_sous_acte_selectionne,
+                    statut="ACTIF",
+                    date_debut__lte=date_aujourdhui,
+                )
+                .filter(
+                    Q(date_fin__isnull=True) | Q(date_fin__gte=date_aujourdhui)
+                )
+                .select_related("id_prestataire")
+            )
+            vus = set()
+            prestataires_choices = []
+            for t in tarifs:
+                if t.id_prestataire_id in vus:
+                    continue
+                vus.add(t.id_prestataire_id)
+                p = t.id_prestataire
+                prestataires_choices.append(
+                    (str(p.id_prestataire), f"{p.code_prestataire} - {p.raison_sociale}")
+                )
+            prestataires_choices.sort(key=lambda x: x[1])
+            form.fields["id_prestataire"].choices = prestataires_choices
+        else:
+            form.fields["id_prestataire"].choices = []
 
     if request.method == "POST":
         form = DemandeTpDetailForm(request.POST)
-
-        form.fields["id_acte"].choices = [
-            (
-                str(a.id_acte),
-                f"{a.code_acte} - {a.libelle}"
-            )
-            for a in actes
-        ]
+        _remplir_choices(form)
 
         if form.is_valid():
             try:
@@ -7604,6 +7656,16 @@ def demande_tp_detail_create(request, id_demande):
                     id_acte=form.cleaned_data["id_acte"],
                     statut="ACTIF"
                 )
+                sous_acte = SousActe.objects.get(
+                    id_sous_acte=form.cleaned_data["id_sous_acte"],
+                    statut="ACTIF"
+                )
+                prestataire = Prestataire.objects.get(
+                    id_prestataire=form.cleaned_data["id_prestataire"],
+                    statut="ACTIF"
+                )
+
+                # Vérifier que l'acte est couvert par une garantie active du contrat
                 acte_couvert = (
                     GarantieActe.objects
                     .filter(
@@ -7631,36 +7693,67 @@ def demande_tp_detail_create(request, id_demande):
                         }
                     )
 
-                quantite = form.cleaned_data["quantite"]
-                montant_unitaire = form.cleaned_data["montant_unitaire"]
-
-                montant_total = (
-                    quantite * montant_unitaire
+                # Récupérer le tarif applicable
+                date_aujourdhui = timezone.now().date()
+                tarif = (
+                    TarifSousActe.objects
+                    .filter(
+                        id_sous_acte=sous_acte,
+                        id_prestataire=prestataire,
+                        statut="ACTIF",
+                        date_debut__lte=date_aujourdhui,
+                    )
+                    .filter(
+                        Q(date_fin__isnull=True) | Q(date_fin__gte=date_aujourdhui)
+                    )
+                    .order_by("-date_debut")
+                    .first()
                 )
 
+                if not tarif:
+                    messages.error(
+                        request,
+                        f"Aucun tarif actif pour ce sous-acte chez ce prestataire."
+                    )
+                    return render(
+                        request,
+                        "core/demande_tp_detail_form.html",
+                        {
+                            "form": form,
+                            "demande": demande,
+                            "titre": "Ajouter un acte à la demande",
+                        }
+                    )
+
+                quantite = form.cleaned_data["quantite"]
+                montant_unitaire = tarif.montant
+                montant_total = quantite * montant_unitaire
+
+                # Créer le détail
                 DemandeTpDetail.objects.create(
                     id_demande=demande,
                     id_acte=acte,
+                    id_sous_acte=sous_acte,
                     quantite=quantite,
                     montant_unitaire=montant_unitaire,
                     montant_total=montant_total,
                     observation=form.cleaned_data["observation"] or None,
                 )
+
+                # Recalculer le montant total de la demande
                 total_details = (
                     DemandeTpDetail.objects
                     .filter(id_demande=demande)
                     .aggregate(total=Sum("montant_total"))["total"]
                     or Decimal("0.00")
                 )
-
                 demande.montant_demande = total_details
                 demande.save(update_fields=["montant_demande"])
 
                 messages.success(
                     request,
-                    "Acte ajoutÃ© Ã  la demande avec succÃ¨s."
+                    "Acte ajouté à la demande avec succès."
                 )
-
                 return redirect(
                     "demande_tp_details",
                     id_demande=demande.id_demande
@@ -7673,15 +7766,11 @@ def demande_tp_detail_create(request, id_demande):
                 )
 
     else:
-        form = DemandeTpDetailForm()
-
-        form.fields["id_acte"].choices = [
-            (
-                str(a.id_acte),
-                f"{a.code_acte} - {a.libelle}"
-            )
-            for a in actes
-        ]
+        form = DemandeTpDetailForm(initial={
+               "id_acte": request.GET.get("id_acte", ""),
+               "id_sous_acte": request.GET.get("id_sous_acte", ""),
+})
+        _remplir_choices(form)
 
     return render(
         request,
@@ -7689,7 +7778,7 @@ def demande_tp_detail_create(request, id_demande):
         {
             "form": form,
             "demande": demande,
-            "titre": "Ajouter un acte Ã  la demande",
+            "titre": "Ajouter un acte à la demande",
         }
     )
 def demande_tp_document_create(request, id_demande):
@@ -9117,6 +9206,96 @@ def type_prestation_radier(request, id_type_prestation):
         "Type de prestation désactivé avec succès."
     )
     return redirect("types_prestation")
+
+def ajax_tarif_sous_acte(request):
+    """Retourne le tarif d'un sous-acte pour un prestataire donné (AJAX)."""
+    if not request.session.get("id_utilisateur"):
+        return JsonResponse({"error": "Non authentifié"}, status=401)
+
+    if request.method != "GET":
+        return JsonResponse({"error": "Méthode non autorisée"}, status=405)
+
+    id_sous_acte = request.GET.get("id_sous_acte")
+    id_prestataire = request.GET.get("id_prestataire")
+
+    if not id_sous_acte or not id_prestataire:
+        return JsonResponse({"tarif": None})
+
+    try:
+        date_aujourdhui = timezone.now().date()
+
+        tarif = (
+            TarifSousActe.objects
+            .filter(
+                id_sous_acte_id=id_sous_acte,
+                id_prestataire_id=id_prestataire,
+                statut="ACTIF",
+                date_debut__lte=date_aujourdhui,
+            )
+            .filter(
+                Q(date_fin__isnull=True) | Q(date_fin__gte=date_aujourdhui)
+            )
+            .order_by("-date_debut")
+            .first()
+        )
+
+        if not tarif:
+            return JsonResponse({"tarif": None})
+
+        return JsonResponse({"tarif": str(tarif.montant)})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+def ajax_prestataires_par_sous_acte(request):
+    """Retourne la liste des prestataires proposant un sous-acte (AJAX)."""
+    if not request.session.get("id_utilisateur"):
+        return JsonResponse({"error": "Non authentifié"}, status=401)
+
+    if request.method != "GET":
+        return JsonResponse({"error": "Méthode non autorisée"}, status=405)
+
+    id_sous_acte = request.GET.get("id_sous_acte")
+
+    if not id_sous_acte:
+        return JsonResponse({"prestataires": []})
+
+    try:
+        date_aujourdhui = timezone.now().date()
+
+        tarifs = (
+            TarifSousActe.objects
+            .filter(
+                id_sous_acte_id=id_sous_acte,
+                statut="ACTIF",
+                date_debut__lte=date_aujourdhui,
+            )
+            .filter(
+                Q(date_fin__isnull=True) | Q(date_fin__gte=date_aujourdhui)
+            )
+            .select_related("id_prestataire")
+        )
+
+        prestataires = []
+        vus = set()
+
+        for tarif in tarifs:
+            p = tarif.id_prestataire
+            if p.id_prestataire in vus:
+                continue
+            vus.add(p.id_prestataire)
+            prestataires.append({
+                "id": p.id_prestataire,
+                "nom": f"{p.code_prestataire} - {p.raison_sociale}",
+            })
+
+        prestataires.sort(key=lambda x: x["nom"])
+
+        return JsonResponse({"prestataires": prestataires})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 def tarif_sous_acte_ajax(request, id_detail_pec):
     if not request.session.get("id_utilisateur"):

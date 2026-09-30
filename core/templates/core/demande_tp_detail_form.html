@@ -331,6 +331,17 @@
 
         <h2>{{ titre }}</h2>
 
+        <div class="info">
+
+            <strong>Workflow :</strong><br>
+
+            1. Choisissez un <strong>Acte</strong> (ex : Analyses)<br>
+            2. Choisissez un <strong>Sous-acte</strong> (ex : NFS, Glycémie…)<br>
+            3. Choisissez un <strong>Prestataire</strong> (labo / clinique)<br>
+            4. Le <strong>Tarif</strong> se charge automatiquement<br>
+            5. Saisissez la <strong>Quantité</strong> puis enregistrez
+
+        </div>
 
         <div class="info">
 
@@ -416,6 +427,67 @@
 <div class="footer">
     © 2026 — Plateforme Tiers Payant
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    // Récupère l'ID de la demande pour préserver le contexte
+    const idDemande = "{{ demande.id_demande }}";
+
+    const champActe = document.getElementById("id_id_acte");
+    const champSousActe = document.getElementById("id_id_sous_acte");
+    const champPrestataire = document.getElementById("id_id_prestataire");
+    const champMontantUnitaire = document.getElementById("id_id_montant_unitaire");
+
+    // === Changement d'ACTE ===
+    if (champActe) {
+        champActe.addEventListener("change", function () {
+            const idActe = this.value;
+            if (idActe) {
+                window.location.href = "/demandes-tp/" + idDemande + "/details/nouveau/?id_acte=" + idActe;
+            }
+        });
+    }
+
+    // === Changement de SOUS-ACTE ===
+    if (champSousActe) {
+        champSousActe.addEventListener("change", function () {
+            const idActe = champActe ? champActe.value : "";
+            const idSousActe = this.value;
+            if (idSousActe) {
+                window.location.href = "/demandes-tp/" + idDemande + "/details/nouveau/?id_acte=" + idActe + "&id_sous_acte=" + idSousActe;
+            }
+        });
+    }
+
+    // === Changement de PRESTATAIRE → charge le tarif en AJAX ===
+    if (champPrestataire && champSousActe && champMontantUnitaire) {
+        champPrestataire.addEventListener("change", function () {
+            const idPrestataire = this.value;
+            const idSousActe = champSousActe.value;
+
+            if (!idSousActe || !idPrestataire) {
+                champMontantUnitaire.value = "";
+                return;
+            }
+
+            fetch("/ajax/tarif/?id_sous_acte=" + idSousActe + "&id_prestataire=" + idPrestataire)
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.tarif) {
+                        champMontantUnitaire.value = data.tarif;
+                    } else {
+                        champMontantUnitaire.value = "";
+                        alert("Aucun tarif actif pour ce sous-acte chez ce prestataire.");
+                    }
+                })
+                .catch(function (err) {
+                    console.error("Erreur AJAX :", err);
+                });
+        });
+    }
+});
+</script>
 
 </body>
 </html>

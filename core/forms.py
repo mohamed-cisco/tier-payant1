@@ -749,6 +749,18 @@ class DemandeTpDetailForm(forms.Form):
         choices=[]
     )
 
+    id_sous_acte = forms.ChoiceField(
+        label="Sous-acte (analyse / prestation détaillée)",
+        choices=[],
+        required=True
+    )
+
+    id_prestataire = forms.ChoiceField(
+        label="Prestataire (laboratoire / clinique)",
+        choices=[],
+        required=True
+    )
+
     quantite = forms.DecimalField(
         label="Quantité",
         max_digits=10,
@@ -758,10 +770,11 @@ class DemandeTpDetailForm(forms.Form):
     )
 
     montant_unitaire = forms.DecimalField(
-        label="Montant unitaire",
+        label="Montant unitaire (DA)",
         max_digits=15,
         decimal_places=2,
-        min_value=0
+        min_value=0,
+        widget=forms.NumberInput(attrs={"readonly": "readonly"})
     )
 
     observation = forms.CharField(
