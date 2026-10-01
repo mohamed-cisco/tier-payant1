@@ -78,6 +78,7 @@ from .views import (
     demande_tp_document_create,
     prises_en_charge,
     prise_en_charge_details,
+    prise_en_charge_pdf,
     consommation_create,
     consommations,
     tarif_sous_acte_ajax,
@@ -482,6 +483,11 @@ path(
     "prises-en-charge/<int:id_pec>/details/",
     prise_en_charge_details,
     name="prise_en_charge_details",
+),
+path(
+    "prises-en-charge/<int:id_pec>/pdf/",
+    prise_en_charge_pdf,
+    name="prise_en_charge_pdf"
 ),
 path(
     "consommations/nouveau/<int:id_detail_pec>/",
