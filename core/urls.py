@@ -88,6 +88,7 @@ from .views import (
     facture_create,
     facture_valider,
     facture_detail,
+    facture_export_excel,
     facture_export_pdf,
     reglements,
     reglement_create,
@@ -538,6 +539,11 @@ path(
     "factures/export-pdf/",
     facture_export_pdf,
     name="facture_export_pdf",
+),
+path(
+    "factures/export-excel/",
+    facture_export_excel,
+    name="facture_export_excel"
 ),
 path(
     "reglements/",

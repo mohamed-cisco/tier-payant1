@@ -369,6 +369,21 @@
 
 
                 {% if "FACTURE_VIEW" in permissions %}
+                    <a
+                        href="{% url 'facture_export_excel' %}"
+                        style="
+                            background: #10b981;
+                            color: white;
+                            padding: 10px 18px;
+                            border-radius: 8px;
+                            text-decoration: none;
+                            font-weight: bold;
+                            margin-right: 10px;
+                            display: inline-block;
+                        "
+                    >
+                        📊 Exporter Excel
+                    </a>
 
                     <a
                         href="{% url 'facture_export_pdf' %}"
