@@ -3149,11 +3149,9 @@ def tarif_sous_acte_create(request):
             )
             for prestataire in prestataires
         ]
-
-        print("DONNEES FORMULAIRE :", form.data)
+        
 
         if form.is_valid():
-            print("FORMULAIRE VALIDE")
 
             id_sous_acte = form.cleaned_data["id_sous_acte"]
             id_prestataire = form.cleaned_data["id_prestataire"]
@@ -3213,9 +3211,7 @@ def tarif_sous_acte_create(request):
                     )
 
                     return redirect("tarifs_sous_actes")
-        else:
-            print("FORMULAIRE INVALIDE")
-            print("ERREURS FORMULAIRE :", form.errors)
+            
 
     else:
 
@@ -7596,10 +7592,6 @@ def demande_tp_detail_create(request, id_demande):
         """Remplit les choices des champs du formulaire."""
     def _remplir_choices(form):
         """Remplit les choices des champs du formulaire."""
-        print("===== _REMPLIR_CHOICES =====")
-        print("method:", request.method)
-        print("GET id_acte:", request.GET.get("id_acte"))
-        print("GET id_sous_acte:", request.GET.get("id_sous_acte"))
         form.fields["id_acte"].choices = [
             (str(a.id_acte), f"{a.code_acte} - {a.libelle}")
             for a in actes
@@ -8806,7 +8798,7 @@ def consommation_create(request, id_detail_pec):
         ]
 
         if form.is_valid():
-            print("STATUT FORMULAIRE :", repr(form.cleaned_data["statut"]))
+            
             try:
                 date_prestation = form.cleaned_data["date_prestation"]
                 quantite = form.cleaned_data["quantite"]
@@ -9056,7 +9048,7 @@ def consommation_create(request, id_detail_pec):
                 return redirect("consommations")
 
             except Exception as e:
-               print("ERREUR CONSOMMATION :", repr(e))
+               
                messages.error(
                 request,
                 f"Erreur lors de la création de la consommation : {e}"
