@@ -94,6 +94,7 @@ from .views import (
     reglement_create,
     reglement_detail,
     reglement_valider,
+    reglement_export_excel,
     recours,
     recours_create,
     recours_traiter,
@@ -549,6 +550,11 @@ path(
     "reglements/",
     reglements,
     name="reglements",
+),
+path(
+    "reglements/export-excel/",
+    reglement_export_excel,
+    name="reglement_export_excel"
 ),
 path(
     "reglements/nouveau/",
