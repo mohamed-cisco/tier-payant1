@@ -254,6 +254,24 @@
 
     </div>
 
+        <a
+        href="{% url 'adherent_carte_pdf' adherent.id_adherent %}"
+        style="
+            background: #10b981;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-right: 10px;
+            display: inline-block;
+        "
+        target="_blank"
+    >
+        🎫 Carte adhérent
+    </a>
+
+
     <a class="btn btn-secondary" href="{% url 'adherents' %}">
         ← Retour aux adhérents
     </a>

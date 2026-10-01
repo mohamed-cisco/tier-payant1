@@ -10,6 +10,7 @@ from .views import (
     type_prestation_radier,
     adherents,
     adherent_detail,
+    adherent_carte_pdf,
     adherent_create,
     adherent_modifier,
     adherent_radier,
@@ -81,6 +82,7 @@ from .views import (
     prise_en_charge_pdf,
     consommation_create,
     consommations,
+    consommation_export_excel,
     tarif_sous_acte_ajax,
     consommation_valider,
     consommation_annuler,
@@ -142,6 +144,11 @@ path(
     "adherents/<int:id_adherent>/radier/",
     adherent_radier,
     name="adherent_radier",
+),
+path(
+    "adherents/<int:id_adherent>/carte-pdf/",
+    adherent_carte_pdf,
+    name="adherent_carte_pdf"
 ),
 path(
     "adherents/import-excel/",
@@ -500,6 +507,11 @@ path(
     "consommations/",
     consommations,
     name="consommations",
+),
+path(
+    "consommations/export-excel/",
+    consommation_export_excel,
+    name="consommation_export_excel"
 ),
 path(
     "consommations/<int:id_detail_pec>/tarif/",

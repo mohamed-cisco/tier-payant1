@@ -1043,6 +1043,153 @@ def adherent_detail(request, id_adherent):
         }
     )
 
+
+
+def adherent_carte_pdf(request, id_adherent):
+    """Génère la carte d'adhérent en PDF."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "ADHERENT_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("adherents")
+
+    try:
+        adherent = (
+            Adherent.objects
+            .select_related("id_personne")
+            .get(id_adherent=id_adherent)
+        )
+    except Adherent.DoesNotExist:
+        messages.error(request, "Adhérent introuvable.")
+        return redirect("adherents")
+
+    adhesion = (
+        Adhesion.objects
+        .filter(id_adherent=adherent, statut="ACTIF")
+        .select_related("id_contrat", "id_contrat__id_souscripteur")
+        .order_by("-date_debut")
+        .first()
+    )
+
+    personne = adherent.id_personne
+
+    from django.http import HttpResponse
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A5, landscape
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.platypus import (
+        SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image,
+    )
+    import os
+    from django.conf import settings
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="Carte-{adherent.numero_adherent}.pdf"'
+    )
+
+    document = SimpleDocTemplate(
+        response,
+        pagesize=landscape(A5),
+        rightMargin=1 * cm,
+        leftMargin=1 * cm,
+        topMargin=1 * cm,
+        bottomMargin=1 * cm,
+    )
+
+    elements = []
+    styles = getSampleStyleSheet()
+
+    style_titre = ParagraphStyle(
+        "Titre", parent=styles["Title"], fontSize=16,
+        textColor=colors.HexColor("#123b65"), alignment=2, leading=20,
+    )
+
+    logo_path = os.path.join(
+        settings.BASE_DIR, "core", "static", "core", "img", "logo-sagps.png"
+    )
+
+    if os.path.exists(logo_path):
+        logo = Image(logo_path, width=5 * cm, height=2.2 * cm)
+    else:
+        logo = ""
+
+    titre_header = Paragraph(
+        "<b>CARTE D'ADHÉRENT</b><br/>"
+        f"<font size=10>Djazair Med - Tiers Payant</font>",
+        style_titre,
+    )
+
+    header_table = Table([[logo, titre_header]], colWidths=[7 * cm, 11.5 * cm])
+    header_table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("LINEBELOW", (0, 0), (-1, 0), 2, colors.HexColor("#123b65")),
+    ]))
+    elements.append(header_table)
+    elements.append(Spacer(1, 0.5 * cm))
+
+    infos_data = [
+        ["Nom", personne.nom or "-"],
+        ["Prénom", personne.prenom or "-"],
+        ["Date de naissance", personne.date_naissance.strftime("%d/%m/%Y") if personne.date_naissance else "-"],
+        ["N° Adhérent", adherent.numero_adherent],
+        ["Contrat", adhesion.id_contrat.numero_contrat if adhesion else "-"],
+        ["Organisme", adhesion.id_contrat.id_souscripteur.raison_sociale if adhesion else "-"],
+        ["Valide du", adhesion.date_debut.strftime("%d/%m/%Y") if adhesion and adhesion.date_debut else "-"],
+        ["Au", adhesion.date_fin.strftime("%d/%m/%Y") if adhesion and adhesion.date_fin else "Illimité"],
+    ]
+
+    infos_table = Table(infos_data, colWidths=[4 * cm, 14.5 * cm])
+    infos_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#eaf2fb")),
+        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (0, -1), 10),
+        ("FONTSIZE", (1, 0), (1, -1), 11),
+        ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#475569")),
+        ("TEXTCOLOR", (1, 0), (1, -1), colors.HexColor("#123b65")),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(infos_table)
+    elements.append(Spacer(1, 0.8 * cm))
+
+    pied_data = [[
+        Paragraph("<b>Signature et cachet</b>", styles["Normal"]),
+        Paragraph(
+            f"<b>N° : {adherent.numero_adherent}</b>",
+            ParagraphStyle("right", parent=styles["Normal"], alignment=2),
+        ),
+    ]]
+    pied_table = Table(pied_data, colWidths=[9 * cm, 9.5 * cm])
+    pied_table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("TOPPADDING", (0, 0), (-1, -1), 20),
+    ]))
+    elements.append(pied_table)
+
+    document.build(elements)
+
+    return response
+
 def _generer_numero_adherent():
     annee = timezone.now().year
     prefixe = f"ADH-{annee}-"
@@ -9444,6 +9591,152 @@ def consommations(request):
             "permissions": permissions,
         }
     )
+
+
+
+def consommation_export_excel(request):
+    """Export Excel de la liste des consommations."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "CONSOMMATION_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("consommations")
+
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from django.http import HttpResponse
+
+    consommations_liste = (
+        Consommation.objects
+        .select_related(
+            "id_detail_pec", "id_personne_beneficiaire", "id_adhesion",
+            "id_acte", "id_sous_acte", "id_prestataire",
+        )
+        .order_by("-date_prestation", "-id_consommation")
+    )
+
+    workbook = openpyxl.Workbook()
+    feuille = workbook.active
+    feuille.title = "Consommations"
+
+    font_titre = Font(bold=True, size=14, color="123B65")
+    font_entete = Font(bold=True, color="FFFFFF", size=10)
+    font_total = Font(bold=True, size=11, color="123B65")
+    fill_entete = PatternFill(start_color="123B65", end_color="123B65", fill_type="solid")
+    fill_total = PatternFill(start_color="EAF2FB", end_color="EAF2FB", fill_type="solid")
+    fill_alt = PatternFill(start_color="F8FAFC", end_color="F8FAFC", fill_type="solid")
+    border = Border(
+        left=Side(style="thin", color="D1D5DB"),
+        right=Side(style="thin", color="D1D5DB"),
+        top=Side(style="thin", color="D1D5DB"),
+        bottom=Side(style="thin", color="D1D5DB"),
+    )
+
+    feuille["A1"] = "LISTE DES CONSOMMATIONS"
+    feuille["A1"].font = font_titre
+    feuille["A1"].alignment = Alignment(horizontal="center")
+    feuille.merge_cells("A1:L1")
+
+    feuille["A2"] = f"Exporté le {timezone.now().strftime('%d/%m/%Y à %H:%M')}"
+    feuille["A2"].font = Font(italic=True, size=9, color="666666")
+    feuille["A2"].alignment = Alignment(horizontal="center")
+    feuille.merge_cells("A2:L2")
+
+    entetes = [
+        "N°", "Bénéficiaire", "Acte", "Sous-acte", "Prestataire",
+        "Date prestation", "Quantité", "Montant base", "PEC", "Reste",
+        "Statut", "Exercice",
+    ]
+
+    ligne_entete = 4
+    for col_num, entete in enumerate(entetes, start=1):
+        cellule = feuille.cell(row=ligne_entete, column=col_num, value=entete)
+        cellule.font = font_entete
+        cellule.fill = fill_entete
+        cellule.alignment = Alignment(horizontal="center", vertical="center")
+        cellule.border = border
+
+    ligne = ligne_entete + 1
+    total_base = 0
+    total_pec = 0
+    total_reste = 0
+
+    for idx, conso in enumerate(consommations_liste):
+        ligne_courante = ligne + idx
+        benef = conso.id_personne_beneficiaire
+        sous_acte = conso.id_sous_acte.code_sous_acte if conso.id_sous_acte else "-"
+
+        values = [
+            conso.id_consommation,
+            f"{benef.nom} {benef.prenom}" if benef else "-",
+            f"{conso.id_acte.code_acte} - {conso.id_acte.libelle[:30]}" if conso.id_acte else "-",
+            sous_acte,
+            conso.id_prestataire.raison_sociale if conso.id_prestataire else "-",
+            conso.date_prestation.strftime("%d/%m/%Y") if conso.date_prestation else "-",
+            float(conso.quantite or 0),
+            float(conso.montant_base or 0),
+            float(conso.montant_prise_en_charge or 0),
+            float(conso.montant_reste or 0),
+            conso.statut,
+            conso.exercice or "-",
+        ]
+
+        for col_num, val in enumerate(values, start=1):
+            cellule = feuille.cell(row=ligne_courante, column=col_num, value=val)
+            cellule.border = border
+            cellule.alignment = Alignment(vertical="center", horizontal="center")
+            if idx % 2 == 1:
+                cellule.fill = fill_alt
+
+        total_base += float(conso.montant_base or 0)
+        total_pec += float(conso.montant_prise_en_charge or 0)
+        total_reste += float(conso.montant_reste or 0)
+
+    ligne_total = ligne + len(consommations_liste)
+    feuille.cell(row=ligne_total, column=1, value="TOTAL").font = font_total
+    feuille.merge_cells(start_row=ligne_total, start_column=1, end_row=ligne_total, end_column=7)
+    feuille.cell(row=ligne_total, column=1).alignment = Alignment(horizontal="right", vertical="center")
+
+    for col_num, val in enumerate([total_base, total_pec, total_reste], start=8):
+        cellule = feuille.cell(row=ligne_total, column=col_num, value=val)
+        cellule.font = font_total
+        cellule.fill = fill_total
+        cellule.border = border
+        cellule.alignment = Alignment(horizontal="center", vertical="center")
+
+    for col_num in [11, 12]:
+        cellule = feuille.cell(row=ligne_total, column=col_num, value="")
+        cellule.fill = fill_total
+        cellule.border = border
+
+    largeurs = [6, 22, 35, 15, 25, 14, 10, 14, 14, 14, 12, 10]
+    for i, largeur in enumerate(largeurs, start=1):
+        feuille.column_dimensions[chr(64 + i)].width = largeur
+
+    feuille.freeze_panes = "A5"
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = (
+        f'attachment; filename="consommations_{timezone.now().strftime("%Y%m%d_%H%M")}.xlsx"'
+    )
+    workbook.save(response)
+    return response
+
 def consommation_valider(request, id_consommation):
     if not request.session.get("id_utilisateur"):
         return redirect("connexion")
