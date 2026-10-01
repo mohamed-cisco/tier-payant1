@@ -9056,7 +9056,7 @@ def consommation_create(request, id_detail_pec):
 
     else:
         form = ConsommationForm()
-
+        print("ERREUR CONSOMMATION :", repr(e))
         form.fields["id_detail_pec"].choices = [
             (
                 str(detail_pec.id_detail_pec),
