@@ -861,7 +861,7 @@ class ReglementForm(forms.Form):
     )
 
     numero_reglement = forms.CharField(
-        label="Numéro de règlement",
+        label="NumÃ©ro de rÃ¨glement",
         max_length=50,
         required=False,
         widget=forms.HiddenInput()
