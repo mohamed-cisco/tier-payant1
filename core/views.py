@@ -10228,10 +10228,6 @@ def reglement_valider(request, id_reglement):
     )
     
 
-    factures_en_attente = Facture.objects.filter(
-        statut="EN_ATTENTE"
-    ).count()
-
     if "REGLEMENT_VALIDATE" not in permissions:
         messages.error(
             request,
@@ -10274,13 +10270,18 @@ def reglement_valider(request, id_reglement):
               or 0
           )
 
+        # Mettre à jour le statut de la facture selon le montant réglé
         if montant_total_regle >= facture.montant_valide:
-              facture.statut = "PAYEE"
-              facture.save()
+            facture.statut = "PAYEE"
+        elif montant_total_regle > 0:
+            facture.statut = "PARTIELLEMENT_PAYEE"
+
+        facture.save()
 
         messages.success(
             request,
-            "Règlement validé avec succès."
+            f"Règlement validé avec succès. "
+            f"Facture {facture.numero_facture} : {facture.statut}."
         )
 
     return redirect("reglements")

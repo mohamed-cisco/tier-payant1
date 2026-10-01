@@ -41,3 +41,8 @@ _backups/
 *_BACKUP*
 CLAUDE.md
 tiers_payant_*.backup
+
+# Excel temporaires
+*.xlsx
+~$*.xlsx
+_imports/
