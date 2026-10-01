@@ -8893,35 +8893,12 @@ def consommation_create(request, id_detail_pec):
                         }
                     )
 
-                montant_base = (
-                    tarif.montant * quantite
-                )
-
-                montant_prise_en_charge = (
-                    detail_pec.montant_accorde
-                    / detail_pec.quantite
-                    * quantite
-                )
-
-                if montant_prise_en_charge > montant_base:
-                    montant_prise_en_charge = montant_base
-
-                if montant_prise_en_charge <= 0:
-                    messages.error(
-                        request,
-                        "Impossible de créer une consommation : le montant pris en charge est nul."
-                    )
-                    return redirect("consommations")
-
-                montant_reste = (
-                    montant_base
-                    - montant_prise_en_charge
-                )
-
+                                # 1. Récupérer le bénéficiaire
                 personne_beneficiaire = (
                     detail_pec.id_pec.id_demande.id_personne_beneficiaire
                 )
 
+                # 2. Récupérer l'adhésion active du bénéficiaire
                 adherent = (
                     Adherent.objects
                     .filter(id_personne=personne_beneficiaire)
@@ -8958,10 +8935,11 @@ def consommation_create(request, id_detail_pec):
                             )
                             .first()
                         )
+
                 if not adhesion:
                     messages.error(
                         request,
-                        "Aucune adhÃ©sion active trouvÃ©e pour ce bÃ©nÃ©ficiaire et ce contrat."
+                        "Aucune adhésion active trouvée pour ce bénéficiaire et ce contrat."
                     )
                     return render(
                         request,
@@ -8973,6 +8951,7 @@ def consommation_create(request, id_detail_pec):
                         }
                     )
 
+                # 3. Récupérer la garantie liée au contrat et à l'acte
                 contrat = detail_pec.id_pec.id_demande.id_contrat
 
                 contrat_garantie = (
@@ -9016,8 +8995,42 @@ def consommation_create(request, id_detail_pec):
                             "detail_pec": detail_pec,
                             "titre": "Nouvelle consommation",
                         }
-                    )                
-                      
+                    )
+
+                # 4. Calculer le montant de base
+                montant_base = tarif.montant * quantite
+
+                # 5. Calculer le montant pris en charge avec le taux et la franchise
+                taux = garantie_acte.taux_prise_en_charge or Decimal("0.00")
+                franchise = garantie_acte.franchise or Decimal("0.00")
+
+                montant_prise_en_charge = (
+                    montant_base * (taux / Decimal("100"))
+                ) - franchise
+
+                # Le montant pris en charge ne peut pas être négatif
+                if montant_prise_en_charge < 0:
+                    montant_prise_en_charge = Decimal("0.00")
+
+                # Le montant pris en charge ne peut pas dépasser le montant de base
+                if montant_prise_en_charge > montant_base:
+                    montant_prise_en_charge = montant_base
+
+                # Le montant pris en charge ne peut pas dépasser le montant accordé dans la PEC
+                if montant_prise_en_charge > detail_pec.montant_accorde:
+                    montant_prise_en_charge = detail_pec.montant_accorde
+
+                # 6. Calculer le reste à payer
+                montant_reste = montant_base - montant_prise_en_charge
+
+                if montant_prise_en_charge <= 0:
+                    messages.error(
+                        request,
+                        "Impossible de créer une consommation : le montant pris en charge est nul."
+                    )
+                    return redirect("consommations")
+                
+                # 7. Créer la consommation
                 consommation = Consommation.objects.create(
                     id_detail_pec=detail_pec,
                     id_personne_beneficiaire=personne_beneficiaire,
@@ -9949,6 +9962,46 @@ def _generer_numero_reglement():
 
     return numero_reglement
 
+
+
+def _generer_reference_reglement(mode_reglement):
+    """Génère une référence unique pour un règlement selon son mode."""
+    annee = timezone.now().year
+
+    prefixes = {
+        "VIREMENT": f"VIR-{annee}-",
+        "CHEQUE": f"CHQ-{annee}-",
+        "ESPECES": f"ESP-{annee}-",
+    }
+
+    prefixe = prefixes.get(mode_reglement, f"REF-{annee}-")
+
+    # Récupère toutes les références existantes pour ce préfixe
+    references = (
+        Reglement.objects
+        .filter(reference_reglement__startswith=prefixe)
+        .values_list("reference_reglement", flat=True)
+    )
+
+    valeurs = []
+    for ref in references:
+        try:
+            valeurs.append(int(ref.rsplit("-", 1)[1]))
+        except (ValueError, IndexError):
+            continue
+
+    prochain = max(valeurs, default=0) + 1
+    reference = f"{prefixe}{prochain:04d}"
+
+    # Vérifie l'unicité
+    while Reglement.objects.filter(
+        reference_reglement=reference
+    ).exists():
+        prochain += 1
+        reference = f"{prefixe}{prochain:04d}"
+
+    return reference
+
 def reglement_create(request):
     if not request.session.get("id_utilisateur"):
         return redirect("connexion")
@@ -10046,15 +10099,15 @@ def reglement_create(request):
                         }
                     )
 
+                mode = form.cleaned_data["mode_reglement"]
+
                 Reglement.objects.create(
                     id_facture=facture,
                     numero_reglement=_generer_numero_reglement(),
                     date_reglement=form.cleaned_data["date_reglement"],
                     montant=montant,
-                    mode_reglement=form.cleaned_data["mode_reglement"],
-                    reference_reglement=form.cleaned_data[
-                        "reference_reglement"
-                    ] or None,
+                    mode_reglement=mode,
+                    reference_reglement=_generer_reference_reglement(mode),
                     statut="EN_ATTENTE",
                     observation=form.cleaned_data["observation"] or None,
                 )

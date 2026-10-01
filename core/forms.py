@@ -893,7 +893,8 @@ class ReglementForm(forms.Form):
     reference_reglement = forms.CharField(
         label="Référence du règlement",
         max_length=100,
-        required=False
+        required=False,
+        widget=forms.HiddenInput()
     )
 
     observation = forms.CharField(
