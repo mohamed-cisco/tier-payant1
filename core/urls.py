@@ -74,6 +74,7 @@ from .views import (
     demandes_tp,
     demande_tp_create,
     demande_tp_details,
+    demande_tp_pdf,
     demande_tp_detail_create,
     demande_tp_valider,
     demande_tp_document_create,
@@ -467,6 +468,11 @@ path(
     "demandes-tp/<int:id_demande>/details/",
     demande_tp_details,
     name="demande_tp_details",
+),
+path(
+    "demandes-tp/<int:id_demande>/pdf/",
+    demande_tp_pdf,
+    name="demande_tp_pdf"
 ),
 path(
     "demandes-tp/<int:id_demande>/details/nouveau/",

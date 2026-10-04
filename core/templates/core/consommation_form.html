@@ -439,7 +439,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 } else {
 
                     tarifBox.textContent =
-                        "Aucun tarif actif trouvÃ© pour ce sous-acte, ce prestataire et cette date.";
+                        "Aucun tarif actif trouvé pour ce sous-acte, ce prestataire et cette date.";
 
                     tarifBox.style.background = "#fef2f2";
                     tarifBox.style.borderColor = "#fecaca";
@@ -450,10 +450,10 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .catch(error => {
 
-                console.error("Erreur rÃ©cupÃ©ration tarif :", error);
+                console.error("Erreur récupération tarif :", error);
 
                 tarifBox.textContent =
-                    "Impossible de rÃ©cupÃ©rer le tarif.";
+                    "Impossible de récupérer le tarif.";
 
                 tarifBox.style.background = "#fef2f2";
                 tarifBox.style.borderColor = "#fecaca";
