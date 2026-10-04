@@ -287,6 +287,10 @@
             <a href="{% url 'roles' %}" class="{% if page == 'roles' %}active{% endif %}">🛡️ Rôles & Permissions</a>
         {% endif %}
 
+        {% if "ROLE_VIEW" in permissions %}
+    <a href="{% url 'champs_personnalises' %}" class="{% if page == 'champs_personnalises' %}active{% endif %}">⚙️ Champs personnalisés</a>
+{% endif %}
+
         <div class="sep"></div>
 <a href="{% url 'aide' %}" class="{% if page == 'aide' %}active{% endif %}">❓ Aide</a>
 
