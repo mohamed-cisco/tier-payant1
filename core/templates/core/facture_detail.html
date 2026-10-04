@@ -1,514 +1,262 @@
-﻿{% load static %}
+﻿{% extends "core/base.html" %}
+{% load static %}
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block title %}Détail facture - Tiers Payant{% endblock %}
+{% block header_title %}Détail de la facture{% endblock %}
+{% block header_sub %}Consultation d'une facture{% endblock %}
 
-    <title>Détail facture - Tiers Payant</title>
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 25px;
+        border-radius: 14px;
+        box-shadow: 0 5px 18px rgba(0,0,0,.08);
+        border: 1px solid #e5e7eb;
+        margin-bottom: 22px;
+        max-width: 1250px;
+        margin-left: auto;
+        margin-right: auto;
+    }
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+    .card h2 {
+        margin: 0 0 22px;
+        color: #123b65;
+        font-size: 20px;
+    }
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
+    .invoice-number {
+        font-size: 23px;
+        color: #123b65;
+        font-weight: 700;
+        margin-bottom: 25px;
+    }
 
-        .header {
-            background: #123b65;
-            color: white;
-            min-height: 95px;
-            padding: 15px 35px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            box-shadow: 0 3px 12px rgba(0,0,0,.10);
-        }
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 15px;
+    }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 22px;
-        }
+    .info-item {
+        padding: 15px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 9px;
+    }
 
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
+    .info-item strong {
+        display: block;
+        margin-bottom: 7px;
+        color: #6b7280;
+        font-size: 13px;
+    }
 
-        .header h1 {
-            margin: 0;
-            font-size: 25px;
-            font-weight: 600;
-        }
+    .info-item span,
+    .info-item div {
+        font-size: 15px;
+    }
 
-        .back {
-            color: white;
-            text-decoration: none;
-            background: #1f4f7d;
-            padding: 11px 18px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            transition: .2s;
-        }
+    .montant-total {
+        font-weight: 700;
+        color: #123b65;
+    }
 
-        .back:hover {
-            background: #2563eb;
-            transform: translateY(-1px);
-        }
+    .statut { font-weight: 700; }
+    .attente { color: #d97706; }
+    .validee { color: #15803d; }
+    .rejetee { color: #dc2626; }
 
-        .container {
-            max-width: 1250px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
+    .table-wrapper { overflow-x: auto; }
 
-        .message {
-            padding: 14px 16px;
-            margin-bottom: 20px;
-            border-radius: 9px;
-            background: #dcfce7;
-            border: 1px solid #bbf7d0;
-            color: #166534;
-            font-weight: 600;
-        }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 5px;
+        min-width: 900px;
+    }
 
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 14px;
-            box-shadow: 0 5px 18px rgba(0,0,0,.08);
-            border: 1px solid #e5e7eb;
-            margin-bottom: 22px;
-        }
+    th, td {
+        padding: 13px 12px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+        font-size: 14px;
+    }
 
-        .card h2 {
-            margin: 0 0 22px;
-            color: #123b65;
-            font-size: 20px;
-        }
+    th {
+        background: #f1f5f9;
+        color: #374151;
+        font-weight: 700;
+        white-space: nowrap;
+    }
 
-        .invoice-number {
-            font-size: 23px;
-            color: #123b65;
-            font-weight: 700;
-            margin-bottom: 25px;
-        }
+    tbody tr:hover { background: #f8fafc; }
 
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 15px;
-        }
+    .montant {
+        text-align: right;
+        white-space: nowrap;
+    }
 
-        .info-item {
-            padding: 15px;
-            background: #f8fafc;
-            border: 1px solid #e5e7eb;
-            border-radius: 9px;
-        }
+    .empty {
+        text-align: center;
+        padding: 30px;
+        color: #6b7280;
+    }
 
-        .info-item strong {
-            display: block;
-            margin-bottom: 7px;
-            color: #6b7280;
-            font-size: 13px;
-        }
+    .actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
 
-        .info-item span,
-        .info-item div {
-            font-size: 15px;
-        }
+    .btn {
+        display: inline-block;
+        padding: 10px 18px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+        transition: .2s;
+    }
 
-        .montant-total {
-            font-weight: 700;
-            color: #123b65;
-        }
+    .btn-pdf {
+        background: #10b981;
+        color: white;
+    }
+    .btn-pdf:hover { background: #059669; }
 
-        .statut {
-            font-weight: 700;
-        }
+    .btn-back {
+        background: #64748b;
+        color: white;
+    }
+    .btn-back:hover { background: #475569; }
 
-        .attente {
-            color: #d97706;
-        }
+    @media (max-width: 750px) {
+        .card { padding: 20px; }
+        .info-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
 
-        .validee {
-            color: #15803d;
-        }
+{% block content %}
 
-        .rejetee {
-            color: #dc2626;
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 5px;
-            min-width: 900px;
-        }
-
-        th,
-        td {
-            padding: 13px 12px;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: left;
-            font-size: 14px;
-        }
-
-        th {
-            background: #f1f5f9;
-            color: #374151;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-
-        tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        .montant {
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        .empty {
-            text-align: center;
-            padding: 30px;
-            color: #6b7280;
-        }
-
-        .footer {
-            text-align: center;
-            color: #6b7280;
-            font-size: 13px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        @media (max-width: 750px) {
-
-            .header {
-                padding: 15px 20px;
-                align-items: flex-start;
-                flex-direction: column;
-            }
-
-            .brand {
-                gap: 15px;
-            }
-
-            .brand img {
-                width: 110px;
-                height: 55px;
-            }
-
-            .header h1 {
-                font-size: 20px;
-            }
-
-            .back {
-                width: 100%;
-                text-align: center;
-            }
-
-            .info-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .card {
-                padding: 20px;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="header">
-
-    <div class="brand">
-
-        <img
-            src="{% static 'core/img/logo-sagps.png' %}"
-            alt="SAGPS"
-        >
-
-        <h1>Détail de la facture</h1>
-
-    </div>
-
-    <a
-        class="back"
-        href="{% url 'factures' %}"
-    >
+<!-- Boutons d'action -->
+<div class="actions">
+    <a href="{% url 'facture_pdf' facture.id_facture %}"
+       target="_blank"
+       class="btn btn-pdf">
+        📄 Télécharger PDF
+    </a>
+    <a href="{% url 'factures' %}" class="btn btn-back">
         ← Retour aux factures
     </a>
-
 </div>
 
-<div class="container">
+<!-- Informations facture -->
+<div class="card">
 
-    {% if messages %}
+    <div class="invoice-number">{{ facture.numero_facture }}</div>
 
-        {% for message in messages %}
-
-            <div class="message">
-                {{ message }}
-            </div>
-
-        {% endfor %}
-
-    {% endif %}
-
-
-    <!-- Informations facture -->
-
-    <div class="card">
-
-        <div class="invoice-number">
-            {{ facture.numero_facture }}
+    <div class="info-grid">
+        <div class="info-item">
+            <strong>Prestataire</strong>
+            {{ facture.id_prestataire.raison_sociale }}
         </div>
-
-        <div class="info-grid">
-
-            <div class="info-item">
-                <strong>Prestataire</strong>
-                {{ facture.id_prestataire.raison_sociale }}
-            </div>
-
-            <div class="info-item">
-
-                <strong>Statut</strong>
-
-                <span class="statut">
-
-                    {% if facture.statut == "EN_ATTENTE" %}
-
-                        <span class="attente">
-                            En attente
-                        </span>
-
-                    {% elif facture.statut == "VALIDEE" %}
-
-                        <span class="validee">
-                            Validée
-                        </span>
-
-                    {% elif facture.statut == "REJETEE" %}
-
-                        <span class="rejetee">
-                            Rejetée
-                        </span>
-
-                    {% else %}
-
-                        {{ facture.statut }}
-
-                    {% endif %}
-
-                </span>
-
-            </div>
-
-            <div class="info-item">
-
-                <strong>Date facture</strong>
-
-                {{ facture.date_facture|date:"d/m/Y" }}
-
-            </div>
-
-            <div class="info-item">
-
-                <strong>Date réception</strong>
-
-                {% if facture.date_reception %}
-
-                    {{ facture.date_reception|date:"d/m/Y" }}
-
+        <div class="info-item">
+            <strong>Statut</strong>
+            <span class="statut">
+                {% if facture.statut == "EN_ATTENTE" %}
+                    <span class="attente">En attente</span>
+                {% elif facture.statut == "VALIDEE" %}
+                    <span class="validee">Validée</span>
+                {% elif facture.statut == "REJETEE" %}
+                    <span class="rejetee">Rejetée</span>
                 {% else %}
-
-                    -
-
+                    {{ facture.statut }}
                 {% endif %}
-
-            </div>
-
-            <div class="info-item">
-
-                <strong>Montant total</strong>
-
-                <span class="montant-total">
-                    {{ facture.montant_total }} DA
-                </span>
-
-            </div>
-
-            <div class="info-item">
-
-                <strong>Montant validé</strong>
-
-                <span>
-                    {{ facture.montant_valide }} DA
-                </span>
-
-            </div>
-
-            <div class="info-item">
-
-                <strong>Montant rejeté</strong>
-
-                <span>
-                    {{ facture.montant_rejete }} DA
-                </span>
-
-            </div>
-
-            <div class="info-item">
-
-                <strong>Observation</strong>
-
-                {{ facture.observation|default:"-" }}
-
-            </div>
-
+            </span>
         </div>
-
-    </div>
-
-
-    <!-- Détails facture -->
-
-    <div class="card">
-
-        <h2>Détails de la facture</h2>
-
-        <div class="table-wrapper">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-
-                        <th>ID</th>
-                        <th>Consommation</th>
-                        <th>Acte</th>
-                        <th>Quantité</th>
-                        <th>Montant total</th>
-                        <th>Montant validé</th>
-                        <th>Montant rejeté</th>
-                        <th>Statut</th>
-
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    {% for detail in details %}
-
-                    <tr>
-
-                        <td>
-                            {{ detail.id_detail_facture }}
-                        </td>
-
-                        <td>
-                            {{ detail.id_consommation.id_consommation }}
-                        </td>
-
-                        <td>
-                            {{ detail.id_acte.code_acte }}
-                            -
-                            {{ detail.id_acte.libelle }}
-                        </td>
-
-                        <td>
-                            {{ detail.quantite }}
-                        </td>
-
-                        <td class="montant">
-                            {{ detail.montant_total }} DA
-                        </td>
-
-                        <td class="montant">
-                            {{ detail.montant_valide }} DA
-                        </td>
-
-                        <td class="montant">
-                            {{ detail.montant_rejete }} DA
-                        </td>
-
-                        <td class="statut">
-
-                            {% if detail.statut == "EN_ATTENTE" %}
-
-                                <span class="attente">
-                                    En attente
-                                </span>
-
-                            {% elif detail.statut == "VALIDEE" %}
-
-                                <span class="validee">
-                                    Validé
-                                </span>
-
-                            {% elif detail.statut == "REJETEE" %}
-
-                                <span class="rejetee">
-                                    Rejeté
-                                </span>
-
-                            {% else %}
-
-                                {{ detail.statut }}
-
-                            {% endif %}
-
-                        </td>
-
-                    </tr>
-
-                    {% empty %}
-
-                    <tr>
-
-                        <td colspan="8" class="empty">
-                            Aucun détail pour cette facture.
-                        </td>
-
-                    </tr>
-
-                    {% endfor %}
-
-                </tbody>
-
-            </table>
-
+        <div class="info-item">
+            <strong>Date facture</strong>
+            {{ facture.date_facture|date:"d/m/Y" }}
         </div>
-
+        <div class="info-item">
+            <strong>Date réception</strong>
+            {% if facture.date_reception %}
+                {{ facture.date_reception|date:"d/m/Y" }}
+            {% else %}
+                -
+            {% endif %}
+        </div>
+        <div class="info-item">
+            <strong>Montant total</strong>
+            <span class="montant-total">{{ facture.montant_total }} DA</span>
+        </div>
+        <div class="info-item">
+            <strong>Montant validé</strong>
+            {{ facture.montant_valide }} DA
+        </div>
+        <div class="info-item">
+            <strong>Montant rejeté</strong>
+            {{ facture.montant_rejete }} DA
+        </div>
+        <div class="info-item">
+            <strong>Observation</strong>
+            {{ facture.observation|default:"-" }}
+        </div>
     </div>
 
 </div>
 
-<div class="footer">
-    © 2026 — Plateforme Tiers Payant
+<!-- Détails facture -->
+<div class="card">
+    <h2>Détails de la facture</h2>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Consommation</th>
+                    <th>Acte</th>
+                    <th>Quantité</th>
+                    <th>Montant total</th>
+                    <th>Montant validé</th>
+                    <th>Montant rejeté</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detail in details %}
+                <tr>
+                    <td>{{ detail.id_detail_facture }}</td>
+                    <td>{{ detail.id_consommation.id_consommation }}</td>
+                    <td>{{ detail.id_acte.code_acte }} - {{ detail.id_acte.libelle }}</td>
+                    <td>{{ detail.quantite }}</td>
+                    <td class="montant">{{ detail.montant_total }} DA</td>
+                    <td class="montant">{{ detail.montant_valide }} DA</td>
+                    <td class="montant">{{ detail.montant_rejete }} DA</td>
+                    <td>
+                        {% if detail.statut == "EN_ATTENTE" %}
+                            <span class="attente">En attente</span>
+                        {% elif detail.statut == "VALIDEE" %}
+                            <span class="validee">Validé</span>
+                        {% elif detail.statut == "REJETEE" %}
+                            <span class="rejetee">Rejeté</span>
+                        {% else %}
+                            {{ detail.statut }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="empty">Aucun détail pour cette facture.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
-</body>
-</html>
+{% endblock %}

@@ -95,11 +95,13 @@ from .views import (
     facture_detail,
     facture_export_excel,
     facture_export_pdf,
+    facture_pdf,
     reglements,
     reglement_create,
     reglement_detail,
     reglement_valider,
     reglement_export_excel,
+    reglement_pdf,
     recours,
     recours_create,
     recours_traiter,
@@ -573,6 +575,11 @@ path(
     name="facture_detail",
 ),
 path(
+    "factures/<int:id_facture>/pdf/",
+    facture_pdf,
+    name="facture_pdf"
+),
+path(
     "factures/export-pdf/",
     facture_export_pdf,
     name="facture_export_pdf",
@@ -601,6 +608,11 @@ path(
     "reglements/<int:id_reglement>/",
     reglement_detail,
     name="reglement_detail",
+),
+path(
+    "reglements/<int:id_reglement>/pdf/",
+    reglement_pdf,
+    name="reglement_pdf"
 ),
 path(
     "reglements/<int:id_reglement>/valider/",
