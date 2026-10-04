@@ -1,414 +1,111 @@
+{% extends "core/base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Rôles & Permissions - Tiers Payant</title>
+{% block title %}Rôles & Permissions - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des rôles{% endblock %}
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+{% block extra_css %}
+<style>
+    .page-title { margin-bottom: 20px; }
+    .page-title h2 { margin: 0; color: #123b65; font-size: 24px; }
+    .page-title p { margin: 6px 0 0; color: #64748b; }
+    .card { background: white; padding: 25px; border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.08); }
+    .card-header { display: flex; justify-content: space-between;
+                   align-items: center; gap: 15px;
+                   flex-wrap: wrap; margin-bottom: 20px; }
+    .card-header h2 { margin: 0; color: #123b65; font-size: 21px; }
+    .btn { display: inline-block; padding: 9px 15px; background: #2563eb;
+           color: white; text-decoration: none; border-radius: 6px;
+           border: none; cursor: pointer; font-weight: bold;
+           font-size: 13px; margin: 2px; }
+    .btn:hover { opacity: .9; }
+    .btn-secondary { background: #64748b; }
+    .btn-permission { background: #7c3aed; }
+    .table-wrapper { width: 100%; overflow-x: auto;
+                     border: 1px solid #e2e8f0; border-radius: 8px; }
+    table { width: 100%; min-width: 850px; border-collapse: collapse; }
+    th, td { padding: 13px 12px; border-bottom: 1px solid #e5e7eb;
+             text-align: left; vertical-align: middle; }
+    th { background: #123b65; color: white; font-size: 13px; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr:last-child td { border-bottom: none; }
+    .role-name { font-weight: bold; color: #123b65; }
+    .role-id { color: #64748b; font-weight: bold; }
+    .actif { display: inline-block; padding: 5px 10px; border-radius: 20px;
+             background: #dcfce7; color: #166534; font-weight: bold; font-size: 12px; }
+    .inactif { display: inline-block; padding: 5px 10px; border-radius: 20px;
+               background: #fee2e2; color: #991b1b; font-weight: bold; font-size: 12px; }
+    .description { color: #475569; }
+    .actions { display: flex; gap: 5px; flex-wrap: wrap; }
+    .actions .btn { margin: 0; }
+    .empty { text-align: center; padding: 35px; color: #64748b; }
+</style>
+{% endblock %}
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
+{% block content %}
 
-        .header {
-            background: #123b65;
-            color: white;
-            min-height: 95px;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 3px 10px rgba(0,0,0,.10);
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
-
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-        }
-
-        .back {
-            color: white;
-            text-decoration: none;
-            background: #1f5b91;
-            padding: 11px 18px;
-            border-radius: 7px;
-            font-weight: bold;
-        }
-
-        .back:hover {
-            background: #2870ad;
-        }
-
-        .container {
-            padding: 30px;
-            max-width: 1400px;
-            margin: auto;
-        }
-
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 3px 12px rgba(0,0,0,.08);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .card-header h2 {
-            margin: 0;
-            color: #123b65;
-            font-size: 21px;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 9px 15px;
-            background: #2563eb;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 13px;
-            margin: 2px;
-        }
-
-        .btn:hover {
-            opacity: .9;
-        }
-
-        .btn-secondary {
-            background: #64748b;
-        }
-
-        .btn-permission {
-            background: #7c3aed;
-        }
-
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-        }
-
-        table {
-            width: 100%;
-            min-width: 850px;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 13px 12px;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: left;
-            vertical-align: middle;
-        }
-
-        th {
-            background: #123b65;
-            color: white;
-            font-size: 13px;
-        }
-
-        tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .role-name {
-            font-weight: bold;
-            color: #123b65;
-        }
-
-        .role-id {
-            color: #64748b;
-            font-weight: bold;
-        }
-
-        .actif {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            background: #dcfce7;
-            color: #166534;
-            font-weight: bold;
-            font-size: 12px;
-        }
-
-        .inactif {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            background: #fee2e2;
-            color: #991b1b;
-            font-weight: bold;
-            font-size: 12px;
-        }
-
-        .description {
-            color: #475569;
-        }
-
-        .actions {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-        }
-
-        .actions .btn {
-            margin: 0;
-        }
-
-        .empty {
-            text-align: center;
-            padding: 35px;
-            color: #64748b;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #64748b;
-            font-size: 13px;
-        }
-
-        @media (max-width: 700px) {
-            .header {
-                padding: 15px 20px;
-                flex-direction: column;
-                gap: 15px;
-                align-items: flex-start;
-            }
-
-            .brand img {
-                width: 110px;
-                height: 55px;
-            }
-
-            .header h1 {
-                font-size: 20px;
-            }
-
-            .container {
-                padding: 20px;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="header">
-
-    <div class="brand">
-
-        <img
-            src="{% static 'core/img/logo-sagps.png' %}"
-            alt="SAGPS"
-        >
-
-        <h1>Gestion des rôles</h1>
-
-    </div>
-
-    <a class="back" href="{% url 'accueil' %}">
-        ← Retour au Dashboard
-    </a>
-
+<div class="page-title">
+    <h2>Gestion des rôles</h2>
+    <p>Gérez les rôles utilisateurs et leurs permissions.</p>
 </div>
 
+<div class="card">
 
-<div class="container">
+    <div class="card-header">
+        <h2>Liste des rôles</h2>
+        {% if "ROLE_CREATE" in permissions %}
+            <a class="btn" href="{% url 'role_create' %}">+ Nouveau rôle</a>
+        {% endif %}
+    </div>
 
-    <div class="card">
-
-        <div class="card-header">
-
-            <h2>Liste des rôles</h2>
-
-            {% if "ROLE_CREATE" in permissions %}
-
-                <a
-                    class="btn"
-                    href="{% url 'role_create' %}"
-                >
-                    + Nouveau rôle
-                </a>
-
-            {% endif %}
-
-        </div>
-
-
-        <div class="table-wrapper">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <th>ID</th>
-                        <th>Rôle</th>
-                        <th>Description</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                    {% for role in roles %}
-
-                    <tr>
-
-                        <td>
-                            <span class="role-id">
-                                #{{ role.id_role }}
-                            </span>
-                        </td>
-
-                        <td>
-                            <span class="role-name">
-                                {{ role.libelle }}
-                            </span>
-                        </td>
-
-                        <td>
-                            <span class="description">
-                                {{ role.description|default:"-" }}
-                            </span>
-                        </td>
-
-                        <td>
-
-                            {% if role.statut == "ACTIF" %}
-
-                                <span class="actif">
-                                    Actif
-                                </span>
-
-                            {% else %}
-
-                                <span class="inactif">
-                                    Inactif
-                                </span>
-
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Rôle</th>
+                    <th>Description</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for role in roles %}
+                <tr>
+                    <td><span class="role-id">#{{ role.id_role }}</span></td>
+                    <td><span class="role-name">{{ role.libelle }}</span></td>
+                    <td><span class="description">{{ role.description|default:"-" }}</span></td>
+                    <td>
+                        {% if role.statut == "ACTIF" %}
+                            <span class="actif">Actif</span>
+                        {% else %}
+                            <span class="inactif">Inactif</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="actions">
+                            {% if "ROLE_UPDATE" in permissions %}
+                                <a class="btn btn-secondary"
+                                   href="{% url 'role_modifier' role.id_role %}">Modifier</a>
                             {% endif %}
-
-                        </td>
-
-                        <td>
-
-                            <div class="actions">
-
-                                {% if "ROLE_UPDATE" in permissions %}
-
-                                    <a
-                                        class="btn btn-secondary"
-                                        href="{% url 'role_modifier' role.id_role %}"
-                                    >
-                                        Modifier
-                                    </a>
-
-                                {% endif %}
-
-
-                                {% if "ROLE_PERMISSION" in permissions %}
-
-                                    <a
-                                        class="btn btn-permission"
-                                        href="{% url 'role_permissions' role.id_role %}"
-                                    >
-                                        Permissions
-                                    </a>
-
-                                {% endif %}
-
-
-                                {% if "ROLE_VIEW" in permissions %}
-
-                                    <a
-                                        class="btn"
-                                        href="{% url 'role_detail' role.id_role %}"
-                                    >
-                                        Détail
-                                    </a>
-
-                                {% endif %}
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-
-                    {% empty %}
-
-                    <tr>
-
-                        <td
-                            colspan="5"
-                            class="empty"
-                        >
-                            Aucun rôle trouvé.
-                        </td>
-
-                    </tr>
-
-                    {% endfor %}
-
-                </tbody>
-
-            </table>
-
-        </div>
-
+                            {% if "ROLE_PERMISSION" in permissions %}
+                                <a class="btn btn-permission"
+                                   href="{% url 'role_permissions' role.id_role %}">Permissions</a>
+                            {% endif %}
+                            {% if "ROLE_VIEW" in permissions %}
+                                <a class="btn" href="{% url 'role_detail' role.id_role %}">Détail</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="empty">Aucun rôle trouvé.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
 </div>
 
-
-<div class="footer">
-    © 2026 — Plateforme Tiers Payant
-</div>
-
-
-</body>
-</html>
+{% endblock %}

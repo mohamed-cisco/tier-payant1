@@ -1,632 +1,128 @@
-<!DOCTYPE html>
-<html lang="fr">
-
-<head>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Adhésions - Tiers Payant</title>
-
-    <style>
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f3f6fa;
-            color: #1f2937;
-        }
-
-        .header {
-            background: #123b65;
-            color: white;
-            min-height: 95px;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 3px 12px rgba(0,0,0,.10);
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
-
-        .brand-text h1 {
-            margin: 0;
-            font-size: 22px;
-            font-weight: 700;
-        }
-
-        .brand-text p {
-            margin: 5px 0 0;
-            font-size: 13px;
-            opacity: .80;
-        }
-
-        .back {
-            color: white;
-            text-decoration: none;
-            background: rgba(255,255,255,.14);
-            border: 1px solid rgba(255,255,255,.20);
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            transition: .2s;
-        }
-
-        .back:hover {
-            background: rgba(255,255,255,.22);
-        }
-
-        .container {
-            padding: 30px 35px;
-            max-width: 1600px;
-            margin: auto;
-        }
-
-        .page-title {
-            margin-bottom: 22px;
-        }
-
-        .page-title h2 {
-            margin: 0;
-            color: #123b65;
-            font-size: 24px;
-        }
-
-        .page-title p {
-            margin: 6px 0 0;
-            color: #6b7280;
-            font-size: 14px;
-        }
-
-        .card {
-            background: white;
-            padding: 24px;
-            border-radius: 14px;
-            border: 1px solid #e5ebf2;
-            box-shadow: 0 4px 15px rgba(0,0,0,.05);
-        }
-
-        .toolbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .filters {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .filters input,
-        .filters select {
-            height: 42px;
-            padding: 0 12px;
-            border: 1px solid #d5dde7;
-            border-radius: 8px;
-            background: white;
-            color: #374151;
-            font-size: 13px;
-            outline: none;
-        }
-
-        .filters input {
-            width: 330px;
-        }
-
-        .filters input:focus,
-        .filters select:focus {
-            border-color: #123b65;
-            box-shadow: 0 0 0 3px rgba(18,59,101,.08);
-        }
-
-        .actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 40px;
-            padding: 9px 14px;
-            background: #123b65;
-            color: white;
-            text-decoration: none;
-            border: none;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: .2s;
-        }
-
-        .btn:hover {
-            background: #1d5d91;
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: #6b7280;
-        }
-
-        .btn-secondary:hover {
-            background: #4b5563;
-        }
-
-        .btn-success {
-            background: #15803d;
-        }
-
-        .btn-success:hover {
-            background: #166534;
-        }
-
-        .btn-danger {
-            background: #dc2626;
-        }
-
-        .btn-danger:hover {
-            background: #b91c1c;
-        }
-
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            border: 1px solid #e5ebf2;
-            border-radius: 10px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1050px;
-        }
-
-        th,
-        td {
-            padding: 13px 12px;
-            text-align: left;
-            border-bottom: 1px solid #edf1f5;
-            font-size: 13px;
-            white-space: nowrap;
-        }
-
-        th {
-            background: #f7f9fc;
-            color: #123b65;
-            font-weight: 700;
-            border-bottom: 2px solid #e3e9f0;
-        }
-
-        tbody tr:hover {
-            background: #f8fbfe;
-        }
-
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .numero {
-            font-weight: 600;
-            color: #123b65;
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .status-actif {
-            color: #166534;
-            background: #dcfce7;
-        }
-
-        .status-radie {
-            color: #991b1b;
-            background: #fee2e2;
-        }
-
-        .row-actions {
-            display: flex;
-            gap: 6px;
-        }
-
-        .row-actions .btn {
-            min-height: 34px;
-            padding: 7px 10px;
-            font-size: 12px;
-        }
-
-        .empty-message {
-            text-align: center;
-            color: #6b7280;
-            padding: 35px !important;
-            font-size: 14px;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 25px;
-            color: #9ca3af;
-            font-size: 12px;
-        }
-
-        @media (max-width: 900px) {
-
-            .header {
-                padding: 15px 20px;
-            }
-
-            .brand img {
-                width: 115px;
-                height: 55px;
-            }
-
-            .brand-text h1 {
-                font-size: 18px;
-            }
-
-            .container {
-                padding: 20px;
-            }
-
-            .filters {
-                width: 100%;
-            }
-
-            .filters input {
-                width: 100%;
-            }
-
-            .filters input,
-            .filters select {
-                flex: 1;
-            }
-
-            .actions {
-                width: 100%;
-            }
-
-            .actions .btn {
-                flex: 1;
-            }
-
-        }
-
-    </style>
-
-</head>
-
-
-<body>
-
-
-<div class="header">
-
-    <div class="brand">
-
-        <img
-            src="/static/core/img/logo-sagps.png"
-            alt="Logo Djazair Med"
-        >
-
-        <div class="brand-text">
-
-            <h1>Tiers Payant</h1>
-
-            <p>Gestion des adhésions</p>
-
-        </div>
-
-    </div>
-
-
-    <a class="back" href="{% url 'accueil' %}">
-        ← Tableau de bord
-    </a>
-
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Adhésions - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des adhésions{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-title { margin-bottom: 22px; }
+    .page-title h2 { margin: 0; color: #123b65; font-size: 24px; }
+    .page-title p { margin: 6px 0 0; color: #6b7280; font-size: 14px; }
+    .card { background: white; padding: 24px; border-radius: 14px;
+            border: 1px solid #e5ebf2; box-shadow: 0 4px 15px rgba(0,0,0,.05); }
+    .toolbar { display: flex; justify-content: space-between; align-items: center;
+               gap: 15px; flex-wrap: wrap; margin-bottom: 20px; }
+    .filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .filters input, .filters select { height: 42px; padding: 0 12px;
+        border: 1px solid #d5dde7; border-radius: 8px;
+        background: white; font-size: 13px; outline: none; }
+    .filters input { width: 330px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; justify-content: center;
+           min-height: 40px; padding: 9px 14px; background: #123b65; color: white;
+           text-decoration: none; border: none; border-radius: 8px;
+           font-size: 13px; font-weight: 600; cursor: pointer; }
+    .btn:hover { background: #1d5d91; }
+    .btn-secondary { background: #6b7280; }
+    .btn-success { background: #15803d; }
+    .btn-danger { background: #dc2626; }
+    .table-wrapper { width: 100%; overflow-x: auto;
+                     border: 1px solid #e5ebf2; border-radius: 10px; }
+    table { width: 100%; border-collapse: collapse; min-width: 1050px; }
+    th, td { padding: 13px 12px; text-align: left;
+             border-bottom: 1px solid #edf1f5; font-size: 13px; white-space: nowrap; }
+    th { background: #f7f9fc; color: #123b65; font-weight: 700; }
+    .numero { font-weight: 600; color: #123b65; }
+    .status-badge { display: inline-flex; padding: 5px 10px;
+                    border-radius: 20px; font-size: 12px; font-weight: 700; }
+    .status-actif { color: #166534; background: #dcfce7; }
+    .status-radie { color: #991b1b; background: #fee2e2; }
+    .row-actions { display: flex; gap: 6px; }
+    .row-actions .btn { min-height: 34px; padding: 7px 10px; font-size: 12px; }
+    .empty-message { text-align: center; color: #6b7280;
+                     padding: 35px !important; font-size: 14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-title">
+    <h2>Gestion des adhésions</h2>
+    <p>Consultez, recherchez et gérez les adhésions des assurés.</p>
 </div>
 
+<div class="card">
+    <div class="toolbar">
+        <form method="get" class="filters">
+            <input type="text" name="recherche" value="{{ recherche }}"
+                   placeholder="N° adhésion, adhérent ou contrat">
+            <select name="statut">
+                <option value="">Tous les statuts</option>
+                <option value="ACTIF" {% if statut == "ACTIF" %}selected{% endif %}>Actives</option>
+                <option value="RADIE" {% if statut == "RADIE" %}selected{% endif %}>Radiées</option>
+            </select>
+            <button type="submit" class="btn">🔎 Rechercher</button>
+            <a href="{% url 'adhesions' %}" class="btn btn-secondary">Réinitialiser</a>
+        </form>
 
-<div class="container">
-
-
-    <div class="page-title">
-
-        <h2>Gestion des adhésions</h2>
-
-        <p>
-            Consultez, recherchez et gérez les adhésions des assurés.
-        </p>
-
+        <div class="actions">
+            {% if "ADHESION_VIEW" in permissions %}
+                <a href="{% url 'adhesion_export_excel' %}" class="btn btn-secondary">📤 Exporter Excel</a>
+            {% endif %}
+            {% if "ADHESION_CREATE" in permissions %}
+                <a class="btn btn-success" href="{% url 'adhesion_create' %}">➕ Nouvelle adhésion</a>
+            {% endif %}
+        </div>
     </div>
 
-
-    <div class="card">
-
-
-        <div class="toolbar">
-
-
-            <form method="get" class="filters">
-
-                <input
-                    type="text"
-                    name="recherche"
-                    value="{{ recherche }}"
-                    placeholder="N° adhésion, adhérent ou contrat"
-                >
-
-
-                <select name="statut">
-
-                    <option value="">
-                        Tous les statuts
-                    </option>
-
-                    <option
-                        value="ACTIF"
-                        {% if statut == "ACTIF" %}selected{% endif %}
-                    >
-                        Actives
-                    </option>
-
-                    <option
-                        value="RADIE"
-                        {% if statut == "RADIE" %}selected{% endif %}
-                    >
-                        Radiées
-                    </option>
-
-                </select>
-
-
-                <button
-                    type="submit"
-                    class="btn"
-                >
-                    🔎 Rechercher
-                </button>
-
-
-                <a
-                    href="{% url 'adhesions' %}"
-                    class="btn btn-secondary"
-                >
-                    Réinitialiser
-                </a>
-
-            </form>
-
-
-            <div class="actions">
-
-
-                {% if "ADHESION_VIEW" in permissions %}
-
-                    <a
-                        href="{% url 'adhesion_export_excel' %}"
-                        class="btn btn-secondary"
-                    >
-                        📤 Exporter Excel
-                    </a>
-
-                {% endif %}
-
-
-                {% if "ADHESION_CREATE" in permissions %}
-
-                    <a
-                        class="btn btn-success"
-                        href="{% url 'adhesion_create' %}"
-                    >
-                        ➕ Nouvelle adhésion
-                    </a>
-
-                {% endif %}
-
-
-            </div>
-
-
-        </div>
-
-
-        <div class="table-wrapper">
-
-
-            <table>
-
-                <thead>
-
-                    <tr>
-
-                        <th>ID</th>
-                        <th>N° Adhésion</th>
-                        <th>Adhérent</th>
-                        <th>Contrat</th>
-                        <th>Date début</th>
-                        <th>Date fin</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
-
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th><th>N° Adhésion</th><th>Adhérent</th>
+                    <th>Contrat</th><th>Date début</th><th>Date fin</th>
+                    <th>Statut</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
                 {% for a in adhesions %}
-
-                    <tr>
-
-                        <td>
-                            {{ a.id_adhesion }}
-                        </td>
-
-
-                        <td class="numero">
-                            {{ a.numero_adhesion }}
-                        </td>
-
-
-                        <td class="numero">
-                            {{ a.id_adherent.numero_adherent }}
-                        </td>
-
-
-                        <td class="numero">
-                            {{ a.id_contrat.numero_contrat }}
-                        </td>
-
-
-                        <td>
-                            {{ a.date_debut|default:"-" }}
-                        </td>
-
-
-                        <td>
-                            {{ a.date_fin|default:"-" }}
-                        </td>
-
-
-                        <td>
-
-                            {% if a.statut == "ACTIF" %}
-
-                                <span class="status-badge status-actif">
-                                    Actif
-                                </span>
-
-                            {% else %}
-
-                                <span class="status-badge status-radie">
-                                    {{ a.statut }}
-                                </span>
-
+                <tr>
+                    <td>{{ a.id_adhesion }}</td>
+                    <td class="numero">{{ a.numero_adhesion }}</td>
+                    <td class="numero">{{ a.id_adherent.numero_adherent }}</td>
+                    <td class="numero">{{ a.id_contrat.numero_contrat }}</td>
+                    <td>{{ a.date_debut|default:"-" }}</td>
+                    <td>{{ a.date_fin|default:"-" }}</td>
+                    <td>
+                        {% if a.statut == "ACTIF" %}
+                            <span class="status-badge status-actif">Actif</span>
+                        {% else %}
+                            <span class="status-badge status-radie">{{ a.statut }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            {% if "ADHESION_UPDATE" in permissions %}
+                                <a href="{% url 'adhesion_modifier' a.id_adhesion %}"
+                                   class="btn btn-secondary">Modifier</a>
                             {% endif %}
-
-                        </td>
-
-
-                        <td>
-
-                            <div class="row-actions">
-
-
-                                {% if "ADHESION_UPDATE" in permissions %}
-
-                                    <a
-                                        href="{% url 'adhesion_modifier' a.id_adhesion %}"
-                                        class="btn btn-secondary"
-                                    >
-                                        Modifier
-                                    </a>
-
-                                {% endif %}
-
-
-                                {% if a.statut == "ACTIF" %}
-
-                                    {% if "ADHESION_DELETE" in permissions %}
-
-                                        <form
-                                            method="post"
-                                            action="{% url 'adhesion_radier' a.id_adhesion %}"
-                                            style="display:inline;"
-                                        >
-
-                                            {% csrf_token %}
-
-                                            <button
-                                                type="submit"
-                                                class="btn btn-danger"
-                                                onclick="return confirm('Voulez-vous vraiment radier cette adhésion ?');"
-                                            >
-                                                Radier
-                                            </button>
-
-                                        </form>
-
-                                    {% endif %}
-
-                                {% endif %}
-
-
-                            </div>
-
-                        </td>
-
-
-                    </tr>
-
-
+                            {% if a.statut == "ACTIF" and "ADHESION_DELETE" in permissions %}
+                                <form method="post" action="{% url 'adhesion_radier' a.id_adhesion %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger"
+                                            onclick="return confirm('Radier cette adhésion ?');">Radier</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
                 {% empty %}
-
-                    <tr>
-
-                        <td
-                            colspan="8"
-                            class="empty-message"
-                        >
-                            Aucune adhésion trouvée.
-                        </td>
-
-                    </tr>
-
+                <tr><td colspan="8" class="empty-message">Aucune adhésion trouvée.</td></tr>
                 {% endfor %}
-
-
-                </tbody>
-
-            </table>
-
-
-        </div>
-
-
+            </tbody>
+        </table>
     </div>
-
-
 </div>
 
-
-<div class="footer">
-
-    © 2026 — Plateforme Tiers Payant
-
-</div>
-
-
-</body>
-
-</html>
+{% endblock %}

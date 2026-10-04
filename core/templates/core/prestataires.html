@@ -1,611 +1,216 @@
-﻿<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+﻿{% extends "core/base.html" %}
+{% load static %}
 
-    <title>Prestataires - SAGPS</title>
+{% block title %}Prestataires - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des prestataires{% endblock %}
+{% block header_sub %}Établissements et professionnels de santé{% endblock %}
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+{% block extra_css %}
+<style>
+    .page-title { margin-bottom: 22px; }
+    .page-title h2 { margin: 0; color: #123b65; font-size: 24px; }
+    .page-title p { margin: 6px 0 0; color: #6b7280; font-size: 14px; }
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
+    .card {
+        background: white; padding: 24px; border-radius: 14px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
 
-        .header {
-            min-height: 95px;
-            background: #123b65;
-            color: white;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 3px 12px rgba(0,0,0,.12);
-        }
+    .card-header {
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 15px; flex-wrap: wrap; margin-bottom: 20px;
+    }
+    .card-header h2 { margin: 0; color: #123b65; font-size: 20px; }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
+    .btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-height: 40px; padding: 9px 14px;
+        background: #123b65; color: white; text-decoration: none;
+        border: none; border-radius: 8px; font-size: 13px;
+        font-weight: 600; cursor: pointer;
+    }
+    .btn:hover { background: #1d5d91; }
+    .btn-secondary { background: #64748b; }
+    .btn-success { background: #15803d; }
+    .btn-danger { background: #dc2626; }
 
-        .header-title h1 {
-            margin: 0;
-            font-size: 25px;
-        }
+    .search-panel {
+        padding: 18px; background: #f8fafc;
+        border: 1px solid #e5e7eb; border-radius: 9px;
+        margin-bottom: 22px;
+    }
 
-        .header-title p {
-            margin: 6px 0 0;
-            font-size: 13px;
-            opacity: .85;
-        }
+    .search-form {
+        display: grid;
+        grid-template-columns: minmax(250px, 2fr) minmax(180px, 1fr)
+                               minmax(160px, 1fr) auto auto;
+        gap: 12px; align-items: end;
+    }
 
-        .back {
-            color: white;
-            text-decoration: none;
-            background: #1d4f80;
-            padding: 10px 16px;
-            border-radius: 7px;
-            font-weight: bold;
-            transition: .2s;
-        }
+    .field { display: flex; flex-direction: column; }
+    .field label {
+        font-weight: bold; margin-bottom: 7px;
+        font-size: 13px; color: #374151;
+    }
+    .field input, .field select {
+        width: 100%; padding: 10px 11px;
+        border: 1px solid #d1d5db; border-radius: 7px;
+        background: white; font-size: 13px; outline: none;
+    }
+    .field input:focus, .field select:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
 
-        .back:hover {
-            background: #2563eb;
-        }
+    .table-wrapper { overflow-x: auto; }
+    table {
+        width: 100%; border-collapse: collapse; min-width: 1100px;
+    }
+    th, td {
+        padding: 13px 12px; border-bottom: 1px solid #e5e7eb;
+        text-align: left; vertical-align: middle; font-size: 13px;
+    }
+    th {
+        background: #f8fafc; color: #334155;
+        font-weight: bold; white-space: nowrap;
+    }
+    tbody tr:hover { background: #f8fbff; }
 
-        .container {
-            padding: 25px 30px 40px;
-            max-width: 1600px;
-            margin: auto;
-        }
+    .code { font-weight: bold; color: #123b65; }
+    .raison-sociale { font-weight: bold; color: #374151; }
 
-        .card {
-            background: white;
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 3px 14px rgba(15,23,42,.07);
-            border: 1px solid #e5e7eb;
-        }
+    .statut {
+        display: inline-block; padding: 5px 10px;
+        border-radius: 20px; font-size: 12px; font-weight: bold;
+    }
+    .actif   { color: #166534; background: #dcfce7; }
+    .inactif { color: #991b1b; background: #fee2e2; }
 
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
+    .table-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+    .table-actions .btn { padding: 7px 10px; font-size: 12px; min-height: auto; }
 
-        .card-header h2 {
-            margin: 0;
-            font-size: 20px;
-            color: #123b65;
-        }
+    .empty {
+        text-align: center; padding: 45px 20px; color: #64748b;
+    }
+</style>
+{% endblock %}
 
-        .actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
+{% block content %}
 
-        .btn {
-            display: inline-block;
-            padding: 10px 15px;
-            background: #2563eb;
-            color: white;
-            text-decoration: none;
-            border-radius: 7px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 13px;
-            transition: .2s;
-        }
-
-        .btn:hover {
-            opacity: .9;
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: #64748b;
-        }
-
-        .btn-danger {
-            background: #dc2626;
-        }
-
-        .search-panel {
-            padding: 18px;
-            background: #f8fafc;
-            border: 1px solid #e5e7eb;
-            border-radius: 9px;
-            margin-bottom: 22px;
-        }
-
-        .search-form {
-            display: grid;
-            grid-template-columns: minmax(250px, 2fr) minmax(180px, 1fr) minmax(160px, 1fr) auto auto;
-            gap: 12px;
-            align-items: end;
-        }
-
-        .field {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .field label {
-            font-weight: bold;
-            margin-bottom: 7px;
-            font-size: 13px;
-            color: #374151;
-        }
-
-        .field input,
-        .field select {
-            width: 100%;
-            padding: 10px 11px;
-            border: 1px solid #d1d5db;
-            border-radius: 7px;
-            background: white;
-            font-size: 13px;
-            outline: none;
-        }
-
-        .field input:focus,
-        .field select:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37,99,235,.12);
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1100px;
-        }
-
-        th,
-        td {
-            padding: 13px 12px;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: left;
-            vertical-align: middle;
-            font-size: 13px;
-        }
-
-        th {
-            background: #f8fafc;
-            color: #334155;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-
-        tbody tr:hover {
-            background: #f8fbff;
-        }
-
-        .code {
-            font-weight: bold;
-            color: #123b65;
-        }
-
-        .raison-sociale {
-            font-weight: bold;
-            color: #374151;
-        }
-
-        .type {
-            color: #475569;
-        }
-
-        .contact {
-            color: #475569;
-        }
-
-        .statut {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .actif {
-            color: #166534;
-            background: #dcfce7;
-        }
-
-        .inactif {
-            color: #991b1b;
-            background: #fee2e2;
-        }
-
-        .table-actions {
-            display: flex;
-            gap: 7px;
-            flex-wrap: wrap;
-        }
-
-        .table-actions .btn {
-            padding: 7px 10px;
-            font-size: 12px;
-        }
-
-        .empty {
-            text-align: center;
-            padding: 45px 20px;
-            color: #64748b;
-        }
-
-        .footer {
-            text-align: center;
-            color: #64748b;
-            font-size: 12px;
-            padding: 15px 20px 25px;
-        }
-
-        @media (max-width: 1050px) {
-            .search-form {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        @media (max-width: 700px) {
-            .header {
-                padding: 15px 18px;
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-            }
-
-            .container {
-                padding: 18px;
-            }
-
-            .search-form {
-                grid-template-columns: 1fr;
-            }
-
-            .card {
-                padding: 18px;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="header">
-
-    <div class="brand">
-
-        <img src="/static/core/img/logo-sagps.png" alt="SAGPS">
-
-        <div class="header-title">
-            <h1>Gestion des prestataires</h1>
-            <p>Gestion des établissements et professionnels de santé</p>
-        </div>
-
-    </div>
-
-    <a class="back" href="{% url 'accueil' %}">
-        ← Dashboard
-    </a>
-
+<div class="page-title">
+    <h2>Gestion des prestataires</h2>
+    <p>Consultez, recherchez et gérez les prestataires de la plateforme.</p>
 </div>
 
+<div class="card">
 
-<div class="container">
+    <div class="card-header">
+        <h2>Liste des prestataires</h2>
 
-    <div class="card">
+        <div class="actions">
+            {% if "PRESTATAIRE_CREATE" in permissions %}
+                <a class="btn" href="{% url 'prestataire_create' %}">+ Nouveau prestataire</a>
+                <a href="{% url 'prestataire_import_excel' %}" class="btn">📥 Importer Excel</a>
+            {% endif %}
+            {% if "PRESTATAIRE_VIEW" in permissions %}
+                <a href="{% url 'prestataire_export_excel' %}" class="btn btn-secondary">📤 Exporter Excel</a>
+            {% endif %}
+        </div>
+    </div>
 
-        <div class="card-header">
-
-            <h2>Liste des prestataires</h2>
-
-            <div class="actions">
-
-                {% if "PRESTATAIRE_CREATE" in permissions %}
-
-                    <a class="btn" href="{% url 'prestataire_create' %}">
-                        + Nouveau prestataire
-                    </a>
-
-                    <a href="{% url 'prestataire_import_excel' %}" class="btn">
-                        📥 Importer Excel
-                    </a>
-
-                {% endif %}
-
-
-                {% if "PRESTATAIRE_VIEW" in permissions %}
-
-                    <a href="{% url 'prestataire_export_excel' %}" class="btn btn-secondary">
-                        📤 Exporter Excel
-                    </a>
-
-                {% endif %}
-
+    <div class="search-panel">
+        <form method="get" class="search-form">
+            <div class="field">
+                <label>Recherche</label>
+                <input type="text" name="recherche" value="{{ recherche }}"
+                       placeholder="Code, raison sociale, NIF...">
             </div>
 
-        </div>
-
-
-        <div class="search-panel">
-
-            <form method="get" class="search-form">
-
-                <div class="field">
-
-                    <label>Recherche</label>
-
-                    <input
-                        type="text"
-                        name="recherche"
-                        value="{{ recherche }}"
-                        placeholder="Code, raison sociale, NIF..."
-                    >
-
-                </div>
-
-
-                <div class="field">
-
-                    <label>Type de prestataire</label>
-
-                    <select name="type_prestataire">
-
-                        <option value="">
-                            Tous les types
+            <div class="field">
+                <label>Type de prestataire</label>
+                <select name="type_prestataire">
+                    <option value="">Tous les types</option>
+                    {% for code, libelle in types_prestataire %}
+                        <option value="{{ code }}" {% if type_prestataire == code %}selected{% endif %}>
+                            {{ libelle }}
                         </option>
-
-                        {% for code, libelle in types_prestataire %}
-
-                            <option
-                                value="{{ code }}"
-                                {% if type_prestataire == code %}selected{% endif %}
-                            >
-                                {{ libelle }}
-                            </option>
-
-                        {% endfor %}
-
-                    </select>
-
-                </div>
-
-
-                <div class="field">
-
-                    <label>Statut</label>
-
-                    <select name="statut">
-
-                        <option value="">
-                            Tous les statuts
-                        </option>
-
-                        <option
-                            value="ACTIF"
-                            {% if statut == "ACTIF" %}selected{% endif %}
-                        >
-                            Actifs
-                        </option>
-
-                        <option
-                            value="INACTIF"
-                            {% if statut == "INACTIF" %}selected{% endif %}
-                        >
-                            Inactifs
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <div>
-
-                    <button type="submit" class="btn">
-                        🔎 Rechercher
-                    </button>
-
-                </div>
-
-
-                <div>
-
-                    <a
-                        href="{% url 'prestataires' %}"
-                        class="btn btn-secondary"
-                    >
-                        ↻ Réinitialiser
-                    </a>
-
-                </div>
-
-            </form>
-
-        </div>
-
-
-        <div class="table-wrapper">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <th>ID</th>
-                        <th>Code</th>
-                        <th>Raison sociale</th>
-                        <th>Type</th>
-                        <th>Téléphone</th>
-                        <th>Email</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                    {% for p in prestataires %}
-
-                    <tr>
-
-                        <td>
-                            {{ p.id_prestataire }}
-                        </td>
-
-
-                        <td>
-                            <span class="code">
-                                {{ p.code_prestataire }}
-                            </span>
-                        </td>
-
-
-                        <td>
-                            <span class="raison-sociale">
-                                {{ p.raison_sociale }}
-                            </span>
-                        </td>
-
-
-                        <td>
-                            <span class="type">
-                                {{ p.type_prestataire }}
-                            </span>
-                        </td>
-
-
-                        <td>
-                            <span class="contact">
-                                {{ p.telephone|default:"-" }}
-                            </span>
-                        </td>
-
-
-                        <td>
-                            <span class="contact">
-                                {{ p.email|default:"-" }}
-                            </span>
-                        </td>
-
-
-                        <td>
-
-                            {% if p.statut == "ACTIF" %}
-
-                                <span class="statut actif">
-                                    Actif
-                                </span>
-
-                            {% else %}
-
-                                <span class="statut inactif">
-                                    {{ p.statut }}
-                                </span>
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <td>
-
-                            <div class="table-actions">
-
-                                {% if "PRESTATAIRE_UPDATE" in permissions %}
-
-                                    <a
-                                        href="{% url 'prestataire_modifier' p.id_prestataire %}"
-                                        class="btn btn-secondary"
-                                    >
-                                        Modifier
-                                    </a>
-
-                                {% endif %}
-
-
-                                {% if p.statut == "ACTIF" %}
-
-                                    {% if "PRESTATAIRE_DELETE" in permissions %}
-
-                                        <form
-                                            method="post"
-                                            action="{% url 'prestataire_radier' p.id_prestataire %}"
-                                            style="display:inline;"
-                                        >
-
-                                            {% csrf_token %}
-
-                                            <button
-                                                type="submit"
-                                                class="btn btn-danger"
-                                                onclick="return confirm('Voulez-vous vraiment désactiver ce prestataire ?');"
-                                            >
-                                                Désactiver
-                                            </button>
-
-                                        </form>
-
-                                    {% endif %}
-
-                                {% endif %}
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-
-                    {% empty %}
-
-                    <tr>
-
-                        <td colspan="8" class="empty">
-                            Aucun prestataire trouvé.
-                        </td>
-
-                    </tr>
-
                     {% endfor %}
+                </select>
+            </div>
 
-                </tbody>
+            <div class="field">
+                <label>Statut</label>
+                <select name="statut">
+                    <option value="">Tous les statuts</option>
+                    <option value="ACTIF" {% if statut == "ACTIF" %}selected{% endif %}>Actifs</option>
+                    <option value="INACTIF" {% if statut == "INACTIF" %}selected{% endif %}>Inactifs</option>
+                </select>
+            </div>
 
-            </table>
+            <div><button type="submit" class="btn">🔎 Rechercher</button></div>
+            <div><a href="{% url 'prestataires' %}" class="btn btn-secondary">↻ Réinitialiser</a></div>
+        </form>
+    </div>
 
-        </div>
-
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Code</th>
+                    <th>Raison sociale</th>
+                    <th>Type</th>
+                    <th>Téléphone</th>
+                    <th>Email</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in prestataires %}
+                <tr>
+                    <td>{{ p.id_prestataire }}</td>
+                    <td class="code">{{ p.code_prestataire }}</td>
+                    <td class="raison-sociale">{{ p.raison_sociale }}</td>
+                    <td>{{ p.type_prestataire }}</td>
+                    <td>{{ p.telephone|default:"-" }}</td>
+                    <td>{{ p.email|default:"-" }}</td>
+                    <td>
+                        {% if p.statut == "ACTIF" %}
+                            <span class="statut actif">Actif</span>
+                        {% else %}
+                            <span class="statut inactif">{{ p.statut }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            {% if "PRESTATAIRE_UPDATE" in permissions %}
+                                <a href="{% url 'prestataire_modifier' p.id_prestataire %}"
+                                   class="btn btn-secondary">Modifier</a>
+                            {% endif %}
+                            {% if p.statut == "ACTIF" and "PRESTATAIRE_DELETE" in permissions %}
+                                <form method="post" action="{% url 'prestataire_radier' p.id_prestataire %}"
+                                      style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger"
+                                            onclick="return confirm('Désactiver ce prestataire ?');">
+                                        Désactiver
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="empty">Aucun prestataire trouvé.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
 </div>
 
-
-<div class="footer">
-    © 2026 — Plateforme Tiers Payant SAGPS
-</div>
-
-</body>
-</html>
+{% endblock %}

@@ -1,611 +1,162 @@
+{% extends "core/base.html" %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block title %}Sous-actes - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des sous-actes{% endblock %}
+{% block header_sub %}Prestations détaillées rattachées aux actes{% endblock %}
 
-    <title>Sous-actes - Tiers Payant</title>
+{% block extra_css %}
+<style>
+    .page-title { margin-bottom: 20px; }
+    .page-title h2 { margin: 0; color: #123b65; font-size: 24px; }
+    .page-title p { margin: 6px 0 0; color: #64748b; }
+    .message { padding: 13px 16px; margin-bottom: 15px; border-radius: 8px;
+               background: #dcfce7; color: #166534;
+               font-weight: bold; border: 1px solid #bbf7d0; }
+    .card { background: white; padding: 25px; border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(15,23,42,.07);
+            border: 1px solid #e5e7eb; }
+    .filters { display: grid;
+               grid-template-columns: 1fr 240px 240px auto;
+               gap: 12px; margin-bottom: 20px; align-items: end; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 13px; font-weight: bold; color: #475569; }
+    .field input, .field select { width: 100%; padding: 10px 12px;
+        border: 1px solid #cbd5e1; border-radius: 7px;
+        background: white; font-size: 14px; }
+    .btn { display: inline-block; padding: 10px 14px; background: #123b65;
+           color: white; text-decoration: none; border-radius: 7px;
+           border: none; cursor: pointer; font-weight: bold; font-size: 13px; }
+    .btn:hover { background: #1d4f82; }
+    .btn-secondary { background: #64748b; }
+    .btn-success { background: #15803d; }
+    .card-header { display: flex; justify-content: space-between;
+                   align-items: center; gap: 15px;
+                   flex-wrap: wrap; margin-bottom: 20px; }
+    .card-header h2 { margin: 0; color: #123b65; font-size: 20px; }
+    .table-wrapper { width: 100%; overflow-x: auto;
+                     border: 1px solid #e2e8f0; border-radius: 10px; }
+    table { width: 100%; min-width: 950px; border-collapse: collapse; }
+    th, td { padding: 13px 12px; border-bottom: 1px solid #e5e7eb;
+             text-align: left; vertical-align: middle; }
+    th { background: #f1f5f9; color: #475569;
+         font-size: 13px; white-space: nowrap; }
+    td { font-size: 13px; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr:last-child td { border-bottom: none; }
+    .code { font-weight: bold; color: #123b65; }
+    .badge { display: inline-block; padding: 6px 10px;
+             border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .actif { background: #dcfce7; color: #166534; }
+    .inactif { background: #fee2e2; color: #991b1b; }
+    .actions-cell { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+    .actions-cell .btn { padding: 7px 11px; font-size: 12px; }
+    .empty { text-align: center; padding: 35px !important; color: #64748b; }
+</style>
+{% endblock %}
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+{% block content %}
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
-
-        .header {
-            background: #123b65;
-            color: white;
-            min-height: 95px;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-            box-shadow: 0 3px 10px rgba(0,0,0,.10);
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
-
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
-
-        .header-title h1 {
-            margin: 0;
-            font-size: 23px;
-        }
-
-        .header-title p {
-            margin: 5px 0 0;
-            font-size: 13px;
-            opacity: .85;
-        }
-
-        .back {
-            color: white;
-            text-decoration: none;
-            background: #1f5b91;
-            padding: 11px 17px;
-            border-radius: 8px;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-
-        .back:hover {
-            background: #2870ad;
-        }
-
-        .container {
-            max-width: 1550px;
-            margin: 0 auto;
-            padding: 30px 25px 40px;
-        }
-
-        .page-title {
-            margin-bottom: 20px;
-        }
-
-        .page-title h2 {
-            margin: 0;
-            color: #123b65;
-            font-size: 24px;
-        }
-
-        .page-title p {
-            margin: 6px 0 0;
-            color: #64748b;
-        }
-
-        .message {
-            padding: 13px 16px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            background: #dcfce7;
-            color: #166534;
-            font-weight: bold;
-            border: 1px solid #bbf7d0;
-        }
-
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 14px;
-            box-shadow: 0 4px 15px rgba(15, 23, 42, .07);
-            border: 1px solid #e5e7eb;
-        }
-
-        .filters {
-            display: grid;
-            grid-template-columns: 1fr 240px 240px auto;
-            gap: 12px;
-            margin-bottom: 20px;
-            align-items: end;
-        }
-
-        .field {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .field label {
-            font-size: 13px;
-            font-weight: bold;
-            color: #475569;
-        }
-
-        .field input,
-        .field select {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 7px;
-            background: white;
-            font-size: 14px;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 10px 14px;
-            background: #123b65;
-            color: white;
-            text-decoration: none;
-            border-radius: 7px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 13px;
-        }
-
-        .btn:hover {
-            background: #1d4f82;
-        }
-
-        .btn-secondary {
-            background: #64748b;
-        }
-
-        .btn-secondary:hover {
-            background: #475569;
-        }
-
-        .btn-success {
-            background: #15803d;
-        }
-
-        .btn-success:hover {
-            background: #166534;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .card-header h2 {
-            margin: 0;
-            color: #123b65;
-            font-size: 20px;
-        }
-
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-        }
-
-        table {
-            width: 100%;
-            min-width: 950px;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 13px 12px;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: left;
-            vertical-align: middle;
-        }
-
-        th {
-            background: #f1f5f9;
-            color: #475569;
-            font-size: 13px;
-            white-space: nowrap;
-        }
-
-        td {
-            font-size: 13px;
-        }
-
-        tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .code {
-            font-weight: bold;
-            color: #123b65;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 6px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .actif {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .inactif {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .actions-cell {
-            display: flex;
-            gap: 7px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .actions-cell .btn {
-            padding: 7px 11px;
-            font-size: 12px;
-        }
-
-        .empty {
-            text-align: center;
-            padding: 35px !important;
-            color: #64748b;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #64748b;
-            font-size: 13px;
-        }
-
-        @media (max-width: 900px) {
-            .filters {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 700px) {
-            .header {
-                padding: 15px 20px;
-                flex-direction: column;
-                gap: 15px;
-                align-items: flex-start;
-            }
-
-            .brand img {
-                width: 125px;
-                height: 55px;
-            }
-
-            .header-title h1 {
-                font-size: 20px;
-            }
-
-            .container {
-                padding: 20px 15px 30px;
-            }
-
-            .card {
-                padding: 18px;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="header">
-
-    <div class="brand">
-
-        <img
-            src="{% static 'core/img/logo-sagps.png' %}"
-            alt="SAGPS"
-        >
-
-        <div class="header-title">
-            <h1>Gestion des sous-actes</h1>
-            <p>Plateforme Tiers Payant</p>
-        </div>
-
-    </div>
-
-    <a class="back" href="{% url 'accueil' %}">
-        ← Retour au Dashboard
-    </a>
-
+<div class="page-title">
+    <h2>Sous-actes</h2>
+    <p>Gestion des prestations détaillées rattachées aux actes.</p>
 </div>
 
+{% if messages %}
+    {% for message in messages %}
+        <div class="message">{{ message }}</div>
+    {% endfor %}
+{% endif %}
 
-<div class="container">
-
-    <div class="page-title">
-        <h2>Sous-actes</h2>
-        <p>Gestion des prestations détaillées rattachées aux actes.</p>
+<div class="card">
+    <div class="card-header">
+        <h2>Recherche et filtres</h2>
+        {% if "ACTE_CREATE" in permissions %}
+            <a class="btn btn-success" href="{% url 'sous_acte_create' %}">+ Nouveau sous-acte</a>
+        {% endif %}
     </div>
 
-
-    {% if messages %}
-        {% for message in messages %}
-            <div class="message">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-
-
-    <div class="card">
-
-        <div class="card-header">
-
-            <h2>Recherche et filtres</h2>
-
-            {% if "ACTE_CREATE" in permissions %}
-                <a class="btn btn-success" href="{% url 'sous_acte_create' %}">
-                    + Nouveau sous-acte
-                </a>
-            {% endif %}
-
+    <form method="get" class="filters">
+        <div class="field">
+            <label for="recherche">Recherche</label>
+            <input type="text" id="recherche" name="recherche"
+                   value="{{ recherche }}" placeholder="Code, libellé ou description...">
         </div>
-
-
-        <form method="get" class="filters">
-
-            <div class="field">
-
-                <label for="recherche">
-                    Recherche
-                </label>
-
-                <input
-                    type="text"
-                    id="recherche"
-                    name="recherche"
-                    value="{{ recherche }}"
-                    placeholder="Code, libellé ou description..."
-                >
-
-            </div>
-
-
-            <div class="field">
-
-                <label for="id_acte">
-                    Acte
-                </label>
-
-                <select id="id_acte" name="id_acte">
-
-                    <option value="">
-                        Tous les actes
+        <div class="field">
+            <label for="id_acte">Acte</label>
+            <select id="id_acte" name="id_acte">
+                <option value="">Tous les actes</option>
+                {% for acte in actes %}
+                    <option value="{{ acte.id_acte }}"
+                        {% if id_acte|stringformat:"s" == acte.id_acte|stringformat:"s" %}selected{% endif %}>
+                        {{ acte.code_acte }} - {{ acte.libelle }}
                     </option>
-
-                    {% for acte in actes %}
-
-                        <option
-                            value="{{ acte.id_acte }}"
-                            {% if id_acte|stringformat:"s" == acte.id_acte|stringformat:"s" %}
-                                selected
-                            {% endif %}
-                        >
-                            {{ acte.code_acte }} - {{ acte.libelle }}
-                        </option>
-
-                    {% endfor %}
-
-                </select>
-
-            </div>
-
-
-            <div class="field">
-
-                <label for="statut">
-                    Statut
-                </label>
-
-                <select id="statut" name="statut">
-
-                    <option value="">
-                        Tous
-                    </option>
-
-                    <option
-                        value="ACTIF"
-                        {% if statut == "ACTIF" %}selected{% endif %}
-                    >
-                        Actif
-                    </option>
-
-                    <option
-                        value="INACTIF"
-                        {% if statut == "INACTIF" %}selected{% endif %}
-                    >
-                        Inactif
-                    </option>
-
-                </select>
-
-            </div>
-
-
-            <div>
-
-                <button type="submit" class="btn">
-                    Rechercher
-                </button>
-
-                <a
-                    href="{% url 'sous_actes' %}"
-                    class="btn btn-secondary"
-                >
-                    Réinitialiser
-                </a>
-
-            </div>
-
-        </form>
-
-    </div>
-
-
-    <br>
-
-
-    <div class="card">
-
-        <div class="card-header">
-
-            <h2>Liste des sous-actes</h2>
-
+                {% endfor %}
+            </select>
         </div>
-
-
-        <div class="table-wrapper">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <th>ID</th>
-                        <th>Code</th>
-                        <th>Sous-acte</th>
-                        <th>Acte</th>
-                        <th>Unité</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                    {% for s in sous_actes %}
-
-                    <tr>
-
-                        <td>
-                            {{ s.id_sous_acte }}
-                        </td>
-
-                        <td>
-                            <span class="code">
-                                {{ s.code_sous_acte }}
-                            </span>
-                        </td>
-
-                        <td>
-                            {{ s.libelle }}
-                        </td>
-
-                        <td>
-                            {{ s.id_acte.code_acte }}
-                            -
-                            {{ s.id_acte.libelle }}
-                        </td>
-
-                        <td>
-                            {% if s.unite %}
-                                {{ s.unite }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-
-                        <td>
-
-                            {% if s.statut == "ACTIF" %}
-
-                                <span class="badge actif">
-                                    Actif
-                                </span>
-
-                            {% else %}
-
-                                <span class="badge inactif">
-                                    {{ s.statut }}
-                                </span>
-
-                            {% endif %}
-
-                        </td>
-
-                        <td>
-
-                            <div class="actions-cell">
-
-                                {% if "ACTE_UPDATE" in permissions %}
-                                    <a
-                                        class="btn"
-                                        href="{% url 'sous_acte_modifier' s.id_sous_acte %}"
-                                    >
-                                        Modifier
-                                    </a>
-                                {% endif %}
-
-
-                                {% if "ACTE_DELETE" in permissions %}
-                                    <a
-                                        class="btn btn-secondary"
-                                        href="{% url 'sous_acte_radier' s.id_sous_acte %}"
-                                    >
-                                        Radier
-                                    </a>
-                                {% endif %}
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                    {% empty %}
-
-                    <tr>
-
-                        <td
-                            colspan="7"
-                            class="empty"
-                        >
-                            Aucun sous-acte trouvé.
-                        </td>
-
-                    </tr>
-
-                    {% endfor %}
-
-                </tbody>
-
-            </table>
-
+        <div class="field">
+            <label for="statut">Statut</label>
+            <select id="statut" name="statut">
+                <option value="">Tous</option>
+                <option value="ACTIF" {% if statut == "ACTIF" %}selected{% endif %}>Actif</option>
+                <option value="INACTIF" {% if statut == "INACTIF" %}selected{% endif %}>Inactif</option>
+            </select>
         </div>
-
-    </div>
-
+        <div>
+            <button type="submit" class="btn">Rechercher</button>
+            <a href="{% url 'sous_actes' %}" class="btn btn-secondary">Réinitialiser</a>
+        </div>
+    </form>
 </div>
 
+<br>
 
-<div class="footer">
-    © 2026 — Plateforme Tiers Payant SAGPS
+<div class="card">
+    <div class="card-header">
+        <h2>Liste des sous-actes</h2>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th><th>Code</th><th>Sous-acte</th>
+                    <th>Acte</th><th>Unité</th><th>Statut</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sous_actes %}
+                <tr>
+                    <td>{{ s.id_sous_acte }}</td>
+                    <td><span class="code">{{ s.code_sous_acte }}</span></td>
+                    <td>{{ s.libelle }}</td>
+                    <td>{{ s.id_acte.code_acte }} - {{ s.id_acte.libelle }}</td>
+                    <td>{{ s.unite|default:"-" }}</td>
+                    <td>
+                        {% if s.statut == "ACTIF" %}
+                            <span class="badge actif">Actif</span>
+                        {% else %}
+                            <span class="badge inactif">{{ s.statut }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="actions-cell">
+                            {% if "ACTE_UPDATE" in permissions %}
+                                <a class="btn" href="{% url 'sous_acte_modifier' s.id_sous_acte %}">Modifier</a>
+                            {% endif %}
+                            {% if "ACTE_DELETE" in permissions %}
+                                <a class="btn btn-secondary"
+                                   href="{% url 'sous_acte_radier' s.id_sous_acte %}">Radier</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="empty">Aucun sous-acte trouvé.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
-</body>
-</html>
+{% endblock %}

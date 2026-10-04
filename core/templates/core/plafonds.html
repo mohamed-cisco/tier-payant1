@@ -1,712 +1,173 @@
+{% extends "core/base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Plafonds - Tiers Payant</title>
+{% block title %}Plafonds - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des plafonds{% endblock %}
+{% block header_sub %}Règles de plafonds par garantie et acte{% endblock %}
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+{% block extra_css %}
+<style>
+    .page-title { margin-bottom: 22px; }
+    .page-title h2 { margin: 0; color: #123b65; font-size: 24px; }
+    .page-title p { margin: 6px 0 0; color: #6b7280; font-size: 14px; }
+    .card { background: white; padding: 25px; border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.08); margin-bottom: 20px; }
+    .card-header { display: flex; justify-content: space-between; align-items: center;
+                   gap: 15px; flex-wrap: wrap; margin-bottom: 20px; }
+    .card h2 { margin: 0 0 20px 0; color: #123b65; font-size: 21px; }
+    .card-header h2 { margin: 0; }
+    .btn { display: inline-block; padding: 9px 15px; background: #2563eb; color: white;
+           text-decoration: none; border-radius: 6px; border: none; cursor: pointer;
+           font-weight: bold; font-size: 14px; }
+    .btn:hover { opacity: .9; }
+    .btn-secondary { background: #64748b; }
+    .btn-danger { background: #dc2626; }
+    .filters { display: grid;
+               grid-template-columns: 2fr 1fr 1fr 1fr auto;
+               gap: 12px; align-items: end; }
+    .field { display: flex; flex-direction: column; }
+    .field label { font-weight: bold; margin-bottom: 7px; color: #374151; font-size: 13px; }
+    .field input, .field select {
+        width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1;
+        border-radius: 6px; background: white; font-size: 14px; }
+    .table-wrapper { width: 100%; overflow-x: auto;
+                     border: 1px solid #e2e8f0; border-radius: 8px; }
+    table { width: 100%; min-width: 1250px; border-collapse: collapse; }
+    th, td { padding: 13px 12px; border-bottom: 1px solid #e5e7eb;
+             text-align: left; vertical-align: middle; white-space: nowrap; }
+    th { background: #123b65; color: white; font-size: 13px; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr:last-child td { border-bottom: none; }
+    .actif { display: inline-block; padding: 5px 10px; border-radius: 20px;
+             background: #dcfce7; color: #166534; font-weight: bold; font-size: 12px; }
+    .inactif { display: inline-block; padding: 5px 10px; border-radius: 20px;
+               background: #f1f5f9; color: #64748b; font-weight: bold; font-size: 12px; }
+    .small { color: #64748b; font-size: 12px; }
+    .actions-cell { display: flex; gap: 6px; align-items: center; }
+    .actions-cell .btn { padding: 7px 11px; font-size: 12px; }
+    .empty { text-align: center; padding: 35px; color: #64748b; }
+</style>
+{% endblock %}
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
+{% block content %}
 
-        .header {
-            background: #123b65;
-            color: white;
-            min-height: 95px;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 3px 10px rgba(0,0,0,.10);
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
-
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-        }
-
-        .back {
-            color: white;
-            text-decoration: none;
-            background: #1f5b91;
-            padding: 11px 18px;
-            border-radius: 7px;
-            font-weight: bold;
-        }
-
-        .back:hover {
-            background: #2870ad;
-        }
-
-        .container {
-            padding: 30px;
-            max-width: 1600px;
-            margin: auto;
-        }
-
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 3px 12px rgba(0,0,0,.08);
-            margin-bottom: 20px;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .card h2 {
-            margin: 0 0 20px 0;
-            color: #123b65;
-            font-size: 21px;
-        }
-
-        .card-header h2 {
-            margin: 0;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 9px 15px;
-            background: #2563eb;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .btn:hover {
-            opacity: .9;
-        }
-
-        .btn-secondary {
-            background: #64748b;
-        }
-
-        .btn-danger {
-            background: #dc2626;
-        }
-
-        .filters {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr auto;
-            gap: 12px;
-            align-items: end;
-        }
-
-        .field {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .field label {
-            font-weight: bold;
-            margin-bottom: 7px;
-            color: #374151;
-            font-size: 13px;
-        }
-
-        .field input,
-        .field select {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            background: white;
-            font-size: 14px;
-        }
-
-        .field input:focus,
-        .field select:focus {
-            outline: none;
-            border-color: #2563eb;
-        }
-
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-        }
-
-        table {
-            width: 100%;
-            min-width: 1250px;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 13px 12px;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: left;
-            vertical-align: middle;
-            white-space: nowrap;
-        }
-
-        th {
-            background: #123b65;
-            color: white;
-            font-size: 13px;
-        }
-
-        tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .actif {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            background: #dcfce7;
-            color: #166534;
-            font-weight: bold;
-            font-size: 12px;
-        }
-
-        .inactif {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            background: #f1f5f9;
-            color: #64748b;
-            font-weight: bold;
-            font-size: 12px;
-        }
-
-        .small {
-            color: #64748b;
-            font-size: 12px;
-        }
-
-        .actions-cell {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
-
-        .actions-cell .btn {
-            padding: 7px 11px;
-            font-size: 12px;
-        }
-
-        .empty {
-            text-align: center;
-            padding: 35px;
-            color: #64748b;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #64748b;
-            font-size: 13px;
-        }
-
-        @media (max-width: 1000px) {
-            .filters {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        @media (max-width: 700px) {
-            .header {
-                padding: 15px 20px;
-                flex-direction: column;
-                gap: 15px;
-                align-items: flex-start;
-            }
-
-            .brand img {
-                width: 110px;
-                height: 55px;
-            }
-
-            .header h1 {
-                font-size: 20px;
-            }
-
-            .container {
-                padding: 20px;
-            }
-
-            .filters {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="header">
-
-    <div class="brand">
-
-        <img
-            src="{% static 'core/img/logo-sagps.png' %}"
-            alt="SAGPS"
-        >
-
-        <h1>Gestion des plafonds</h1>
-
-    </div>
-
-    <a href="{% url 'accueil' %}" class="back">
-        ← Retour au Dashboard
-    </a>
-
+<div class="page-title">
+    <h2>Gestion des plafonds</h2>
+    <p>Configurez les plafonds applicables aux garanties et actes.</p>
 </div>
 
-
-<div class="container">
-
-    <!-- RECHERCHE ET FILTRES -->
-    <div class="card">
-
-        <div class="card-header">
-
-            <h2>Recherche et filtres</h2>
-
-            <div>
-
-                {% if "PLAFOND_CREATE" in permissions %}
-
-                    <a
-                        href="{% url 'plafond_create' %}"
-                        class="btn"
-                    >
-                        + Nouveau plafond
-                    </a>
-
-                {% endif %}
-
-                <a
-                    href="{% url 'plafonds' %}"
-                    class="btn btn-secondary"
-                >
-                    ↻ Actualiser
-                </a>
-
-            </div>
-
+<div class="card">
+    <div class="card-header">
+        <h2>Recherche et filtres</h2>
+        <div>
+            {% if "PLAFOND_CREATE" in permissions %}
+                <a href="{% url 'plafond_create' %}" class="btn">+ Nouveau plafond</a>
+            {% endif %}
+            <a href="{% url 'plafonds' %}" class="btn btn-secondary">↻ Actualiser</a>
         </div>
+    </div>
 
-
-        <form method="get">
-
-            <div class="filters">
-
-                <div class="field">
-
-                    <label>Recherche</label>
-
-                    <input
-                        type="text"
-                        name="recherche"
-                        value="{{ recherche }}"
-                        placeholder="Garantie ou acte..."
-                    >
-
-                </div>
-
-
-                <div class="field">
-
-                    <label>Type</label>
-
-                    <select name="type_plafond">
-
-                        <option value="">Tous</option>
-
-                        <option
-                            value="MONTANT"
-                            {% if type_plafond == "MONTANT" %}selected{% endif %}
-                        >
-                            Montant
-                        </option>
-
-                        <option
-                            value="QUANTITE"
-                            {% if type_plafond == "QUANTITE" %}selected{% endif %}
-                        >
-                            Quantité
-                        </option>
-
-                        <option
-                            value="MIXTE"
-                            {% if type_plafond == "MIXTE" %}selected{% endif %}
-                        >
-                            Montant + quantité
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <div class="field">
-
-                    <label>Période</label>
-
-                    <select name="periode">
-
-                        <option value="">Toutes</option>
-
-                        <option
-                            value="JOUR"
-                            {% if periode == "JOUR" %}selected{% endif %}
-                        >
-                            Journalier
-                        </option>
-
-                        <option
-                            value="MOIS"
-                            {% if periode == "MOIS" %}selected{% endif %}
-                        >
-                            Mensuel
-                        </option>
-
-                        <option
-                            value="TRIMESTRE"
-                            {% if periode == "TRIMESTRE" %}selected{% endif %}
-                        >
-                            Trimestriel
-                        </option>
-
-                        <option
-                            value="SEMESTRE"
-                            {% if periode == "SEMESTRE" %}selected{% endif %}
-                        >
-                            Semestriel
-                        </option>
-
-                        <option
-                            value="ANNEE"
-                            {% if periode == "ANNEE" %}selected{% endif %}
-                        >
-                            Annuel
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <div class="field">
-
-                    <label>Statut</label>
-
-                    <select name="statut">
-
-                        <option value="">Tous</option>
-
-                        <option
-                            value="ACTIF"
-                            {% if statut == "ACTIF" %}selected{% endif %}
-                        >
-                            Actif
-                        </option>
-
-                        <option
-                            value="INACTIF"
-                            {% if statut == "INACTIF" %}selected{% endif %}
-                        >
-                            Inactif
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <div>
-
-                    <button
-                        type="submit"
-                        class="btn"
-                    >
-                        🔍 Rechercher
-                    </button>
-
-                </div>
-
+    <form method="get">
+        <div class="filters">
+            <div class="field">
+                <label>Recherche</label>
+                <input type="text" name="recherche" value="{{ recherche }}"
+                       placeholder="Garantie ou acte...">
             </div>
-
-        </form>
-
-    </div>
-
-
-    <!-- LISTE -->
-    <div class="card">
-
-        <h2>Liste des plafonds</h2>
-
-        <div class="table-wrapper">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <th>ID</th>
-                        <th>Garantie</th>
-                        <th>Acte</th>
-                        <th>Type</th>
-                        <th>Niveau</th>
-                        <th>Période</th>
-                        <th>Montant max</th>
-                        <th>Quantité max</th>
-                        <th>Date début</th>
-                        <th>Date fin</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                    {% for p in plafonds %}
-
-                    <tr>
-
-                        <td>
-                            {{ p.id_plafond }}
-                        </td>
-
-
-                        <td>
-
-                            {% if p.id_garantie_acte %}
-
-                                <strong>
-                                    {{ p.id_garantie_acte.id_garantie.code_garantie }}
-                                </strong>
-
-                                <br>
-
-                                <span class="small">
-                                    {{ p.id_garantie_acte.id_garantie.libelle }}
-                                </span>
-
-                            {% else %}
-
-                                -
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <td>
-
-                            {% if p.id_garantie_acte %}
-
-                                <strong>
-                                    {{ p.id_garantie_acte.id_acte.code_acte }}
-                                </strong>
-
-                                <br>
-
-                                <span class="small">
-                                    {{ p.id_garantie_acte.id_acte.libelle }}
-                                </span>
-
-                            {% else %}
-
-                                -
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <td>
-                            {{ p.type_plafond }}
-                        </td>
-
-
-                        <td>
-                            {{ p.niveau_application }}
-                        </td>
-
-
-                        <td>
-                            {{ p.periode }}
-                        </td>
-
-
-                        <td>
-
-                            {% if p.montant_max %}
-
-                                {{ p.montant_max }} DA
-
-                            {% else %}
-
-                                -
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <td>
-
-                            {% if p.quantite_max %}
-
-                                {{ p.quantite_max }}
-
-                            {% else %}
-
-                                -
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <td>
-                            {{ p.date_debut|date:"d/m/Y" }}
-                        </td>
-
-
-                        <td>
-
-                            {% if p.date_fin %}
-
-                                {{ p.date_fin|date:"d/m/Y" }}
-
-                            {% else %}
-
-                                -
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <td>
-
-                            {% if p.statut == "ACTIF" %}
-
-                                <span class="actif">
-                                    ACTIF
-                                </span>
-
-                            {% else %}
-
-                                <span class="inactif">
-                                    {{ p.statut }}
-                                </span>
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <td>
-
-                            <div class="actions-cell">
-
-                                {% if "PLAFOND_UPDATE" in permissions %}
-
-                                    <a
-                                        href="{% url 'plafond_modifier' p.id_plafond %}"
-                                        class="btn btn-secondary"
-                                    >
-                                        Modifier
-                                    </a>
-
-                                {% endif %}
-
-
-                                {% if "PLAFOND_DELETE" in permissions and p.statut == "ACTIF" %}
-
-                                    <a
-                                        href="{% url 'plafond_desactiver' p.id_plafond %}"
-                                        class="btn btn-danger"
-                                    >
-                                        Désactiver
-                                    </a>
-
-                                {% endif %}
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-
-                    {% empty %}
-
-                    <tr>
-
-                        <td
-                            colspan="12"
-                            class="empty"
-                        >
-                            Aucun plafond enregistré.
-                        </td>
-
-                    </tr>
-
-                    {% endfor %}
-
-                </tbody>
-
-            </table>
-
+            <div class="field">
+                <label>Type</label>
+                <select name="type_plafond">
+                    <option value="">Tous</option>
+                    <option value="MONTANT" {% if type_plafond == "MONTANT" %}selected{% endif %}>Montant</option>
+                    <option value="QUANTITE" {% if type_plafond == "QUANTITE" %}selected{% endif %}>Quantité</option>
+                    <option value="MIXTE" {% if type_plafond == "MIXTE" %}selected{% endif %}>Montant + quantité</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Période</label>
+                <select name="periode">
+                    <option value="">Toutes</option>
+                    <option value="JOUR" {% if periode == "JOUR" %}selected{% endif %}>Journalier</option>
+                    <option value="MOIS" {% if periode == "MOIS" %}selected{% endif %}>Mensuel</option>
+                    <option value="TRIMESTRE" {% if periode == "TRIMESTRE" %}selected{% endif %}>Trimestriel</option>
+                    <option value="SEMESTRE" {% if periode == "SEMESTRE" %}selected{% endif %}>Semestriel</option>
+                    <option value="ANNEE" {% if periode == "ANNEE" %}selected{% endif %}>Annuel</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Statut</label>
+                <select name="statut">
+                    <option value="">Tous</option>
+                    <option value="ACTIF" {% if statut == "ACTIF" %}selected{% endif %}>Actif</option>
+                    <option value="INACTIF" {% if statut == "INACTIF" %}selected{% endif %}>Inactif</option>
+                </select>
+            </div>
+            <div><button type="submit" class="btn">🔍 Rechercher</button></div>
         </div>
+    </form>
+</div>
 
+<div class="card">
+    <h2>Liste des plafonds</h2>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th><th>Garantie</th><th>Acte</th><th>Type</th>
+                    <th>Niveau</th><th>Période</th><th>Montant max</th><th>Quantité max</th>
+                    <th>Date début</th><th>Date fin</th><th>Statut</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in plafonds %}
+                <tr>
+                    <td>{{ p.id_plafond }}</td>
+                    <td>
+                        {% if p.id_garantie_acte %}
+                            <strong>{{ p.id_garantie_acte.id_garantie.code_garantie }}</strong>
+                            <br><span class="small">{{ p.id_garantie_acte.id_garantie.libelle }}</span>
+                        {% else %}-{% endif %}
+                    </td>
+                    <td>
+                        {% if p.id_garantie_acte %}
+                            <strong>{{ p.id_garantie_acte.id_acte.code_acte }}</strong>
+                            <br><span class="small">{{ p.id_garantie_acte.id_acte.libelle }}</span>
+                        {% else %}-{% endif %}
+                    </td>
+                    <td>{{ p.type_plafond }}</td>
+                    <td>{{ p.niveau_application }}</td>
+                    <td>{{ p.periode }}</td>
+                    <td>{% if p.montant_max %}{{ p.montant_max }} DA{% else %}-{% endif %}</td>
+                    <td>{% if p.quantite_max %}{{ p.quantite_max }}{% else %}-{% endif %}</td>
+                    <td>{{ p.date_debut|date:"d/m/Y" }}</td>
+                    <td>{% if p.date_fin %}{{ p.date_fin|date:"d/m/Y" }}{% else %}-{% endif %}</td>
+                    <td>
+                        {% if p.statut == "ACTIF" %}
+                            <span class="actif">ACTIF</span>
+                        {% else %}
+                            <span class="inactif">{{ p.statut }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="actions-cell">
+                            {% if "PLAFOND_UPDATE" in permissions %}
+                                <a href="{% url 'plafond_modifier' p.id_plafond %}"
+                                   class="btn btn-secondary">Modifier</a>
+                            {% endif %}
+                            {% if "PLAFOND_DELETE" in permissions and p.statut == "ACTIF" %}
+                                <a href="{% url 'plafond_desactiver' p.id_plafond %}"
+                                   class="btn btn-danger">Désactiver</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="12" class="empty">Aucun plafond enregistré.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
 </div>
 
-
-<div class="footer">
-    © 2026 — Plateforme Tiers Payant
-</div>
-
-
-</body>
-</html>
+{% endblock %}

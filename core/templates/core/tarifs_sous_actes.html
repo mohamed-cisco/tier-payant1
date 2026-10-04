@@ -1,707 +1,192 @@
+{% extends "core/base.html" %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="fr">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Tarifs sous-actes - Tiers Payant</title>
-
-    <style>
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f4f7fb;
-            color: #263238;
-        }
-
-        header {
-            min-height: 95px;
-            background: #123b65;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 15px 30px;
-            color: white;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
-
-        .brand-title {
-            font-size: 22px;
-            font-weight: bold;
-        }
-
-        .header-actions a {
-            color: white;
-            text-decoration: none;
-            padding: 10px 16px;
-            border-radius: 7px;
-            background: rgba(255,255,255,.12);
-        }
-
-        .header-actions a:hover {
-            background: rgba(255,255,255,.22);
-        }
-
-        main {
-            max-width: 1500px;
-            margin: 35px auto;
-            padding: 0 20px;
-        }
-
-        .page-title {
-            margin-bottom: 25px;
-        }
-
-        .page-title h1 {
-            margin: 0 0 8px;
-            color: #123b65;
-            font-size: 28px;
-        }
-
-        .page-title p {
-            margin: 0;
-            color: #607d8b;
-        }
-
-        .card {
-            background: white;
-            border-radius: 14px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 18px rgba(0,0,0,.07);
-        }
-
-        .card-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .card-title h2 {
-            margin: 0;
-            color: #123b65;
-            font-size: 21px;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 10px 16px;
-            border-radius: 7px;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .btn-primary {
-            background: #1976d2;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #125ea7;
-        }
-
-        .btn-success {
-            background: #138a43;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #0e7136;
-        }
-
-        .btn-secondary {
-            background: #68788f;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #56657a;
-        }
-
-        .filters {
-            display: grid;
-            grid-template-columns: 2fr 1.5fr 1.5fr 1fr auto auto;
-            gap: 12px;
-            align-items: end;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 7px;
-            font-weight: bold;
-            color: #123b65;
-        }
-
-        input,
-        select {
-            width: 100%;
-            padding: 11px 12px;
-            border: 1px solid #d5dce5;
-            border-radius: 7px;
-            font-size: 14px;
-            background: white;
-        }
-
-        input:focus,
-        select:focus {
-            outline: none;
-            border-color: #1976d2;
-            box-shadow: 0 0 0 3px rgba(25,118,210,.10);
-        }
-
-        .table-container {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            min-width: 1000px;
-        }
-
-        th {
-            background: #edf3f9;
-            color: #123b65;
-            text-align: left;
-            padding: 13px 12px;
-            font-size: 14px;
-            border-bottom: 1px solid #d8e0e8;
-        }
-
-        td {
-            padding: 13px 12px;
-            border-bottom: 1px solid #edf1f5;
-            font-size: 14px;
-            vertical-align: middle;
-        }
-
-        tr:hover td {
-            background: #fafcff;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .badge-actif {
-            background: #d9f7e5;
-            color: #19713a;
-        }
-
-        .badge-inactif {
-            background: #eceff1;
-            color: #546e7a;
-        }
-
-        .amount {
-            font-weight: bold;
-            color: #123b65;
-            white-space: nowrap;
-        }
-
-        .actions {
-            display: flex;
-            gap: 7px;
-            white-space: nowrap;
-        }
-
-        .actions .btn {
-            padding: 7px 11px;
-            font-size: 12px;
-        }
-
-        .empty {
-            text-align: center;
-            padding: 35px;
-            color: #78909c;
-        }
-
-        .messages {
-            margin-bottom: 20px;
-        }
-
-        .message {
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-
-        footer {
-            margin-top: 50px;
-            padding: 20px;
-            text-align: center;
-            color: #78909c;
-            font-size: 14px;
-        }
-
-        @media (max-width: 1000px) {
-            .filters {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        @media (max-width: 650px) {
-            header {
-                padding: 15px;
-            }
-
-            .brand-title {
-                display: none;
-            }
-
-            main {
-                padding: 0 10px;
-            }
-
-            .filters {
-                grid-template-columns: 1fr;
-            }
-
-            .card {
-                padding: 18px;
-            }
-        }
-
-    </style>
-</head>
-
-<body>
-
-<header>
-
-    <div class="brand">
-
-        <a href="{% url 'accueil' %}">
-            <img
-                src="{% static 'core/img/logo-sagps.png' %}"
-                alt="SAGPS"
-            >
-        </a>
-
-        <div class="brand-title">
-            Gestion des tarifs sous-actes
-        </div>
-
-    </div>
-
-    <div class="header-actions">
-
-        <a href="{% url 'accueil' %}">
-            ← Retour au Dashboard
-        </a>
-
-    </div>
-
-</header>
-
-
-<main>
-
-    <div class="page-title">
-
-        <h1>Tarifs des sous-actes</h1>
-
-        <p>
-            Gestion des tarifs par sous-acte et par prestataire.
-        </p>
-
-    </div>
-
-
-    {% if messages %}
-
-        <div class="messages">
-
-            {% for message in messages %}
-
-                <div class="message">
-                    {{ message }}
-                </div>
-
-            {% endfor %}
-
-        </div>
-
-    {% endif %}
-
-
-    <div class="card">
-
-        <div class="card-title">
-
-            <h2>Recherche et filtres</h2>
-
-            {% if "ACTE_CREATE" in permissions %}
-
-                <a
-                    href="{% url 'tarif_sous_acte_create' %}"
-                    class="btn btn-success"
-                >
-                    + Nouveau tarif
-                </a>
-
-            {% endif %}
-
-        </div>
-
-
-        <form method="get">
-
-            <div class="filters">
-
-                <div class="form-group">
-
-                    <label for="recherche">
-                        Recherche
-                    </label>
-
-                    <input
-                        type="text"
-                        id="recherche"
-                        name="recherche"
-                        value="{{ recherche }}"
-                        placeholder="Sous-acte, acte ou prestataire..."
-                    >
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="id_sous_acte">
-                        Sous-acte
-                    </label>
-
-                    <select
-                        id="id_sous_acte"
-                        name="id_sous_acte"
-                    >
-
-                        <option value="">
-                            Tous les sous-actes
-                        </option>
-
-                        {% for s in sous_actes %}
-
-                            <option
-                                value="{{ s.id_sous_acte }}"
-                                {% if id_sous_acte == s.id_sous_acte|stringformat:"s" %}
-                                    selected
-                                {% endif %}
-                            >
-                                {{ s.code_sous_acte }} - {{ s.libelle }}
-                            </option>
-
-                        {% endfor %}
-
-                    </select>
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="id_prestataire">
-                        Prestataire
-                    </label>
-
-                    <select
-                        id="id_prestataire"
-                        name="id_prestataire"
-                    >
-
-                        <option value="">
-                            Tous les prestataires
-                        </option>
-
-                        {% for p in prestataires %}
-
-                            <option
-                                value="{{ p.id_prestataire }}"
-                                {% if id_prestataire == p.id_prestataire|stringformat:"s" %}
-                                    selected
-                                {% endif %}
-                            >
-                                {{ p.code_prestataire }} - {{ p.raison_sociale }}
-                            </option>
-
-                        {% endfor %}
-
-                    </select>
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="statut">
-                        Statut
-                    </label>
-
-                    <select
-                        id="statut"
-                        name="statut"
-                    >
-
-                        <option value="">
-                            Tous
-                        </option>
-
-                        <option
-                            value="ACTIF"
-                            {% if statut == "ACTIF" %}selected{% endif %}
-                        >
-                            Actif
-                        </option>
-
-                        <option
-                            value="INACTIF"
-                            {% if statut == "INACTIF" %}selected{% endif %}
-                        >
-                            Inactif
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                >
-                    Rechercher
-                </button>
-
-
-                <a
-                    href="{% url 'tarifs_sous_actes' %}"
-                    class="btn btn-secondary"
-                >
-                    Réinitialiser
-                </a>
-
-            </div>
-
-        </form>
-
-    </div>
-
-
-    <div class="card">
-
-        <div class="card-title">
-
-            <h2>Liste des tarifs</h2>
-
-        </div>
-
-
-        <div class="table-container">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-
-                        <th>ID</th>
-
-                        <th>Sous-acte</th>
-
-                        <th>Acte</th>
-
-                        <th>Prestataire</th>
-
-                        <th>Montant</th>
-
-                        <th>Date début</th>
-
-                        <th>Date fin</th>
-
-                        <th>Statut</th>
-
-                        <th>Actions</th>
-
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                    {% for tarif in tarifs %}
-
-                        <tr>
-
-                            <td>
-                                {{ tarif.id_tarif_sous_acte }}
-                            </td>
-
-                            <td>
-                                <strong>
-                                    {{ tarif.id_sous_acte.code_sous_acte }}
-                                </strong>
-                                <br>
-                                {{ tarif.id_sous_acte.libelle }}
-                            </td>
-
-                            <td>
-                                {{ tarif.id_sous_acte.id_acte.code_acte }}
-                                -
-                                {{ tarif.id_sous_acte.id_acte.libelle }}
-                            </td>
-
-                            <td>
-                                {{ tarif.id_prestataire.code_prestataire }}
-                                -
-                                {{ tarif.id_prestataire.raison_sociale }}
-                            </td>
-
-                            <td class="amount">
-                                {{ tarif.montant|floatformat:2 }} DA
-                            </td>
-
-                            <td>
-                                {{ tarif.date_debut|date:"d/m/Y" }}
-                            </td>
-
-                            <td>
-
-                                {% if tarif.date_fin %}
-
-                                    {{ tarif.date_fin|date:"d/m/Y" }}
-
-                                {% else %}
-
-                                    <span style="color:#78909c;">
-                                        Sans limite
-                                    </span>
-
-                                {% endif %}
-
-                            </td>
-
-                            <td>
-
-                                {% if tarif.statut == "ACTIF" %}
-
-                                    <span class="badge badge-actif">
-                                        Actif
-                                    </span>
-
-                                {% else %}
-
-                                    <span class="badge badge-inactif">
-                                        {{ tarif.statut }}
-                                    </span>
-
-                                {% endif %}
-
-                            </td>
-
-                            <td>
-
-                                <div class="actions">
-
-                                    {% if "ACTE_UPDATE" in permissions %}
-
-                                        <a
-                                            href="{% url 'tarif_sous_acte_modifier' tarif.id_tarif_sous_acte %}"
-                                            class="btn btn-primary"
-                                        >
-                                            Modifier
-                                        </a>
-
-                                    {% endif %}
-
-
-                                    {% if "ACTE_DELETE" in permissions %}
-
-    <form
-        method="post"
-        action="{% url 'tarif_sous_acte_radier' tarif.id_tarif_sous_acte %}"
-        style="display:inline;"
-        onsubmit="return confirm('Voulez-vous vraiment radier ce tarif ?');"
-    >
-        {% csrf_token %}
-
-        <button
-            type="submit"
-            class="btn btn-secondary"
-        >
-            Radier
-        </button>
-    </form>
-
+{% block title %}Tarifs sous-actes - Tiers Payant{% endblock %}
+{% block header_title %}Tarifs des sous-actes{% endblock %}
+{% block header_sub %}Tarifs par sous-acte et prestataire{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-title { margin-bottom: 25px; }
+    .page-title h2 { margin: 0 0 8px; color: #123b65; font-size: 26px; }
+    .page-title p { margin: 0; color: #607d8b; font-size: 14px; }
+    .card { background: white; border-radius: 14px; padding: 25px;
+            margin-bottom: 20px; box-shadow: 0 4px 18px rgba(0,0,0,.07); }
+    .card-title { display: flex; justify-content: space-between;
+                  align-items: center; margin-bottom: 20px; }
+    .card-title h2 { margin: 0; color: #123b65; font-size: 21px; }
+    .btn { display: inline-block; padding: 10px 16px; border-radius: 7px;
+           text-decoration: none; border: none; cursor: pointer;
+           font-weight: bold; font-size: 14px; }
+    .btn-primary { background: #1976d2; color: white; }
+    .btn-primary:hover { background: #125ea7; }
+    .btn-success { background: #138a43; color: white; }
+    .btn-success:hover { background: #0e7136; }
+    .btn-secondary { background: #68788f; color: white; }
+    .btn-secondary:hover { background: #56657a; }
+    .filters { display: grid;
+               grid-template-columns: 2fr 1.5fr 1.5fr 1fr auto auto;
+               gap: 12px; align-items: end; }
+    .form-group label { display: block; margin-bottom: 7px;
+                        font-weight: bold; color: #123b65; font-size: 13px; }
+    input, select { width: 100%; padding: 11px 12px; border: 1px solid #d5dce5;
+                    border-radius: 7px; font-size: 14px; background: white; }
+    input:focus, select:focus { outline: none; border-color: #1976d2;
+        box-shadow: 0 0 0 3px rgba(25,118,210,.10); }
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: separate;
+            border-spacing: 0; min-width: 1000px; }
+    th { background: #edf3f9; color: #123b65; text-align: left;
+         padding: 13px 12px; font-size: 14px; border-bottom: 1px solid #d8e0e8; }
+    td { padding: 13px 12px; border-bottom: 1px solid #edf1f5;
+         font-size: 14px; vertical-align: middle; }
+    tr:hover td { background: #fafcff; }
+    .badge { display: inline-block; padding: 5px 10px;
+             border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .badge-actif { background: #d9f7e5; color: #19713a; }
+    .badge-inactif { background: #eceff1; color: #546e7a; }
+    .amount { font-weight: bold; color: #123b65; white-space: nowrap; }
+    .actions { display: flex; gap: 7px; white-space: nowrap; }
+    .actions .btn { padding: 7px 11px; font-size: 12px; }
+    .empty { text-align: center; padding: 35px; color: #78909c; }
+    .messages { margin-bottom: 20px; }
+    .message { padding: 12px 15px; border-radius: 8px;
+               margin-bottom: 10px; background: #e8f5e9; color: #2e7d32; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-title">
+    <h2>Tarifs des sous-actes</h2>
+    <p>Gestion des tarifs par sous-acte et par prestataire.</p>
+</div>
+
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+        <div class="message">{{ message }}</div>
+    {% endfor %}
+</div>
 {% endif %}
 
-                                </div>
-
-                            </td>
-
-                        </tr>
-
-                    {% empty %}
-
-                        <tr>
-
-                            <td
-                                colspan="9"
-                                class="empty"
-                            >
-                                Aucun tarif sous-acte enregistré.
-                            </td>
-
-                        </tr>
-
-                    {% endfor %}
-
-                </tbody>
-
-            </table>
-
-        </div>
-
+<div class="card">
+    <div class="card-title">
+        <h2>Recherche et filtres</h2>
+        {% if "ACTE_CREATE" in permissions %}
+            <a href="{% url 'tarif_sous_acte_create' %}" class="btn btn-success">+ Nouveau tarif</a>
+        {% endif %}
     </div>
 
-</main>
+    <form method="get">
+        <div class="filters">
+            <div class="form-group">
+                <label for="recherche">Recherche</label>
+                <input type="text" id="recherche" name="recherche"
+                       value="{{ recherche }}" placeholder="Sous-acte, acte ou prestataire...">
+            </div>
+            <div class="form-group">
+                <label for="id_sous_acte">Sous-acte</label>
+                <select id="id_sous_acte" name="id_sous_acte">
+                    <option value="">Tous les sous-actes</option>
+                    {% for s in sous_actes %}
+                        <option value="{{ s.id_sous_acte }}"
+                            {% if id_sous_acte == s.id_sous_acte|stringformat:"s" %}selected{% endif %}>
+                            {{ s.code_sous_acte }} - {{ s.libelle }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="id_prestataire">Prestataire</label>
+                <select id="id_prestataire" name="id_prestataire">
+                    <option value="">Tous les prestataires</option>
+                    {% for p in prestataires %}
+                        <option value="{{ p.id_prestataire }}"
+                            {% if id_prestataire == p.id_prestataire|stringformat:"s" %}selected{% endif %}>
+                            {{ p.code_prestataire }} - {{ p.raison_sociale }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="statut">Statut</label>
+                <select id="statut" name="statut">
+                    <option value="">Tous</option>
+                    <option value="ACTIF" {% if statut == "ACTIF" %}selected{% endif %}>Actif</option>
+                    <option value="INACTIF" {% if statut == "INACTIF" %}selected{% endif %}>Inactif</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Rechercher</button>
+            <a href="{% url 'tarifs_sous_actes' %}" class="btn btn-secondary">Réinitialiser</a>
+        </div>
+    </form>
+</div>
 
+<div class="card">
+    <div class="card-title">
+        <h2>Liste des tarifs</h2>
+    </div>
 
-<footer>
-    © 2026 — Plateforme Tiers Payant SAGPS
-</footer>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th><th>Sous-acte</th><th>Acte</th><th>Prestataire</th>
+                    <th>Montant</th><th>Date début</th><th>Date fin</th>
+                    <th>Statut</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tarif in tarifs %}
+                <tr>
+                    <td>{{ tarif.id_tarif_sous_acte }}</td>
+                    <td>
+                        <strong>{{ tarif.id_sous_acte.code_sous_acte }}</strong>
+                        <br>{{ tarif.id_sous_acte.libelle }}
+                    </td>
+                    <td>{{ tarif.id_sous_acte.id_acte.code_acte }} - {{ tarif.id_sous_acte.id_acte.libelle }}</td>
+                    <td>{{ tarif.id_prestataire.code_prestataire }} - {{ tarif.id_prestataire.raison_sociale }}</td>
+                    <td class="amount">{{ tarif.montant|floatformat:2 }} DA</td>
+                    <td>{{ tarif.date_debut|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if tarif.date_fin %}
+                            {{ tarif.date_fin|date:"d/m/Y" }}
+                        {% else %}
+                            <span style="color:#78909c;">Sans limite</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if tarif.statut == "ACTIF" %}
+                            <span class="badge badge-actif">Actif</span>
+                        {% else %}
+                            <span class="badge badge-inactif">{{ tarif.statut }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="actions">
+                            {% if "ACTE_UPDATE" in permissions %}
+                                <a href="{% url 'tarif_sous_acte_modifier' tarif.id_tarif_sous_acte %}"
+                                   class="btn btn-primary">Modifier</a>
+                            {% endif %}
+                            {% if "ACTE_DELETE" in permissions %}
+                                <form method="post"
+                                      action="{% url 'tarif_sous_acte_radier' tarif.id_tarif_sous_acte %}"
+                                      style="display:inline;"
+                                      onsubmit="return confirm('Radier ce tarif ?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-secondary">Radier</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9" class="empty">Aucun tarif sous-acte enregistré.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 
-</body>
-
-</html>
+{% endblock %}

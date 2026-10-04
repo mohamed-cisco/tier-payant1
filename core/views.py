@@ -254,6 +254,7 @@ def accueil(request):
             "graphique_demandes": graphique_demandes,
             "prestation_labels": prestation_labels,
             "prestation_totaux": prestation_totaux,
+            "page": "accueil", 
         }
     )
 def connexion(request):
@@ -345,6 +346,7 @@ def utilisateurs(request):
             "utilisateur": utilisateur,
             "utilisateurs": utilisateurs,
             "permissions": permissions,
+            "page": "utilisateurs",
         }
     )
 
@@ -634,6 +636,7 @@ def roles(request):
         {
             "roles": roles,
 "permissions": permissions,
+"page": "roles",       # ← AJOUTE
         }
     )
 def role_create(request):
@@ -984,6 +987,7 @@ def adherents(request):
             "recherche": recherche,
             "statut": statut,
             "permissions": permissions,
+            "page": "adherents",     # ← AJOUTE CETTE LIGNE
         }
     )
 
@@ -1636,6 +1640,7 @@ def souscripteurs(request):
             "recherche": recherche,
             "statut": statut,
             "permissions": permissions,
+            "page": "souscripteurs",
         }
     )
 def _generer_code_souscripteur():
@@ -1952,6 +1957,7 @@ def contrats(request):
             "recherche": recherche,
             "statut": statut,
             "permissions": permissions,
+            "page": "contrats",     # ← AJOUTE
         }
     )
 
@@ -2501,6 +2507,7 @@ def garanties(request):
             "recherche": recherche,
             "statut": statut,
             "permissions": permissions,
+            "page": "garanties",
         }
     )
 
@@ -2820,6 +2827,7 @@ def actes(request):
             "recherche": recherche,
             "statut": statut,
             "permissions": permissions,
+            "page": "actes",       # ← AJOUTE
         }
     )
 
@@ -2932,6 +2940,7 @@ def sous_actes(request):
             "statut": statut,
             "id_acte": id_acte,
             "permissions": permissions,
+            "page": "sous_actes",     # ← AJOUTE
         }
     )
 
@@ -3696,6 +3705,7 @@ def tarifs_sous_actes(request):
             "id_prestataire": id_prestataire,
             "statut": statut,
             "permissions": permissions,
+            "page": "tarifs_sous_actes",
         }
     )
 
@@ -3995,6 +4005,7 @@ def garantie_actes(request):
             "recherche": recherche,
             "id_garantie": id_garantie,
             "permissions": permissions,
+            "page": "garantie_actes",
         }
     )
 def garantie_acte_create(request):
@@ -4412,6 +4423,7 @@ def adhesions(request):
             "recherche": recherche,
             "statut": statut,
             "permissions": permissions,
+            "page": "adhesions",
         }
     )
 def _generer_numero_adhesion():
@@ -5067,6 +5079,7 @@ def ayant_droits(request):
             "recherche": recherche,
             "id_adherent": id_adherent,
             "permissions": permissions,
+            "page": "ayant_droits",
         }
     )
 
@@ -5572,6 +5585,7 @@ def prestataires(request):
             "statut": statut,
             "types_prestataire": types_prestataire,
             "permissions": permissions,
+            "page": "prestataires",
         }
     )
 def _generer_code_prestataire():
@@ -5892,6 +5906,7 @@ def conventions(request):
             "recherche": recherche,
             "statut": statut,
             "statuts": statuts,
+            "page": "conventions",
         }
     )
 def _generer_numero_convention():
@@ -6707,6 +6722,7 @@ def plafonds(request):
             "type_plafond": type_plafond,
             "periode": periode,
             "statut": statut,
+            "page": "plafonds",
         }
     )
 def document_create(request):
@@ -7161,6 +7177,7 @@ def documents(request):
             "recherche": recherche,
             "statut": statut,
             "statuts": statuts,
+            "page": "documents",
         }
     )
 def demandes_tp(request):
@@ -7243,6 +7260,7 @@ def demandes_tp(request):
             "statut": statut,
             "statuts": statuts,
             "permissions": permissions,
+            "page": "demandes_tp",     # ← AJOUTE
         }
     )
 def _libelle_beneficiaire(personne):
@@ -9459,6 +9477,7 @@ def types_prestation(request):
             "recherche": recherche,
             "statut": statut,
             "permissions": permissions,
+            "page": "types_prestation",     # ← AJOUTE
         }
     )
 
@@ -9763,6 +9782,7 @@ def consommations(request):
         {
             "consommations": consommations,
             "permissions": permissions,
+            "page": "consommations",
         }
     )
 
@@ -10259,13 +10279,13 @@ def factures(request):
         .select_related("id_prestataire")
         .order_by("-id_facture")
     )
-
     return render(
         request,
         "core/factures.html",
         {
             "factures": factures,
             "permissions": permissions,
+            "page": "factures",     # ← AJOUTE
         }
     )
 
@@ -10843,6 +10863,7 @@ def reglements(request):
         {
             "reglements": reglements,
             "permissions": permissions,
+            "page": "reglements",     # ← AJOUTE
         }
     )
 
@@ -11193,6 +11214,7 @@ def recours(request):
         {
             "recours": recours_list,
             "permissions": permissions,
+            "page": "recours",
         }
     )
 
@@ -11349,6 +11371,7 @@ def audit_logs(request):
             "date_fin": date_fin,
             "modules": modules,
             "types_action": types_action,
+            "page": "audit",
         }
     )
 def recours_create(request):
@@ -11771,6 +11794,7 @@ def prise_en_charge_details(request, id_pec):
             "pec": pec,
             "details": details,
             "permissions": permissions,
+            "page": "prises_en_charge",
         }
     )
 

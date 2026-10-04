@@ -1,508 +1,132 @@
-﻿{% load static %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+﻿{% extends "core/base.html" %}
+{% load static %}
 
-    <title>Garantie ↔ Acte - Tiers Payant</title>
+{% block title %}Garantie ↔ Acte - Tiers Payant{% endblock %}
+{% block header_title %}Garantie ↔ Acte{% endblock %}
+{% block header_sub %}Associations entre garanties et actes{% endblock %}
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+{% block extra_css %}
+<style>
+    .page-title { margin-bottom: 22px; }
+    .page-title h2 { margin: 0; color: #123b65; font-size: 24px; }
+    .page-title p { margin: 6px 0 0; color: #6b7280; font-size: 14px; }
+    .card { background: white; padding: 25px; border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.08); }
+    .card-header { display: flex; justify-content: space-between; align-items: center;
+                   gap: 15px; flex-wrap: wrap; margin-bottom: 20px; }
+    .card-header h2 { margin: 0; color: #123b65; font-size: 21px; }
+    .btn { display: inline-block; padding: 9px 15px; background: #2563eb; color: white;
+           text-decoration: none; border-radius: 6px; border: none; cursor: pointer;
+           font-weight: bold; font-size: 14px; }
+    .btn:hover { opacity: .9; }
+    .btn-secondary { background: #64748b; }
+    .btn-danger { background: #dc2626; }
+    .search-form { background: #f8fafc; border: 1px solid #e2e8f0;
+                   padding: 15px; border-radius: 8px; margin-bottom: 20px;
+                   display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .search-form input, .search-form select {
+        padding: 10px 12px; border: 1px solid #cbd5e1;
+        border-radius: 6px; background: white; font-size: 14px; }
+    .search-form input { width: 320px; }
+    .table-wrapper { width: 100%; overflow-x: auto;
+                     border: 1px solid #e2e8f0; border-radius: 8px; }
+    table { width: 100%; min-width: 1100px; border-collapse: collapse; }
+    th, td { padding: 13px 12px; border-bottom: 1px solid #e5e7eb;
+             text-align: left; white-space: nowrap; }
+    th { background: #123b65; color: white; font-size: 13px; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr:last-child td { border-bottom: none; }
+    .actif { display: inline-block; padding: 5px 10px; border-radius: 20px;
+             background: #dcfce7; color: #166534; font-weight: bold; font-size: 12px; }
+    .inactif { display: inline-block; padding: 5px 10px; border-radius: 20px;
+               background: #fee2e2; color: #991b1b; font-weight: bold; font-size: 12px; }
+    .empty { text-align: center; padding: 30px; color: #64748b; }
+    .actions { display: flex; gap: 6px; align-items: center; }
+    .actions form { display: inline; margin: 0; }
+    .actions .btn { padding: 7px 11px; font-size: 12px; }
+</style>
+{% endblock %}
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
+{% block content %}
 
-        .header {
-            background: #123b65;
-            color: white;
-            min-height: 95px;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 3px 10px rgba(0,0,0,.10);
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
-
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-        }
-
-        .back {
-            color: white;
-            text-decoration: none;
-            background: #1f5b91;
-            padding: 11px 18px;
-            border-radius: 7px;
-            font-weight: bold;
-        }
-
-        .back:hover {
-            background: #2870ad;
-        }
-
-        .container {
-            padding: 30px;
-            max-width: 1600px;
-            margin: auto;
-        }
-
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 3px 12px rgba(0,0,0,.08);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .card-header h2 {
-            margin: 0;
-            color: #123b65;
-            font-size: 21px;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 9px 15px;
-            background: #2563eb;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .btn:hover {
-            opacity: .9;
-        }
-
-        .btn-secondary {
-            background: #64748b;
-        }
-
-        .btn-danger {
-            background: #dc2626;
-        }
-
-        .search-form {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .search-form input,
-        .search-form select {
-            padding: 10px 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            background: white;
-            font-size: 14px;
-        }
-
-        .search-form input {
-            width: 320px;
-        }
-
-        .search-form input:focus,
-        .search-form select:focus {
-            outline: none;
-            border-color: #2563eb;
-        }
-
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-        }
-
-        table {
-            width: 100%;
-            min-width: 1100px;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 13px 12px;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: left;
-            white-space: nowrap;
-        }
-
-        th {
-            background: #123b65;
-            color: white;
-            font-size: 13px;
-        }
-
-        tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .actif {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            background: #dcfce7;
-            color: #166534;
-            font-weight: bold;
-            font-size: 12px;
-        }
-
-        .inactif {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            background: #fee2e2;
-            color: #991b1b;
-            font-weight: bold;
-            font-size: 12px;
-        }
-
-        .empty {
-            text-align: center;
-            padding: 30px;
-            color: #64748b;
-        }
-
-        .actions {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
-
-        .actions form {
-            display: inline;
-            margin: 0;
-        }
-
-        .actions .btn {
-            padding: 7px 11px;
-            font-size: 12px;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #64748b;
-            font-size: 13px;
-        }
-
-        @media (max-width: 900px) {
-            .header {
-                padding: 15px 20px;
-            }
-
-            .brand img {
-                width: 110px;
-                height: 55px;
-            }
-
-            .header h1 {
-                font-size: 19px;
-            }
-
-            .container {
-                padding: 20px;
-            }
-
-            .search-form input {
-                width: 100%;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="header">
-
-    <div class="brand">
-
-        <img src="{% static 'core/img/logo-sagps.png' %}" alt="SAGPS">
-
-        <h1>Garantie ↔ Acte</h1>
-
-    </div>
-
-    <a class="back" href="{% url 'garanties' %}">
-        ← Retour aux garanties
-    </a>
-
+<div class="page-title">
+    <h2>Associations Garantie / Acte</h2>
+    <p>Gérez les liens entre les garanties et les actes médicaux.</p>
 </div>
 
+<div class="card">
+    <div class="card-header">
+        <h2>Liste des associations</h2>
+        {% if "GARANTIE_CREATE" in permissions %}
+            <a class="btn" href="{% url 'garantie_acte_create' %}">+ Associer un acte</a>
+        {% endif %}
+    </div>
 
-<div class="container">
-
-    <div class="card">
-
-        <div class="card-header">
-
-            <h2>Associations Garantie / Acte</h2>
-
-            {% if "GARANTIE_CREATE" in permissions %}
-
-                <a class="btn" href="{% url 'garantie_acte_create' %}">
-                    + Associer un acte
-                </a>
-
-            {% endif %}
-
-        </div>
-
-
-        <form method="get" class="search-form">
-
-            <input
-                type="text"
-                name="recherche"
-                value="{{ recherche }}"
-                placeholder="Garantie, code acte ou libellé"
-            >
-
-            <select name="id_garantie">
-
-                <option value="">
-                    Toutes les garanties
+    <form method="get" class="search-form">
+        <input type="text" name="recherche" value="{{ recherche }}"
+               placeholder="Garantie, code acte ou libellé">
+        <select name="id_garantie">
+            <option value="">Toutes les garanties</option>
+            {% for g in garanties %}
+                <option value="{{ g.id_garantie }}"
+                    {% if id_garantie|stringformat:"s" == g.id_garantie|stringformat:"s" %}selected{% endif %}>
+                    {{ g.code_garantie }} - {{ g.libelle }}
                 </option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn">🔍 Rechercher</button>
+        <a href="{% url 'garantie_actes' %}" class="btn btn-secondary">↻ Réinitialiser</a>
+    </form>
 
-                {% for g in garanties %}
-
-                    <option
-                        value="{{ g.id_garantie }}"
-                        {% if id_garantie|stringformat:"s" == g.id_garantie|stringformat:"s" %}
-                            selected
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th><th>Garantie</th><th>Acte</th><th>Type prestation</th>
+                    <th>Taux</th><th>Franchise</th><th>Date début</th><th>Date fin</th>
+                    <th>Statut</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ga in garantie_actes %}
+                <tr>
+                    <td>{{ ga.id_garantie_acte }}</td>
+                    <td><strong>{{ ga.id_garantie.code_garantie }}</strong> - {{ ga.id_garantie.libelle }}</td>
+                    <td><strong>{{ ga.id_acte.code_acte }}</strong> - {{ ga.id_acte.libelle }}</td>
+                    <td>{{ ga.id_acte.id_type_prestation.libelle }}</td>
+                    <td>{% if ga.taux_prise_en_charge != None %}{{ ga.taux_prise_en_charge }} %{% else %}-{% endif %}</td>
+                    <td>{% if ga.franchise != None %}{{ ga.franchise }}{% else %}-{% endif %}</td>
+                    <td>{{ ga.date_debut|default:"-" }}</td>
+                    <td>{{ ga.date_fin|default:"-" }}</td>
+                    <td>
+                        {% if ga.statut == "ACTIF" %}
+                            <span class="actif">Actif</span>
+                        {% else %}
+                            <span class="inactif">{{ ga.statut }}</span>
                         {% endif %}
-                    >
-                        {{ g.code_garantie }} - {{ g.libelle }}
-                    </option>
-
+                    </td>
+                    <td>
+                        <div class="actions">
+                            {% if "GARANTIE_UPDATE" in permissions %}
+                                <a href="{% url 'garantie_acte_modifier' ga.id_garantie_acte %}"
+                                   class="btn btn-secondary">Modifier</a>
+                            {% endif %}
+                            {% if ga.statut == "ACTIF" and "GARANTIE_DELETE" in permissions %}
+                                <form method="post" action="{% url 'garantie_acte_radier' ga.id_garantie_acte %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger"
+                                            onclick="return confirm('Radier cette association ?');">Radier</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="10" class="empty">Aucune association trouvée.</td></tr>
                 {% endfor %}
-
-            </select>
-
-            <button type="submit" class="btn">
-                🔍 Rechercher
-            </button>
-
-            <a
-                href="{% url 'garantie_actes' %}"
-                class="btn btn-secondary"
-            >
-                ↻ Réinitialiser
-            </a>
-
-        </form>
-
-
-        <div class="table-wrapper">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <th>ID</th>
-                        <th>Garantie</th>
-                        <th>Acte</th>
-                        <th>Type prestation</th>
-                        <th>Taux</th>
-                        <th>Franchise</th>
-                        <th>Date début</th>
-                        <th>Date fin</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    {% for ga in garantie_actes %}
-
-                    <tr>
-
-                        <td>
-                            {{ ga.id_garantie_acte }}
-                        </td>
-
-                        <td>
-                            <strong>
-                                {{ ga.id_garantie.code_garantie }}
-                            </strong>
-                            -
-                            {{ ga.id_garantie.libelle }}
-                        </td>
-
-                        <td>
-                            <strong>
-                                {{ ga.id_acte.code_acte }}
-                            </strong>
-                            -
-                            {{ ga.id_acte.libelle }}
-                        </td>
-
-                        <td>
-                            {{ ga.id_acte.id_type_prestation.libelle }}
-                        </td>
-
-                        <td>
-                            {% if ga.taux_prise_en_charge != None %}
-                                {{ ga.taux_prise_en_charge }} %
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-
-                        <td>
-                            {% if ga.franchise != None %}
-                                {{ ga.franchise }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-
-                        <td>
-                            {{ ga.date_debut|default:"-" }}
-                        </td>
-
-                        <td>
-                            {{ ga.date_fin|default:"-" }}
-                        </td>
-
-                        <td>
-
-                            {% if ga.statut == "ACTIF" %}
-
-                                <span class="actif">
-                                    Actif
-                                </span>
-
-                            {% else %}
-
-                                <span class="inactif">
-                                    {{ ga.statut }}
-                                </span>
-
-                            {% endif %}
-
-                        </td>
-
-                        <td>
-
-                            <div class="actions">
-
-                                {% if "GARANTIE_UPDATE" in permissions %}
-
-                                    <a
-                                        href="{% url 'garantie_acte_modifier' ga.id_garantie_acte %}"
-                                        class="btn btn-secondary"
-                                    >
-                                        Modifier
-                                    </a>
-
-                                {% endif %}
-
-
-                                {% if ga.statut == "ACTIF" %}
-
-                                    {% if "GARANTIE_DELETE" in permissions %}
-
-                                        <form
-                                            method="post"
-                                            action="{% url 'garantie_acte_radier' ga.id_garantie_acte %}"
-                                        >
-
-                                            {% csrf_token %}
-
-                                            <button
-                                                type="submit"
-                                                class="btn btn-danger"
-                                                onclick="return confirm('Voulez-vous vraiment radier cette association ?');"
-                                            >
-                                                Radier
-                                            </button>
-
-                                        </form>
-
-                                    {% endif %}
-
-                                {% endif %}
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                    {% empty %}
-
-                    <tr>
-
-                        <td colspan="10" class="empty">
-                            Aucune association trouvée.
-                        </td>
-
-                    </tr>
-
-                    {% endfor %}
-
-                </tbody>
-
-            </table>
-
-        </div>
-
+            </tbody>
+        </table>
     </div>
-
 </div>
 
-
-<div class="footer">
-    © 2026 — Plateforme Tiers Payant
-</div>
-
-
-</body>
-</html>
-
+{% endblock %}

@@ -1,542 +1,128 @@
+{% extends "core/base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Audit - Tiers Payant</title>
-
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
-
-        .header {
-            background: #123b65;
-            color: white;
-            min-height: 95px;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 3px 10px rgba(0,0,0,.10);
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
-
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-        }
-
-        .back {
-            color: white;
-            text-decoration: none;
-            background: #1f5b91;
-            padding: 11px 18px;
-            border-radius: 7px;
-            font-weight: bold;
-        }
-
-        .back:hover {
-            background: #2870ad;
-        }
-
-        .container {
-            padding: 30px;
-            max-width: 1500px;
-            margin: auto;
-        }
-
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 3px 12px rgba(0,0,0,.08);
-            margin-bottom: 20px;
-        }
-
-        .card h2 {
-            margin-top: 0;
-            color: #123b65;
-            font-size: 21px;
-        }
-
-        .filters {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
-            gap: 12px;
-            align-items: end;
-        }
-
-        .field {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .field label {
-            font-weight: bold;
-            margin-bottom: 7px;
-            color: #334155;
-            font-size: 13px;
-        }
-
-        .field input,
-        .field select {
-            width: 100%;
-            padding: 10px 11px;
-            border: 1px solid #cbd5e1;
-            border-radius: 7px;
-            background: white;
-            font-size: 14px;
-        }
-
-        .field input:focus,
-        .field select:focus {
-            outline: none;
-            border-color: #2563eb;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 10px 16px;
-            border: none;
-            background: #2563eb;
-            color: white;
-            text-decoration: none;
-            border-radius: 7px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 13px;
-        }
-
-        .btn:hover {
-            opacity: .9;
-        }
-
-        .btn-secondary {
-            background: #64748b;
-        }
-
-        .filter-actions {
-            margin-top: 15px;
-        }
-
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-        }
-
-        table {
-            width: 100%;
-            min-width: 1250px;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 12px 10px;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: left;
-            vertical-align: top;
-            font-size: 13px;
-        }
-
-        th {
-            background: #123b65;
-            color: white;
-            white-space: nowrap;
-        }
-
-        tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .audit-id {
-            color: #64748b;
-            font-weight: bold;
-        }
-
-        .action {
-            display: inline-block;
-            padding: 5px 9px;
-            border-radius: 15px;
-            background: #e0f2fe;
-            color: #075985;
-            font-weight: bold;
-            font-size: 11px;
-        }
-
-        .small {
-            color: #64748b;
-            font-size: 13px;
-            margin-bottom: 0;
-        }
-
-        .empty {
-            text-align: center;
-            padding: 35px;
-            color: #64748b;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #64748b;
-            font-size: 13px;
-        }
-
-        @media (max-width: 1100px) {
-            .filters {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 700px) {
-            .header {
-                padding: 15px 20px;
-                flex-direction: column;
-                gap: 15px;
-                align-items: flex-start;
-            }
-
-            .brand img {
-                width: 110px;
-                height: 55px;
-            }
-
-            .header h1 {
-                font-size: 20px;
-            }
-
-            .container {
-                padding: 20px;
-            }
-
-            .filters {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="header">
-
-    <div class="brand">
-
-        <img
-            src="{% static 'core/img/logo-sagps.png' %}"
-            alt="SAGPS"
-        >
-
-        <h1>Journal d'audit</h1>
-
-    </div>
-
-    <a class="back" href="{% url 'accueil' %}">
-        ← Retour au Dashboard
-    </a>
-
-</div>
-
-
-<div class="container">
-
-    <div class="card">
-
-        <h2>Recherche et filtres</h2>
-
-        <form method="get">
-
-            <div class="filters">
-
-                <div class="field">
-                    <label>Recherche</label>
-
-                    <input
-                        type="text"
-                        name="recherche"
-                        value="{{ recherche }}"
-                        placeholder="Module, table, description, IP..."
-                    >
-                </div>
-
-
-                <div class="field">
-
-                    <label>Module</label>
-
-                    <select name="module">
-
-                        <option value="">Tous</option>
-
-                        {% for m in modules %}
-
-                            <option
-                                value="{{ m }}"
-                                {% if module == m %}selected{% endif %}
-                            >
-                                {{ m }}
-                            </option>
-
-                        {% endfor %}
-
-                    </select>
-
-                </div>
-
-
-                <div class="field">
-
-                    <label>Type d'action</label>
-
-                    <select name="type_action">
-
-                        <option value="">Tous</option>
-
-                        {% for t in types_action %}
-
-                            <option
-                                value="{{ t }}"
-                                {% if type_action == t %}selected{% endif %}
-                            >
-                                {{ t }}
-                            </option>
-
-                        {% endfor %}
-
-                    </select>
-
-                </div>
-
-
-                <div class="field">
-
-                    <label>Date début</label>
-
-                    <input
-                        type="date"
-                        name="date_debut"
-                        value="{{ date_debut }}"
-                    >
-
-                </div>
-
-
-                <div class="field">
-
-                    <label>Date fin</label>
-
-                    <input
-                        type="date"
-                        name="date_fin"
-                        value="{{ date_fin }}"
-                    >
-
-                </div>
-
-
-                <div>
-
-                    <button
-                        type="submit"
-                        class="btn"
-                    >
-                        Rechercher
-                    </button>
-
-                </div>
-
+{% block title %}Audit - Tiers Payant{% endblock %}
+{% block header_title %}Journal d'audit{% endblock %}
+{% block header_sub %}Historique des actions utilisateurs{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card { background: white; padding: 25px; border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.08); margin-bottom: 20px; }
+    .card h2 { margin-top: 0; color: #123b65; font-size: 21px; }
+    .filters { display: grid;
+               grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+               gap: 12px; align-items: end; }
+    .field { display: flex; flex-direction: column; }
+    .field label { font-weight: bold; margin-bottom: 7px;
+                   color: #334155; font-size: 13px; }
+    .field input, .field select { width: 100%; padding: 10px 11px;
+        border: 1px solid #cbd5e1; border-radius: 7px;
+        background: white; font-size: 14px; }
+    .btn { display: inline-block; padding: 10px 16px; border: none;
+           background: #2563eb; color: white; text-decoration: none;
+           border-radius: 7px; cursor: pointer; font-weight: bold; font-size: 13px; }
+    .btn:hover { opacity: .9; }
+    .btn-secondary { background: #64748b; }
+    .filter-actions { margin-top: 15px; }
+    .table-wrapper { width: 100%; overflow-x: auto;
+                     border: 1px solid #e2e8f0; border-radius: 8px; }
+    table { width: 100%; min-width: 1250px; border-collapse: collapse; }
+    th, td { padding: 12px 10px; border-bottom: 1px solid #e5e7eb;
+             text-align: left; vertical-align: top; font-size: 13px; }
+    th { background: #123b65; color: white; white-space: nowrap; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr:last-child td { border-bottom: none; }
+    .audit-id { color: #64748b; font-weight: bold; }
+    .action { display: inline-block; padding: 5px 9px; border-radius: 15px;
+              background: #e0f2fe; color: #075985;
+              font-weight: bold; font-size: 11px; }
+    .small { color: #64748b; font-size: 13px; margin-bottom: 0; }
+    .empty { text-align: center; padding: 35px; color: #64748b; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <h2>Recherche et filtres</h2>
+
+    <form method="get">
+        <div class="filters">
+            <div class="field">
+                <label>Recherche</label>
+                <input type="text" name="recherche" value="{{ recherche }}"
+                       placeholder="Module, table, description, IP...">
             </div>
-
-        </form>
-
-
-        <div class="filter-actions">
-
-            <a
-                href="{% url 'audit_logs' %}"
-                class="btn btn-secondary"
-            >
-                Réinitialiser
-            </a>
-
-        </div>
-
-    </div>
-
-
-    <div class="card">
-
-        <h2>Journaux d'audit</h2>
-
-        <div class="table-wrapper">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <th>ID</th>
-                        <th>Date</th>
-                        <th>Utilisateur</th>
-                        <th>Action</th>
-                        <th>Module</th>
-                        <th>Table cible</th>
-                        <th>ID enregistrement</th>
-                        <th>Adresse IP</th>
-                        <th>Poste</th>
-                        <th>Description</th>
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                    {% for audit in audits %}
-
-                    <tr>
-
-                        <td>
-                            <span class="audit-id">
-                                #{{ audit.id_audit }}
-                            </span>
-                        </td>
-
-
-                        <td>
-                            {{ audit.date_action|date:"d/m/Y H:i:s" }}
-                        </td>
-
-
-                        <td>
-
-                            {% if audit.id_utilisateur %}
-
-                                {{ audit.id_utilisateur.nom_utilisateur }}
-
-                            {% else %}
-
-                                -
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <td>
-
-                            <span class="action">
-                                {{ audit.type_action }}
-                            </span>
-
-                        </td>
-
-
-                        <td>
-                            {{ audit.module|default:"-" }}
-                        </td>
-
-
-                        <td>
-                            {{ audit.table_cible|default:"-" }}
-                        </td>
-
-
-                        <td>
-                            {{ audit.id_enregistrement|default:"-" }}
-                        </td>
-
-
-                        <td>
-                            {{ audit.adresse_ip|default:"-" }}
-                        </td>
-
-
-                        <td>
-                            {{ audit.poste|default:"-" }}
-                        </td>
-
-
-                        <td>
-
-                            {% if audit.description %}
-
-                                {{ audit.description }}
-
-                            {% else %}
-
-                                -
-
-                            {% endif %}
-
-                        </td>
-
-                    </tr>
-
-
-                    {% empty %}
-
-                    <tr>
-
-                        <td
-                            colspan="10"
-                            class="empty"
-                        >
-                            Aucun journal d'audit trouvé.
-                        </td>
-
-                    </tr>
-
+            <div class="field">
+                <label>Module</label>
+                <select name="module">
+                    <option value="">Tous</option>
+                    {% for m in modules %}
+                        <option value="{{ m }}" {% if module == m %}selected{% endif %}>{{ m }}</option>
                     {% endfor %}
-
-                </tbody>
-
-            </table>
-
+                </select>
+            </div>
+            <div class="field">
+                <label>Type d'action</label>
+                <select name="type_action">
+                    <option value="">Tous</option>
+                    {% for t in types_action %}
+                        <option value="{{ t }}" {% if type_action == t %}selected{% endif %}>{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label>Date début</label>
+                <input type="date" name="date_debut" value="{{ date_debut }}">
+            </div>
+            <div class="field">
+                <label>Date fin</label>
+                <input type="date" name="date_fin" value="{{ date_fin }}">
+            </div>
+            <div><button type="submit" class="btn">Rechercher</button></div>
         </div>
+    </form>
 
+    <div class="filter-actions">
+        <a href="{% url 'audit_logs' %}" class="btn btn-secondary">Réinitialiser</a>
+    </div>
+</div>
 
-        <p class="small">
-            Les journaux d'audit sont consultables uniquement.
-        </p>
+<div class="card">
+    <h2>Journaux d'audit</h2>
 
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th><th>Date</th><th>Utilisateur</th><th>Action</th>
+                    <th>Module</th><th>Table cible</th><th>ID enregistrement</th>
+                    <th>Adresse IP</th><th>Poste</th><th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for audit in audits %}
+                <tr>
+                    <td><span class="audit-id">#{{ audit.id_audit }}</span></td>
+                    <td>{{ audit.date_action|date:"d/m/Y H:i:s" }}</td>
+                    <td>{% if audit.id_utilisateur %}{{ audit.id_utilisateur.nom_utilisateur }}{% else %}-{% endif %}</td>
+                    <td><span class="action">{{ audit.type_action }}</span></td>
+                    <td>{{ audit.module|default:"-" }}</td>
+                    <td>{{ audit.table_cible|default:"-" }}</td>
+                    <td>{{ audit.id_enregistrement|default:"-" }}</td>
+                    <td>{{ audit.adresse_ip|default:"-" }}</td>
+                    <td>{{ audit.poste|default:"-" }}</td>
+                    <td>{% if audit.description %}{{ audit.description }}{% else %}-{% endif %}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="10" class="empty">Aucun journal d'audit trouvé.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
+    <p class="small">Les journaux d'audit sont consultables uniquement.</p>
 </div>
 
-
-<div class="footer">
-    © 2026 — Plateforme Tiers Payant
-</div>
-
-
-</body>
-</html>
+{% endblock %}

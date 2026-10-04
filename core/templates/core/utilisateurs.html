@@ -1,444 +1,138 @@
+{% extends "core/base.html" %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block title %}Utilisateurs - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des utilisateurs{% endblock %}
+{% block header_sub %}Comptes et rôles utilisateurs{% endblock %}
 
-    <title>Utilisateurs - Tiers Payant</title>
+{% block extra_css %}
+<style>
+    .page-title { margin-bottom: 20px; }
+    .page-title h2 { margin: 0; color: #123b65; font-size: 24px; }
+    .page-title p { margin: 6px 0 0; color: #64748b; }
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+    .card {
+        background: white; padding: 25px; border-radius: 14px;
+        box-shadow: 0 4px 15px rgba(15,23,42,.07);
+        border: 1px solid #e5e7eb;
+    }
+    .card-header {
+        display: flex; justify-content: space-between;
+        align-items: center; gap: 15px;
+        flex-wrap: wrap; margin-bottom: 20px;
+    }
+    .card-header h2 { margin: 0; color: #123b65; font-size: 20px; }
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
+    .btn {
+        display: inline-block; padding: 9px 14px;
+        background: #123b65; color: white; text-decoration: none;
+        border-radius: 7px; border: none; cursor: pointer;
+        font-weight: bold; font-size: 13px;
+    }
+    .btn:hover { background: #1d4f82; }
+    .btn-secondary { background: #64748b; }
 
-        .header {
-            background: #123b65;
-            color: white;
-            min-height: 95px;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-            box-shadow: 0 3px 10px rgba(0,0,0,.10);
-        }
+    .table-wrapper {
+        width: 100%; overflow-x: auto;
+        border: 1px solid #e2e8f0; border-radius: 10px;
+    }
+    table {
+        width: 100%; min-width: 950px; border-collapse: collapse;
+    }
+    th, td {
+        padding: 13px 12px; border-bottom: 1px solid #e5e7eb;
+        text-align: left; vertical-align: middle;
+    }
+    th {
+        background: #f1f5f9; color: #475569;
+        font-size: 13px; white-space: nowrap;
+    }
+    td { font-size: 13px; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr:last-child td { border-bottom: none; }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
+    .username { font-weight: bold; color: #123b65; }
 
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
+    .actif, .inactif {
+        display: inline-block; padding: 6px 10px;
+        border-radius: 20px; font-weight: bold; font-size: 12px;
+    }
+    .actif   { background: #dcfce7; color: #166534; }
+    .inactif { background: #fee2e2; color: #991b1b; }
 
-        .header-title h1 {
-            margin: 0;
-            font-size: 23px;
-        }
+    .actions { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+    .actions .btn { padding: 7px 11px; font-size: 12px; }
 
-        .header-title p {
-            margin: 5px 0 0;
-            font-size: 13px;
-            opacity: .85;
-        }
+    .empty {
+        text-align: center; padding: 35px !important; color: #64748b;
+    }
+</style>
+{% endblock %}
 
-        .back {
-            color: white;
-            text-decoration: none;
-            background: #1f5b91;
-            padding: 11px 17px;
-            border-radius: 8px;
-            font-weight: bold;
-            white-space: nowrap;
-            transition: .2s;
-        }
+{% block content %}
 
-        .back:hover {
-            background: #2870ad;
-        }
-
-        .container {
-            max-width: 1500px;
-            margin: 0 auto;
-            padding: 30px 25px 40px;
-        }
-
-        .page-title {
-            margin-bottom: 20px;
-        }
-
-        .page-title h2 {
-            margin: 0;
-            color: #123b65;
-            font-size: 24px;
-        }
-
-        .page-title p {
-            margin: 6px 0 0;
-            color: #64748b;
-        }
-
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 14px;
-            box-shadow: 0 4px 15px rgba(15, 23, 42, .07);
-            border: 1px solid #e5e7eb;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .card-header h2 {
-            margin: 0;
-            color: #123b65;
-            font-size: 20px;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 9px 14px;
-            background: #123b65;
-            color: white;
-            text-decoration: none;
-            border-radius: 7px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 13px;
-            transition: .2s;
-        }
-
-        .btn:hover {
-            background: #1d4f82;
-        }
-
-        .btn-secondary {
-            background: #64748b;
-        }
-
-        .btn-secondary:hover {
-            background: #475569;
-        }
-
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-        }
-
-        table {
-            width: 100%;
-            min-width: 950px;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 13px 12px;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: left;
-            vertical-align: middle;
-        }
-
-        th {
-            background: #f1f5f9;
-            color: #475569;
-            font-size: 13px;
-            white-space: nowrap;
-        }
-
-        td {
-            font-size: 13px;
-        }
-
-        tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .username {
-            font-weight: bold;
-            color: #123b65;
-        }
-
-        .actif,
-        .inactif {
-            display: inline-block;
-            padding: 6px 10px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 12px;
-        }
-
-        .actif {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .inactif {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .actions {
-            display: flex;
-            gap: 7px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .actions .btn {
-            padding: 7px 11px;
-            font-size: 12px;
-        }
-
-        .empty {
-            text-align: center;
-            padding: 35px !important;
-            color: #64748b;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #64748b;
-            font-size: 13px;
-        }
-
-        @media (max-width: 700px) {
-            .header {
-                padding: 15px 20px;
-                flex-direction: column;
-                gap: 15px;
-                align-items: flex-start;
-            }
-
-            .brand img {
-                width: 125px;
-                height: 55px;
-            }
-
-            .header-title h1 {
-                font-size: 20px;
-            }
-
-            .container {
-                padding: 20px 15px 30px;
-            }
-
-            .card {
-                padding: 18px;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="header">
-
-    <div class="brand">
-
-        <img
-            src="{% static 'core/img/logo-sagps.png' %}"
-            alt="SAGPS"
-        >
-
-        <div class="header-title">
-            <h1>Gestion des utilisateurs</h1>
-            <p>Plateforme Tiers Payant</p>
-        </div>
-
-    </div>
-
-    <a class="back" href="{% url 'accueil' %}">
-        ← Retour au Dashboard
-    </a>
-
+<div class="page-title">
+    <h2>Utilisateurs</h2>
+    <p>Gestion des comptes utilisateurs et de leurs rôles.</p>
 </div>
 
+<div class="card">
 
-<div class="container">
-
-    <div class="page-title">
-        <h2>Utilisateurs</h2>
-        <p>Gestion des comptes utilisateurs et de leurs rôles.</p>
+    <div class="card-header">
+        <h2>Liste des utilisateurs</h2>
+        {% if "USER_CREATE" in permissions %}
+            <a href="{% url 'utilisateur_create' %}" class="btn">+ Nouvel utilisateur</a>
+        {% endif %}
     </div>
 
-
-    <div class="card">
-
-        <div class="card-header">
-
-            <h2>Liste des utilisateurs</h2>
-
-            {% if "USER_CREATE" in permissions %}
-
-                <a
-                    href="{% url 'utilisateur_create' %}"
-                    class="btn"
-                >
-                    + Nouvel utilisateur
-                </a>
-
-            {% endif %}
-
-        </div>
-
-
-        <div class="table-wrapper">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <th>ID</th>
-                        <th>Nom utilisateur</th>
-                        <th>Nom</th>
-                        <th>Prénom</th>
-                        <th>Email</th>
-                        <th>Téléphone</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                    {% for u in utilisateurs %}
-
-                        <tr>
-
-                            <td>
-                                {{ u.id_utilisateur }}
-                            </td>
-
-                            <td>
-                                <span class="username">
-                                    {{ u.nom_utilisateur }}
-                                </span>
-                            </td>
-
-                            <td>
-                                {{ u.nom }}
-                            </td>
-
-                            <td>
-                                {{ u.prenom }}
-                            </td>
-
-                            <td>
-                                {{ u.email|default:"-" }}
-                            </td>
-
-                            <td>
-                                {{ u.telephone|default:"-" }}
-                            </td>
-
-                            <td>
-
-                                {% if u.statut == "ACTIF" %}
-
-                                    <span class="actif">
-                                        Actif
-                                    </span>
-
-                                {% else %}
-
-                                    <span class="inactif">
-                                        Inactif
-                                    </span>
-
-                                {% endif %}
-
-                            </td>
-
-                            <td>
-
-                                <div class="actions">
-
-                                    {% if "USER_UPDATE" in permissions %}
-
-                                        <a
-                                            href="{% url 'utilisateur_modifier' u.id_utilisateur %}"
-                                            class="btn btn-secondary"
-                                        >
-                                            Modifier
-                                        </a>
-
-                                        <a
-                                            href="{% url 'utilisateur_roles' u.id_utilisateur %}"
-                                            class="btn"
-                                        >
-                                            Rôles
-                                        </a>
-
-                                    {% endif %}
-
-                                </div>
-
-                            </td>
-
-                        </tr>
-
-
-                    {% empty %}
-
-                        <tr>
-
-                            <td
-                                colspan="8"
-                                class="empty"
-                            >
-                                Aucun utilisateur trouvé.
-                            </td>
-
-                        </tr>
-
-                    {% endfor %}
-
-                </tbody>
-
-            </table>
-
-        </div>
-
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nom utilisateur</th>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th>Email</th>
+                    <th>Téléphone</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in utilisateurs %}
+                <tr>
+                    <td>{{ u.id_utilisateur }}</td>
+                    <td><span class="username">{{ u.nom_utilisateur }}</span></td>
+                    <td>{{ u.nom }}</td>
+                    <td>{{ u.prenom }}</td>
+                    <td>{{ u.email|default:"-" }}</td>
+                    <td>{{ u.telephone|default:"-" }}</td>
+                    <td>
+                        {% if u.statut == "ACTIF" %}
+                            <span class="actif">Actif</span>
+                        {% else %}
+                            <span class="inactif">Inactif</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="actions">
+                            {% if "USER_UPDATE" in permissions %}
+                                <a href="{% url 'utilisateur_modifier' u.id_utilisateur %}"
+                                   class="btn btn-secondary">Modifier</a>
+                                <a href="{% url 'utilisateur_roles' u.id_utilisateur %}"
+                                   class="btn">Rôles</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="empty">Aucun utilisateur trouvé.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
 </div>
 
-
-<div class="footer">
-    © 2026 — Plateforme Tiers Payant SAGPS
-</div>
-
-
-</body>
-</html>
+{% endblock %}
