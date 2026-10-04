@@ -465,18 +465,24 @@ def utilisateur_create(request):
         form = UtilisateurForm(request.POST)
 
         if form.is_valid():
-            Utilisateur.objects.create(
+                        # Créer l'objet SANS sauvegarder
+            nouvel_utilisateur = Utilisateur(
                 nom_utilisateur=form.cleaned_data["nom_utilisateur"],
-                mot_de_passe_hash=make_password(
-                    form.cleaned_data["mot_de_passe"]
-                ),
                 nom=form.cleaned_data["nom"],
                 prenom=form.cleaned_data["prenom"],
                 email=form.cleaned_data["email"] or None,
                 telephone=form.cleaned_data["telephone"] or None,
                 statut=form.cleaned_data["statut"],
-                date_creation=timezone.now()
+                is_active=True,
+                date_creation=timezone.now(),
             )
+
+            # Utiliser set_password (met à jour password ET mot_de_passe_hash)
+            nouvel_utilisateur.set_password(
+                form.cleaned_data["mot_de_passe"]
+            )
+            nouvel_utilisateur.mot_de_passe_hash = nouvel_utilisateur.password
+            nouvel_utilisateur.save()
 
             messages.success(
                 request,
@@ -545,7 +551,6 @@ def utilisateur_modifier(request, id_utilisateur):
             utilisateur.nom_utilisateur = (
                 form.cleaned_data["nom_utilisateur"]
             )
-
             utilisateur.nom = form.cleaned_data["nom"]
             utilisateur.prenom = form.cleaned_data["prenom"]
             utilisateur.email = (
@@ -559,9 +564,8 @@ def utilisateur_modifier(request, id_utilisateur):
             mot_de_passe = form.cleaned_data["mot_de_passe"]
 
             if mot_de_passe:
-                utilisateur.mot_de_passe_hash = make_password(
-                    mot_de_passe
-                )
+                utilisateur.set_password(mot_de_passe)
+                utilisateur.mot_de_passe_hash = utilisateur.password
 
             utilisateur.save()
 
@@ -1134,7 +1138,7 @@ def adherent_detail(request, id_adherent):
 
 
 def adherent_carte_pdf(request, id_adherent):
-    """Génère la carte d'adhérent en PDF."""
+    """Génère la carte d'adhérent en PDF (avec ayants droit)."""
     if not request.session.get("id_utilisateur"):
         return redirect("connexion")
 
@@ -1172,8 +1176,18 @@ def adherent_carte_pdf(request, id_adherent):
         .first()
     )
 
+    # ⬇️ Récupérer les ayants droit ACTIFS
+    ayants_droit = (
+        AyantDroit.objects
+        .select_related("id_personne")
+        .filter(id_adherent=adherent, statut="ACTIF")
+        .order_by("id_ayant_droit")
+    )
+
     personne = adherent.id_personne
 
+    import os
+    from django.conf import settings
     from django.http import HttpResponse
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A5, landscape
@@ -1182,8 +1196,6 @@ def adherent_carte_pdf(request, id_adherent):
     from reportlab.platypus import (
         SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image,
     )
-    import os
-    from django.conf import settings
 
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = (
@@ -1193,10 +1205,10 @@ def adherent_carte_pdf(request, id_adherent):
     document = SimpleDocTemplate(
         response,
         pagesize=landscape(A5),
-        rightMargin=1 * cm,
-        leftMargin=1 * cm,
-        topMargin=1 * cm,
-        bottomMargin=1 * cm,
+        rightMargin=0.8 * cm,
+        leftMargin=0.8 * cm,
+        topMargin=0.6 * cm,
+        bottomMargin=0.6 * cm,
     )
 
     elements = []
@@ -1207,6 +1219,9 @@ def adherent_carte_pdf(request, id_adherent):
         textColor=colors.HexColor("#123b65"), alignment=2, leading=20,
     )
 
+    # =========================
+    # EN-TÊTE AVEC LOGO
+    # =========================
     logo_path = os.path.join(
         settings.BASE_DIR, "core", "static", "core", "img", "logo-sagps.png"
     )
@@ -1230,35 +1245,110 @@ def adherent_carte_pdf(request, id_adherent):
         ("LINEBELOW", (0, 0), (-1, 0), 2, colors.HexColor("#123b65")),
     ]))
     elements.append(header_table)
-    elements.append(Spacer(1, 0.5 * cm))
+    elements.append(Spacer(1, 0.4 * cm))
 
+    # =========================
+    # INFOS DU TITULAIRE
+    # =========================
     infos_data = [
         ["Nom", personne.nom or "-"],
         ["Prénom", personne.prenom or "-"],
-        ["Date de naissance", personne.date_naissance.strftime("%d/%m/%Y") if personne.date_naissance else "-"],
+        ["Date de naissance",
+         personne.date_naissance.strftime("%d/%m/%Y") if personne.date_naissance else "-"],
         ["N° Adhérent", adherent.numero_adherent],
         ["Contrat", adhesion.id_contrat.numero_contrat if adhesion else "-"],
-        ["Organisme", adhesion.id_contrat.id_souscripteur.raison_sociale if adhesion else "-"],
-        ["Valide du", adhesion.date_debut.strftime("%d/%m/%Y") if adhesion and adhesion.date_debut else "-"],
-        ["Au", adhesion.date_fin.strftime("%d/%m/%Y") if adhesion and adhesion.date_fin else "Illimité"],
+        ["Organisme",
+         adhesion.id_contrat.id_souscripteur.raison_sociale if adhesion else "-"],
+        ["Valide du",
+         adhesion.date_debut.strftime("%d/%m/%Y") if adhesion and adhesion.date_debut else "-"],
+        ["Au",
+         adhesion.date_fin.strftime("%d/%m/%Y") if adhesion and adhesion.date_fin else "Illimité"],
     ]
 
     infos_table = Table(infos_data, colWidths=[4 * cm, 14.5 * cm])
     infos_table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#eaf2fb")),
         ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (0, -1), 10),
-        ("FONTSIZE", (1, 0), (1, -1), 11),
+        ("FONTSIZE", (0, 0), (0, -1), 8),
+        ("FONTSIZE", (1, 0), (1, -1), 9),
         ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#475569")),
         ("TEXTCOLOR", (1, 0), (1, -1), colors.HexColor("#123b65")),
         ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 8),
-        ("TOPPADDING", (0, 0), (-1, -1), 6),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
     ]))
     elements.append(infos_table)
-    elements.append(Spacer(1, 0.8 * cm))
+
+    # =========================
+    # AYANTS DROIT (si présents)
+    # =========================
+    if ayants_droit:
+        elements.append(Spacer(1, 0.3 * cm))
+
+        # Titre de section
+        style_section_ayant = ParagraphStyle(
+            "SectionAyant",
+            parent=styles["Normal"],
+            fontSize=10,
+            textColor=colors.HexColor("#123b65"),
+            fontName="Helvetica-Bold",
+            spaceAfter=5,
+        )
+        elements.append(Paragraph("AYANTS DROIT", style_section_ayant))
+
+        # Tableau des ayants droit
+        ad_data = [["Nom & Prénom", "N° Personne", "Lien", "Date de naissance"]]
+
+        for ad in ayants_droit:
+            p = ad.id_personne
+            lien_label = ad.type_lien
+            if ad.type_lien == "ENFANT":
+                lien_label = "Enfant"
+            elif ad.type_lien == "CONJOINT":
+                lien_label = "Conjoint(e)"
+            elif ad.type_lien == "PARENT":
+                lien_label = "Parent"
+
+            ad_data.append([
+                f"{p.nom} {p.prenom}",
+                p.numero_personne or "-",
+                lien_label,
+                p.date_naissance.strftime("%d/%m/%Y") if p.date_naissance else "-",
+            ])
+
+        ad_table = Table(
+            ad_data,
+            colWidths=[6 * cm, 4 * cm, 4 * cm, 4.5 * cm],
+            repeatRows=1,
+        )
+        ad_table.setStyle(TableStyle([
+            # En-tête
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123b65")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+            # Corps
+            ("ALIGN", (0, 1), (0, -1), "LEFT"),
+            ("ALIGN", (1, 1), (-1, -1), "CENTER"),
+            # Bordures
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            # Padding
+            ("LEFTPADDING", (0, 0), (-1, -1), 5),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ]))
+        elements.append(ad_table)
+
+    # =========================
+    # PIED : SIGNATURE
+    # =========================
+    
+    elements.append(Spacer(1, 0.3 * cm))
 
     pied_data = [[
         Paragraph("<b>Signature et cachet</b>", styles["Normal"]),
@@ -1270,7 +1360,7 @@ def adherent_carte_pdf(request, id_adherent):
     pied_table = Table(pied_data, colWidths=[9 * cm, 9.5 * cm])
     pied_table.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("TOPPADDING", (0, 0), (-1, -1), 20),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
     ]))
     elements.append(pied_table)
 
@@ -8080,7 +8170,7 @@ def demande_tp_create(request):
                     id_contrat=contrat,
                     id_prestataire=prestataire,
                     date_demande=timezone.now(),
-                    montant_demande=form.cleaned_data["montant_demande"],
+                    montant_demande=Decimal("0.00"),   # Calculé après ajout des actes
                     statut="EN_ATTENTE",
                     motif_rejet=form.cleaned_data["motif_rejet"] or None,
                     date_decision=None,
@@ -9595,17 +9685,21 @@ def consommation_create(request, id_detail_pec):
         )
 
     consommation_existante = (
-        Consommation.objects
-        .filter(id_detail_pec=detail_pec)
-        .first()
+    Consommation.objects
+    .filter(
+        id_detail_pec=detail_pec,
+        statut__in=["A_TRAITER", "VALIDEE"]    # ← AJOUTE ce filtre
     )
+    .first()
+)
 
     if consommation_existante:
-        messages.error(
-            request,
-            "Une consommation existe déjÃ  pour ce détail de prise en charge."
-        )
-        return redirect("consommations")
+      messages.error(
+        request,
+        "Une consommation active existe déjà pour ce détail. "
+        "Annulez-la d'abord ou vérifiez son statut."
+    )
+    return redirect("consommations")
 
     if request.method == "POST":
         form = ConsommationForm(request.POST)
