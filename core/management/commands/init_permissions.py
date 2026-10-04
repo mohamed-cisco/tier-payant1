@@ -137,7 +137,8 @@ PERMISSIONS = [
 ]
 
 
-class Command(BaseCommand):
+class Command
+(BaseCommand):
     help = "Crée les permissions manquantes dans la base"
 
     def handle(self, *args, **options):

@@ -1488,6 +1488,7 @@ def adherent_create(request):
                             {
                                 "form": form,
                                 "titre": "Nouvel adhérent",
+                                "page": "adherents",
                             }
                         )
 
@@ -1682,6 +1683,7 @@ def adherent_modifier(request, id_adherent):
         {
             "form": form,
             "titre": "Modifier l'adhérent",
+            "page": "adherents",
         }
     )
 def adherent_radier(request, id_adherent):
@@ -5758,6 +5760,7 @@ def ayant_droit_create(request):
                                 "form": form,
                                 "titre": "Nouvel ayant droit",
                                 "adherent_preselectionne": adherent_preselectionne,
+                                "page": "ayant_droits",
                             }
                         )
 

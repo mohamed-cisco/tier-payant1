@@ -1,377 +1,198 @@
+{% extends "core/base.html" %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="fr">
+{% block title %}Importer des adhérents - Tiers Payant{% endblock %}
+{% block header_title %}Importation des adhérents{% endblock %}
+{% block header_sub %}Import depuis un fichier Excel{% endblock %}
 
-<head>
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 18px rgba(0,0,0,.07);
+        max-width: 900px;
+        margin: 0 auto;
+    }
 
-    <meta charset="UTF-8">
+    .card-header {
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 18px;
+        margin-bottom: 25px;
+    }
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    .card-header h2 {
+        margin: 0;
+        color: #123b65;
+        font-size: 24px;
+    }
 
-    <title>Importer des adhérents - Tiers Payant</title>
+    .card-header p {
+        margin: 7px 0 0;
+        color: #6b7280;
+        font-size: 14px;
+    }
 
-    <style>
+    .info {
+        background: #eff6ff;
+        border-left: 4px solid #2563eb;
+        padding: 16px;
+        margin-bottom: 22px;
+        border-radius: 7px;
+        color: #1e3a5f;
+        line-height: 1.5;
+    }
 
-        * {
-            box-sizing: border-box;
-        }
+    .info strong { color: #123b65; }
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
+    .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        margin-bottom: 25px;
+    }
 
-        .header {
-            background: #123b65;
-            color: white;
-            min-height: 95px;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 3px 12px rgba(0,0,0,.12);
-        }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 850px;
+    }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
+    th, td {
+        padding: 11px 10px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+        font-size: 13px;
+    }
 
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
+    th {
+        background: #f8fafc;
+        color: #374151;
+        font-weight: bold;
+    }
 
-        .brand-text h1 {
-            margin: 0;
-            font-size: 22px;
-        }
+    .field {
+        margin-top: 10px;
+        margin-bottom: 20px;
+    }
 
-        .brand-text p {
-            margin: 5px 0 0;
-            font-size: 13px;
-            opacity: .85;
-        }
+    .field label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #374151;
+    }
 
-        .back {
-            color: white;
-            text-decoration: none;
-            background: #1d4f7d;
-            padding: 10px 17px;
-            border-radius: 7px;
-            font-size: 14px;
-            transition: .2s;
-        }
+    .field input[type="file"] {
+        width: 100%;
+        padding: 11px;
+        border: 1px solid #d1d5db;
+        border-radius: 7px;
+        background: white;
+        font-size: 14px;
+    }
 
-        .back:hover {
-            background: #25618f;
-        }
+    .field input[type="file"]:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
 
-        .container {
-            max-width: 1100px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
+    .field-error {
+        color: #b91c1c;
+        background: #fee2e2;
+        padding: 10px 12px;
+        border-radius: 7px;
+        margin-top: 8px;
+        font-size: 13px;
+    }
 
-        .card {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 18px rgba(0,0,0,.07);
-        }
+    .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+    }
 
-        .card-header {
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 18px;
-            margin-bottom: 25px;
-        }
+    .btn {
+        display: inline-block;
+        padding: 11px 19px;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        border-radius: 7px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        transition: .2s;
+    }
 
-        .card-header h2 {
-            margin: 0;
-            color: #123b65;
-            font-size: 24px;
-        }
+    .btn:hover { background: #1d4ed8; }
 
-        .card-header p {
-            margin: 7px 0 0;
-            color: #6b7280;
-            font-size: 14px;
-        }
+    .btn-secondary { background: #6b7280; }
+    .btn-secondary:hover { background: #4b5563; }
 
-        .info {
-            background: #eff6ff;
-            border-left: 4px solid #2563eb;
-            padding: 16px;
-            margin-bottom: 22px;
-            border-radius: 7px;
-            color: #1e3a5f;
-            line-height: 1.5;
-        }
+    @media (max-width: 700px) {
+        .actions { flex-direction: column; }
+        .btn { text-align: center; }
+    }
+</style>
+{% endblock %}
 
-        .info strong {
-            color: #123b65;
-        }
+{% block content %}
 
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            margin-bottom: 25px;
-        }
+<div class="card">
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 850px;
-        }
-
-        th,
-        td {
-            padding: 11px 10px;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: left;
-            font-size: 13px;
-        }
-
-        th {
-            background: #f8fafc;
-            color: #374151;
-            font-weight: bold;
-        }
-
-        tbody tr:hover {
-            background: #f9fafb;
-        }
-
-        .field {
-            margin-top: 10px;
-            margin-bottom: 20px;
-        }
-
-        .field label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: #374151;
-        }
-
-        .field input[type="file"] {
-            width: 100%;
-            padding: 11px;
-            border: 1px solid #d1d5db;
-            border-radius: 7px;
-            background: white;
-            font-size: 14px;
-        }
-
-        .field input[type="file"]:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37,99,235,.12);
-        }
-
-        .field-error {
-            color: #b91c1c;
-            background: #fee2e2;
-            padding: 10px 12px;
-            border-radius: 7px;
-            margin-top: 8px;
-            font-size: 13px;
-        }
-
-        .actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 11px 19px;
-            background: #2563eb;
-            color: white;
-            text-decoration: none;
-            border-radius: 7px;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            transition: .2s;
-        }
-
-        .btn:hover {
-            background: #1d4ed8;
-        }
-
-        .btn-secondary {
-            background: #6b7280;
-        }
-
-        .btn-secondary:hover {
-            background: #4b5563;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 25px;
-            color: #6b7280;
-            font-size: 13px;
-        }
-
-        @media (max-width: 700px) {
-
-            .header {
-                padding: 15px 18px;
-            }
-
-            .brand img {
-                width: 110px;
-                height: 55px;
-            }
-
-            .brand-text h1 {
-                font-size: 18px;
-            }
-
-            .back {
-                padding: 8px 11px;
-                font-size: 12px;
-            }
-
-            .card {
-                padding: 20px;
-            }
-
-            .actions {
-                flex-direction: column;
-            }
-
-            .btn {
-                text-align: center;
-            }
-        }
-
-    </style>
-
-</head>
-
-<body>
-
-<div class="header">
-
-    <div class="brand">
-
-        <img src="{% static 'core/img/logo-sagps.png' %}" alt="SAGPS">
-
-        <div class="brand-text">
-            <h1>Importation des adhérents</h1>
-            <p>Plateforme Tiers Payant</p>
-        </div>
-
+    <div class="card-header">
+        <h2>Importer un fichier Excel</h2>
+        <p>Ajoutez plusieurs adhérents à partir d'un fichier Excel.</p>
     </div>
 
-    <a href="{% url 'adherents' %}" class="back">
-        ← Retour aux adhérents
-    </a>
-
-</div>
-
-
-<div class="container">
-
-    <div class="card">
-
-        <div class="card-header">
-            <h2>Importer un fichier Excel</h2>
-            <p>Ajoutez plusieurs adhérents à partir d'un fichier Excel.</p>
-        </div>
-
-        <div class="info">
-
-            <strong>Format accepté :</strong> .xlsx
-
-            <br><br>
-
-            La première ligne du fichier Excel doit contenir
-            les colonnes suivantes :
-
-        </div>
-
-
-        <div class="table-wrapper">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <th>nom</th>
-                        <th>prenom</th>
-                        <th>date_naissance</th>
-                        <th>sexe</th>
-                        <th>adresse</th>
-                        <th>telephone</th>
-                        <th>email</th>
-                        <th>date_adhesion</th>
-                    </tr>
-
-                </thead>
-
-            </table>
-
-        </div>
-
-
-        <form method="post" enctype="multipart/form-data">
-
-            {% csrf_token %}
-
-            <div class="field">
-
-                {{ form.fichier.label_tag }}
-
-                {{ form.fichier }}
-
-                {% if form.fichier.errors %}
-
-                    <div class="field-error">
-                        {{ form.fichier.errors }}
-                    </div>
-
-                {% endif %}
-
-            </div>
-
-
-            <div class="actions">
-
-                <button type="submit" class="btn">
-                    📥 Importer les adhérents
-                </button>
-
-                <a href="{% url 'adherents' %}" class="btn btn-secondary">
-                    Annuler
-                </a>
-
-            </div>
-
-        </form>
-
+    <div class="info">
+        <strong>Format accepté :</strong> .xlsx
+        <br><br>
+        La première ligne du fichier Excel doit contenir
+        les colonnes suivantes :
     </div>
 
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>nom</th>
+                    <th>prenom</th>
+                    <th>date_naissance</th>
+                    <th>sexe</th>
+                    <th>adresse</th>
+                    <th>telephone</th>
+                    <th>email</th>
+                    <th>date_adhesion</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+
+        {% csrf_token %}
+
+        <div class="field">
+            {{ form.fichier.label_tag }}
+            {{ form.fichier }}
+            {% if form.fichier.errors %}
+                <div class="field-error">{{ form.fichier.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="actions">
+            <button type="submit" class="btn">📥 Importer les adhérents</button>
+            <a href="{% url 'adherents' %}" class="btn btn-secondary">Annuler</a>
+        </div>
+
+    </form>
+
 </div>
 
-
-<div class="footer">
-    © 2026 — Plateforme Tiers Payant
-</div>
-
-</body>
-
-</html>
+{% endblock %}

@@ -1,13 +1,12 @@
-from .models import UtilisateurRole
+from .models import Utilisateur, UtilisateurRole, RolePermission
 
 
 def utilisateur_context(request):
-    """Ajoute automatiquement l'utilisateur connecté et ses rôles au contexte de tous les templates."""
+    """Ajoute utilisateur, rôles et permissions à TOUS les templates."""
     id_utilisateur = request.session.get("id_utilisateur")
     if not id_utilisateur:
         return {}
 
-    from .models import Utilisateur
     try:
         utilisateur = Utilisateur.objects.get(id_utilisateur=id_utilisateur)
     except Utilisateur.DoesNotExist:
@@ -19,7 +18,18 @@ def utilisateur_context(request):
         .select_related("id_role")
     )
 
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
     return {
         "utilisateur": utilisateur,
         "roles": roles,
+        "permissions": permissions,
     }
