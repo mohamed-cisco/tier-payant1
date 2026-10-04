@@ -11,7 +11,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.http import FileResponse, JsonResponse
 from django import forms
-from django.db.models import Q, Sum, Count
+from django.db.models import Q, Sum, Count, Avg
 from django.db.models.functions import TruncMonth
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -112,16 +112,12 @@ def enregistrer_audit(
 
 @session_utilisateur_required
 def accueil(request):
-    
     utilisateur = request.utilisateur
     id_utilisateur = utilisateur.id_utilisateur
 
     roles = (
         UtilisateurRole.objects
-        .filter(
-            id_utilisateur=id_utilisateur,
-            statut="ACTIF"
-        )
+        .filter(id_utilisateur=id_utilisateur, statut="ACTIF")
         .select_related("id_role")
     )
 
@@ -132,105 +128,173 @@ def accueil(request):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
-        # =========================
-    # STATISTIQUES DU TABLEAU DE BORD
+
     # =========================
+    # FILTRE PAR PÉRIODE
+    # =========================
+    periode = request.GET.get("periode", "annee")
+    aujourd_hui = timezone.now().date()
 
+    if periode == "mois":
+        date_debut = aujourd_hui.replace(day=1)
+    elif periode == "trimestre":
+        mois_debut = ((aujourd_hui.month - 1) // 3) * 3 + 1
+        date_debut = aujourd_hui.replace(month=mois_debut, day=1)
+    elif periode == "annee":
+        date_debut = aujourd_hui.replace(month=1, day=1)
+    else:
+        date_debut = None
+
+    # =========================
+    # STATISTIQUES GÉNÉRALES
+    # =========================
     nombre_adherents = Adherent.objects.count()
+    contrats_actifs = Contrat.objects.filter(statut="ACTIF").count()
+    demandes_en_attente = DemandeTp.objects.filter(statut="EN_ATTENTE").count()
+    factures_en_attente = Facture.objects.filter(statut="EN_ATTENTE").count()
 
-    contrats_actifs = Contrat.objects.filter(
-        statut="ACTIF"
-    ).count()
-
-    demandes_en_attente = DemandeTp.objects.filter(
-        statut="EN_ATTENTE"
-    ).count()
-
-    factures_en_attente = Facture.objects.filter(
-        statut="EN_ATTENTE"
-    ).count()
     montant_factures_validees = (
-    Facture.objects
-    .filter(statut__in=["VALIDEE", "PAYEE"])
-    .aggregate(total=Sum("montant_valide"))["total"]
-    or 0
-)
-
+        Facture.objects
+        .filter(statut__in=["VALIDEE", "PAYEE"])
+        .aggregate(total=Sum("montant_valide"))["total"]
+        or 0
+    )
     montant_paye = (
         Reglement.objects
         .filter(statut="VALIDEE")
         .aggregate(total=Sum("montant"))["total"]
         or 0
     )
-
     reste_a_payer = montant_factures_validees - montant_paye
 
-    adherents_actifs = Adherent.objects.filter(
-        statut="ACTIF"
-    ).count()
-
-    demandes_acceptees = DemandeTp.objects.filter(
-        statut="ACCEPTEE"
-    ).count()
-
-    factures_payees = Facture.objects.filter(
-        statut="PAYEE"
-    ).count()
-
-    dernieres_demandes = DemandeTp.objects.order_by(
-        "-date_demande"
-    )[:5]
-
-    dernieres_factures = Facture.objects.order_by(
-        "-date_facture"
-    )[:5]
+    adherents_actifs = Adherent.objects.filter(statut="ACTIF").count()
+    demandes_acceptees = DemandeTp.objects.filter(statut="ACCEPTEE").count()
+    factures_payees = Facture.objects.filter(statut="PAYEE").count()
 
     # =========================
-    # DONNÉES GRAPHIQUE DEMANDES TP
+    # KPIs AVANCÉS
     # =========================
+    total_demandes = DemandeTp.objects.count()
+
+    if total_demandes:
+        taux_acceptation = round((demandes_acceptees / total_demandes) * 100, 1)
+    else:
+        taux_acceptation = 0
+
+    montant_moyen_demande = (
+        DemandeTp.objects.aggregate(moyenne=Avg("montant_demande"))["moyenne"]
+        or 0
+    )
+
+    # Délai moyen de traitement
+    delai_moyen_jours = 0
+    try:
+        demandes_traitees = DemandeTp.objects.filter(
+            statut="ACCEPTEE",
+            date_decision__isnull=False
+        ).exclude(date_demande__isnull=True)
+
+        if demandes_traitees.exists():
+            delais = [
+                (d.date_decision.date() - d.date_demande.date()).days
+                for d in demandes_traitees
+                if d.date_decision and d.date_demande
+            ]
+            if delais:
+                delai_moyen_jours = round(sum(delais) / len(delais), 1)
+    except Exception:
+        pass
+
+    # =========================
+    # GRAPHIQUE 1 : DEMANDES PAR MOIS
+    # =========================
+    demandes_qs = DemandeTp.objects.all()
+    if date_debut:
+        demandes_qs = demandes_qs.filter(date_demande__date__gte=date_debut)
 
     demandes_par_mois = (
-        DemandeTp.objects
+        demandes_qs
         .annotate(mois=TruncMonth("date_demande"))
         .values("mois")
         .annotate(total=Count("id_demande"))
         .order_by("mois")
     )
+    graphique_labels = [item["mois"].strftime("%m/%Y") for item in demandes_par_mois]
+    graphique_demandes = [item["total"] for item in demandes_par_mois]
 
-    graphique_labels = [
-        item["mois"].strftime("%m/%Y")
-        for item in demandes_par_mois
-    ]
-
-    graphique_demandes = [
-        item["total"]
-        for item in demandes_par_mois
-    ]
     # =========================
-    # RÉPARTITION PAR TYPE DE PRESTATION
+    # GRAPHIQUE 2 : RÉPARTITION PAR TYPE DE PRESTATION
     # =========================
-
     prestations_par_type = (
         DemandeTpDetail.objects
         .values("id_acte__id_type_prestation__libelle")
         .annotate(total=Count("id_detail"))
         .order_by("-total")
     )
-
     prestation_labels = [
-        item["id_acte__id_type_prestation__libelle"]
+        item["id_acte__id_type_prestation__libelle"] or "Non défini"
         for item in prestations_par_type
     ]
+    prestation_totaux = [item["total"] for item in prestations_par_type]
 
-    prestation_totaux = [
-        item["total"]
-        for item in prestations_par_type
-    ]
+    # =========================
+    # GRAPHIQUE 3 : FACTURES PAR STATUT
+    # =========================
+    factures_par_statut = (
+        Facture.objects
+        .values("statut")
+        .annotate(total=Count("id_facture"))
+        .order_by("-total")
+    )
+    facture_statut_labels = [item["statut"] for item in factures_par_statut]
+    facture_statut_totaux = [item["total"] for item in factures_par_statut]
+
+    # =========================
+    # GRAPHIQUE 4 : TOP 5 PRESTATAIRES PAR MONTANT VALIDÉ
+    # =========================
+    top_prestataires = (
+        Facture.objects
+        .values("id_prestataire__raison_sociale")
+        .annotate(total=Sum("montant_valide"))
+        .order_by("-total")[:5]
+    )
+    top_prestataire_labels = [item["id_prestataire__raison_sociale"] for item in top_prestataires]
+    top_prestataire_totaux = [float(item["total"] or 0) for item in top_prestataires]
+
+    # =========================
+    # ALERTES
+    # =========================
+    date_limite_30j = aujourd_hui + timedelta(days=30)
+
+    conventions_bientot_expirees = (
+        Convention.objects
+        .filter(
+            statut="ACTIF",
+            date_fin__isnull=False,
+            date_fin__lte=date_limite_30j,
+            date_fin__gte=aujourd_hui
+        )
+        .select_related("id_prestataire")
+        .order_by("date_fin")
+    )
+
+    date_retard = aujourd_hui - timedelta(days=30)
+
+    factures_en_retard = (
+        Facture.objects
+        .filter(statut="EN_ATTENTE", date_facture__lte=date_retard)
+        .select_related("id_prestataire")
+        .order_by("date_facture")
+    )
+
+    # =========================
+    # ACTIVITÉ RÉCENTE
+    # =========================
+    dernieres_demandes = DemandeTp.objects.order_by("-date_demande")[:5]
+    dernieres_factures = Facture.objects.order_by("-date_facture")[:5]
+
     return render(
         request,
         "core/accueil.html",
@@ -238,6 +302,10 @@ def accueil(request):
             "utilisateur": utilisateur,
             "roles": roles,
             "permissions": permissions,
+            "page": "accueil",
+            "periode": periode,
+
+            # Stats générales
             "nombre_adherents": nombre_adherents,
             "contrats_actifs": contrats_actifs,
             "demandes_en_attente": demandes_en_attente,
@@ -247,14 +315,30 @@ def accueil(request):
             "reste_a_payer": reste_a_payer,
             "adherents_actifs": adherents_actifs,
             "demandes_acceptees": demandes_acceptees,
-            "factures_payees": factures_payees, 
-            "dernieres_demandes": dernieres_demandes,
-            "dernieres_factures": dernieres_factures,
+            "factures_payees": factures_payees,
+
+            # KPIs avancés
+            "taux_acceptation": taux_acceptation,
+            "montant_moyen_demande": montant_moyen_demande,
+            "delai_moyen_jours": delai_moyen_jours,
+
+            # Graphiques
             "graphique_labels": graphique_labels,
             "graphique_demandes": graphique_demandes,
             "prestation_labels": prestation_labels,
             "prestation_totaux": prestation_totaux,
-            "page": "accueil", 
+            "facture_statut_labels": facture_statut_labels,
+            "facture_statut_totaux": facture_statut_totaux,
+            "top_prestataire_labels": top_prestataire_labels,
+            "top_prestataire_totaux": top_prestataire_totaux,
+
+            # Alertes
+            "conventions_bientot_expirees": conventions_bientot_expirees,
+            "factures_en_retard": factures_en_retard,
+
+            # Activité récente
+            "dernieres_demandes": dernieres_demandes,
+            "dernieres_factures": dernieres_factures,
         }
     )
 def connexion(request):

@@ -7,34 +7,7 @@
 
 {% block extra_css %}
 <style>
-    /* ===== STATS ===== */
-    .stats {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 14px;
-        margin: 18px 0 25px;
-    }
-
-    .stat-card {
-        background: white;
-        border-radius: 14px;
-        padding: 18px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        border: 1px solid #e8edf3;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-        transition: transform .2s, box-shadow .2s;
-    }
-    .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 22px rgba(0,0,0,0.09);
-    }
-    .stat-icon { font-size: 32px; }
-    .stat-title { font-size: 14px; color: #6c757d; }
-    .stat-value { font-size: 28px; font-weight: bold; color: #0d6efd; }
-
-    /* ===== WELCOME ===== */
+    /* ===== BANDEAU DE BIENVENUE ===== */
     .welcome {
         background: linear-gradient(135deg, #123b65, #1d5d91);
         color: white;
@@ -53,16 +26,79 @@
         background: rgba(255,255,255,0.07);
         right: -70px; top: -80px;
     }
-    .welcome h2 { margin: 0 0 12px; font-size: 28px; font-weight: 700; }
+    .welcome h2 { margin: 0 0 12px; font-size: 26px; font-weight: 700; }
     .welcome p { margin: 6px 0; font-size: 14px; opacity: .95; }
 
-    /* ===== SECTION TITLE ===== */
+    /* ===== FILTRES PÉRIODE ===== */
+    .periode-bar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 22px;
+        padding: 12px 16px;
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e8edf3;
+        box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    }
+    .periode-bar strong {
+        color: #123b65;
+        margin-right: 8px;
+        font-size: 14px;
+    }
+    .periode-bar a {
+        padding: 8px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+        background: #f1f5f9;
+        transition: .2s;
+    }
+    .periode-bar a:hover { background: #e2e8f0; }
+    .periode-bar a.active {
+        background: #123b65;
+        color: white;
+    }
+
+    /* ===== STATS ===== */
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin: 18px 0 25px;
+    }
+    .stat-card {
+        background: white;
+        border-radius: 14px;
+        padding: 18px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        border: 1px solid #e8edf3;
+        box-shadow: 0 4px 15px rgba(0,0,0,.06);
+        transition: transform .2s, box-shadow .2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 22px rgba(0,0,0,.09);
+    }
+    .stat-icon { font-size: 32px; }
+    .stat-title { font-size: 13px; color: #6c757d; margin-bottom: 3px; }
+    .stat-value { font-size: 24px; font-weight: 700; color: #0d6efd; }
+    .stat-value.small { font-size: 18px; }
+    .stat-value.success { color: #16a34a; }
+    .stat-value.warning { color: #d97706; }
+    .stat-value.danger  { color: #dc2626; }
+
+    /* ===== SECTION TITRE ===== */
     .section-title {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-top: 35px;
-        margin-bottom: 15px;
+        margin: 30px 0 15px;
     }
     .section-title h2 {
         margin: 0;
@@ -83,16 +119,59 @@
         border: 1px solid #e8edf3;
         border-radius: 14px;
         padding: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 15px rgba(0,0,0,.05);
     }
-    .chart-card h2 {
+    .chart-card h3 {
         margin: 0 0 18px;
         color: #123b65;
-        font-size: 18px;
+        font-size: 16px;
     }
     .chart-container {
         position: relative;
-        height: 280px;
+        height: 260px;
+    }
+
+    /* ===== ALERTES ===== */
+    .alert-card {
+        background: white;
+        border: 1px solid #fecaca;
+        border-left: 5px solid #dc2626;
+        border-radius: 12px;
+        padding: 18px 20px;
+        margin-bottom: 12px;
+        box-shadow: 0 3px 10px rgba(220,38,38,.06);
+    }
+    .alert-card.warning {
+        border-color: #fed7aa;
+        border-left-color: #d97706;
+        box-shadow: 0 3px 10px rgba(217,119,6,.06);
+    }
+    .alert-card h4 {
+        margin: 0 0 8px;
+        color: #991b1b;
+        font-size: 15px;
+    }
+    .alert-card.warning h4 { color: #92400e; }
+    .alert-card p {
+        margin: 4px 0;
+        font-size: 13px;
+        color: #475569;
+    }
+    .alert-card a {
+        color: #2563eb;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .alert-card a:hover { text-decoration: underline; }
+    .alert-empty {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-left: 5px solid #16a34a;
+        border-radius: 12px;
+        padding: 18px 20px;
+        color: #166534;
+        font-size: 14px;
+        font-weight: 500;
     }
 
     /* ===== ACTIVITÉ RÉCENTE ===== */
@@ -100,39 +179,40 @@
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 14px;
-        margin: 30px 0;
+        margin-top: 15px;
     }
     .recent-card {
         background: white;
         border-radius: 14px;
         padding: 22px;
         border: 1px solid #e8edf3;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        box-shadow: 0 4px 15px rgba(0,0,0,.06);
         overflow-x: auto;
     }
     .recent-card h3 {
         margin-top: 0;
         margin-bottom: 15px;
         font-size: 16px;
+        color: #123b65;
     }
     .recent-card table { width: 100%; border-collapse: collapse; }
     .recent-card th {
         text-align: left;
         padding: 11px 10px;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 700;
         color: #123b65;
         border-bottom: 2px solid #e8edf3;
         white-space: nowrap;
+        text-transform: uppercase;
     }
     .recent-card td {
         padding: 10px;
-        font-size: 14px;
+        font-size: 13px;
         border-bottom: 1px solid #eee;
     }
     .recent-card tr:last-child td { border-bottom: none; }
-
-    .empty-message { color: #777; font-style: italic; }
+    .empty-message { color: #777; font-style: italic; font-size: 14px; }
 
     /* ===== BADGES ===== */
     .status-badge {
@@ -164,11 +244,19 @@
 
 <!-- ========== BIENVENUE ========== -->
 <div class="welcome">
-    <h2>Bienvenue sur votre espace Tiers Payant</h2>
+    <h2>Bienvenue {{ utilisateur.prenom }} 👋</h2>
     <p>Gestion centralisée des adhérents, contrats, demandes de prise en charge et factures.</p>
 </div>
 
-<!-- ========== STATISTIQUES ========== -->
+<!-- ========== FILTRES PÉRIODE ========== -->
+<div class="periode-bar">
+    <strong>📅 Période :</strong>
+    <a href="?periode=mois"      class="{% if periode == 'mois' %}active{% endif %}">Ce mois</a>
+    <a href="?periode=trimestre" class="{% if periode == 'trimestre' %}active{% endif %}">Ce trimestre</a>
+    <a href="?periode=annee"     class="{% if periode == 'annee' %}active{% endif %}">Cette année</a>
+</div>
+
+<!-- ========== STATS PRINCIPALES ========== -->
 <div class="stats">
     <div class="stat-card">
         <div class="stat-icon">👥</div>
@@ -188,86 +276,151 @@
         <div class="stat-icon">📝</div>
         <div>
             <div class="stat-title">Demandes en attente</div>
-            <div class="stat-value">{{ demandes_en_attente }}</div>
+            <div class="stat-value warning">{{ demandes_en_attente }}</div>
         </div>
     </div>
     <div class="stat-card">
         <div class="stat-icon">💰</div>
         <div>
             <div class="stat-title">Factures en attente</div>
-            <div class="stat-value">{{ factures_en_attente }}</div>
+            <div class="stat-value warning">{{ factures_en_attente }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== KPIs AVANCÉS ========== -->
+<div class="section-title"><h2>Indicateurs de performance</h2></div>
+<div class="stats">
+    <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div>
+            <div class="stat-title">Taux d'acceptation</div>
+            <div class="stat-value success">{{ taux_acceptation }}%</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">💵</div>
+        <div>
+            <div class="stat-title">Montant moyen / demande</div>
+            <div class="stat-value small">{{ montant_moyen_demande|floatformat:2 }} DA</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">⏱️</div>
+        <div>
+            <div class="stat-title">Délai moyen de traitement</div>
+            <div class="stat-value small">{{ delai_moyen_jours }} jour(s)</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">👨‍👩‍👧</div>
+        <div>
+            <div class="stat-title">Adhérents actifs</div>
+            <div class="stat-value">{{ adherents_actifs }}</div>
         </div>
     </div>
 </div>
 
 <!-- ========== GRAPHIQUES ========== -->
+<div class="section-title"><h2>📊 Analyses graphiques</h2></div>
+
 <div class="charts-row">
     <div class="chart-card">
-        <h2>Évolution des demandes Tiers Payant</h2>
+        <h3>Évolution des demandes TP</h3>
         <div class="chart-container">
             <canvas id="demandesChart"></canvas>
         </div>
     </div>
     <div class="chart-card">
-        <h2>Répartition par type de prestation</h2>
+        <h3>Répartition par type de prestation</h3>
         <div class="chart-container">
             <canvas id="prestationChart"></canvas>
         </div>
     </div>
 </div>
 
-<!-- ========== SITUATION FINANCIÈRE ========== -->
-<div class="section-title"><h2>Situation financière</h2></div>
+<div class="charts-row">
+    <div class="chart-card">
+        <h3>Factures par statut</h3>
+        <div class="chart-container">
+            <canvas id="facturesStatutChart"></canvas>
+        </div>
+    </div>
+    <div class="chart-card">
+        <h3>Top 5 prestataires (montant validé)</h3>
+        <div class="chart-container">
+            <canvas id="topPrestatairesChart"></canvas>
+        </div>
+    </div>
+</div>
 
+<!-- ========== SITUATION FINANCIÈRE ========== -->
+<div class="section-title"><h2>💰 Situation financière</h2></div>
 <div class="stats">
     <div class="stat-card">
         <div class="stat-icon">💵</div>
         <div>
             <div class="stat-title">Factures validées</div>
-            <div class="stat-value">{{ montant_factures_validees|floatformat:2 }} DA</div>
+            <div class="stat-value small">{{ montant_factures_validees|floatformat:2 }} DA</div>
         </div>
     </div>
     <div class="stat-card">
         <div class="stat-icon">💳</div>
         <div>
             <div class="stat-title">Montant payé</div>
-            <div class="stat-value">{{ montant_paye|floatformat:2 }} DA</div>
+            <div class="stat-value small success">{{ montant_paye|floatformat:2 }} DA</div>
         </div>
     </div>
     <div class="stat-card">
         <div class="stat-icon">⏳</div>
         <div>
             <div class="stat-title">Reste à payer</div>
-            <div class="stat-value">{{ reste_a_payer|floatformat:2 }} DA</div>
+            <div class="stat-value small danger">{{ reste_a_payer|floatformat:2 }} DA</div>
         </div>
     </div>
 </div>
 
-<!-- ========== SITUATION ACTUELLE ========== -->
-<div class="section-title"><h2>Situation actuelle</h2></div>
+<!-- ========== ALERTES ========== -->
+<div class="section-title"><h2>🔔 Alertes</h2></div>
 
-<div class="stats">
-    <div class="stat-card">
-        <div class="stat-icon">✅</div>
-        <div>
-            <div class="stat-title">Demandes TP acceptées</div>
-            <div class="stat-value">{{ demandes_acceptees }}</div>
-        </div>
+{% if factures_en_retard %}
+    <div class="alert-card">
+        <h4>⚠️ {{ factures_en_retard|length }} facture(s) en retard de traitement</h4>
+        <p>Factures en attente depuis plus de 30 jours.</p>
+        <p>
+            <a href="{% url 'factures' %}?statut=EN_ATTENTE">Voir les factures →</a>
+        </p>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon">💰</div>
-        <div>
-            <div class="stat-title">Factures payées</div>
-            <div class="stat-value">{{ factures_payees }}</div>
-        </div>
+{% endif %}
+
+{% if conventions_bientot_expirees %}
+    <div class="alert-card warning">
+        <h4>⏰ {{ conventions_bientot_expirees|length }} convention(s) expirent dans moins de 30 jours</h4>
+        <ul style="margin: 8px 0 0 20px; padding: 0; font-size: 13px; color: #475569;">
+            {% for conv in conventions_bientot_expirees|slice:":5" %}
+                <li>
+                    <strong>{{ conv.numero_convention }}</strong>
+                    — {{ conv.id_prestataire.raison_sociale }}
+                    (expire le {{ conv.date_fin|date:"d/m/Y" }})
+                </li>
+            {% endfor %}
+        </ul>
+        <p style="margin-top: 8px;">
+            <a href="{% url 'conventions' %}?statut=ACTIF">Voir les conventions →</a>
+        </p>
     </div>
-</div>
+{% endif %}
+
+{% if not factures_en_retard and not conventions_bientot_expirees %}
+    <div class="alert-empty">
+        ✅ Aucune alerte — tout est en ordre !
+    </div>
+{% endif %}
 
 <!-- ========== ACTIVITÉ RÉCENTE ========== -->
-<h2 style="margin-top:30px;">📋 Activité récente</h2>
+<div class="section-title"><h2>📋 Activité récente</h2></div>
 
 <div class="recent-grid">
-
     <div class="recent-card">
         <h3>Dernières demandes TP</h3>
         {% if dernieres_demandes %}
@@ -335,27 +488,27 @@
             <p class="empty-message">Aucune facture.</p>
         {% endif %}
     </div>
-
 </div>
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // ===== GRAPHIQUE DEMANDES =====
-    const graphiqueLabels   = {{ graphique_labels|safe }};
-    const graphiqueDemandes = {{ graphique_demandes|safe }};
-
+    // ===== GRAPHIQUE 1 : DEMANDES =====
     new Chart(document.getElementById("demandesChart"), {
         type: "line",
         data: {
-            labels: graphiqueLabels,
+            labels: {{ graphique_labels|safe }},
             datasets: [{
                 label: "Nombre de demandes",
-                data: graphiqueDemandes,
+                data: {{ graphique_demandes|safe }},
+                borderColor: "#123b65",
+                backgroundColor: "rgba(18, 59, 101, 0.1)",
                 borderWidth: 3,
                 tension: 0.3,
-                fill: false
+                fill: true,
+                pointBackgroundColor: "#123b65",
+                pointRadius: 5
             }]
         },
         options: {
@@ -365,16 +518,23 @@
         }
     });
 
-    // ===== GRAPHIQUE PRESTATIONS =====
-    const prestationLabels = {{ prestation_labels|safe }};
+    // ===== GRAPHIQUE 2 : PRESTATIONS =====
     const prestationTotaux = {{ prestation_totaux|safe }};
     const totalPrestations = prestationTotaux.reduce((t, v) => t + v, 0);
 
     new Chart(document.getElementById('prestationChart'), {
         type: 'doughnut',
         data: {
-            labels: prestationLabels,
-            datasets: [{ data: prestationTotaux, borderWidth: 1 }]
+            labels: {{ prestation_labels|safe }},
+            datasets: [{
+                data: prestationTotaux,
+                backgroundColor: [
+                    "#123b65", "#2563eb", "#3b82f6", "#60a5fa",
+                    "#93c5fd", "#bfdbfe", "#dbeafe", "#eff6ff"
+                ],
+                borderWidth: 2,
+                borderColor: "#fff"
+            }]
         },
         options: {
             responsive: true,
@@ -384,11 +544,73 @@
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            const valeur = context.raw;
+                            const v = context.raw;
                             const pct = totalPrestations > 0
-                                ? ((valeur / totalPrestations) * 100).toFixed(1)
+                                ? ((v / totalPrestations) * 100).toFixed(1)
                                 : 0;
-                            return context.label + ' : ' + valeur + ' (' + pct + '%)';
+                            return context.label + ' : ' + v + ' (' + pct + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // ===== GRAPHIQUE 3 : FACTURES PAR STATUT =====
+    new Chart(document.getElementById('facturesStatutChart'), {
+        type: 'bar',
+        data: {
+            labels: {{ facture_statut_labels|safe }},
+            datasets: [{
+                label: "Nombre de factures",
+                data: {{ facture_statut_totaux|safe }},
+                backgroundColor: [
+                    "#fbbf24", "#16a34a", "#dc2626", "#2563eb", "#64748b"
+                ],
+                borderRadius: 8,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+
+    // ===== GRAPHIQUE 4 : TOP PRESTATAIRES =====
+    new Chart(document.getElementById('topPrestatairesChart'), {
+        type: 'bar',
+        data: {
+            labels: {{ top_prestataire_labels|safe }},
+            datasets: [{
+                label: "Montant validé (DA)",
+                data: {{ top_prestataire_totaux|safe }},
+                backgroundColor: "#123b65",
+                borderRadius: 6
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.raw.toLocaleString('fr-FR') + ' DA';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(v) {
+                            return v.toLocaleString('fr-FR');
                         }
                     }
                 }
