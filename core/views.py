@@ -5252,52 +5252,38 @@ def ayant_droit_modifier(request, id_ayant_droit):
         messages.error(request, "Ayant droit introuvable.")
         return redirect("ayant_droits")
 
-    personnes = (
-        Personne.objects
-        .filter(statut="ACTIF")
-        .order_by("nom", "prenom")
-    )
-
-    adherents = (
-        Adherent.objects
-        .filter(statut="ACTIF")
-        .order_by("numero_adherent")
-    )
+    personne = ayant_droit.id_personne
+    adherent = ayant_droit.id_adherent
 
     if request.method == "POST":
-        form = AyantDroitForm(request.POST)
-
-        form.fields["id_personne"].choices = [
-            (
-                str(p.id_personne),
-                f"{p.numero_personne or ''} - {p.nom} {p.prenom}"
-            )
-            for p in personnes
-        ]
-
-        form.fields["id_adherent"].choices = [
-            (str(a.id_adherent), a.numero_adherent)
-            for a in adherents
-        ]
+        form = AyantDroitForm(
+            request.POST,
+            nom_adherent=adherent.id_personne.nom,
+            date_adhesion=adherent.date_adhesion,
+        )
 
         if form.is_valid():
             try:
-                personne = Personne.objects.get(
-                    id_personne=form.cleaned_data["id_personne"],
-                    statut="ACTIF"
-                )
-                adherent = Adherent.objects.get(
-                    id_adherent=form.cleaned_data["id_adherent"],
-                    statut="ACTIF"
-                )
+                with transaction.atomic():
 
-                ayant_droit.id_personne = personne
-                ayant_droit.id_adherent = adherent
-                ayant_droit.type_lien = form.cleaned_data["type_lien"]
-                ayant_droit.date_debut = form.cleaned_data["date_debut"]
-                ayant_droit.date_fin = form.cleaned_data["date_fin"]
-                ayant_droit.statut = form.cleaned_data["statut"]
-                ayant_droit.save()
+                    # Mise à jour de la personne liée
+                    personne.nom = form.cleaned_data["nom"].strip()
+                    personne.prenom = form.cleaned_data["prenom"].strip()
+                    personne.date_naissance = form.cleaned_data["date_naissance"]
+                    personne.sexe = form.cleaned_data["sexe"] or None
+                    personne.date_modification = timezone.now()
+                    personne.save()
+
+                    # Mise à jour de l'ayant droit
+                    ayant_droit.id_adherent_id = (
+                        form.cleaned_data.get("id_adherent")
+                        or ayant_droit.id_adherent_id
+                    )
+                    ayant_droit.type_lien = form.cleaned_data["type_lien"]
+                    ayant_droit.date_debut = form.cleaned_data["date_debut"]
+                    ayant_droit.date_fin = form.cleaned_data["date_fin"]
+                    ayant_droit.statut = form.cleaned_data["statut"]
+                    ayant_droit.save()
 
                 messages.success(
                     request,
@@ -5313,27 +5299,19 @@ def ayant_droit_modifier(request, id_ayant_droit):
     else:
         form = AyantDroitForm(
             initial={
-                "id_personne": str(ayant_droit.id_personne_id),
-                "id_adherent": str(ayant_droit.id_adherent_id),
+                "id_adherent": ayant_droit.id_adherent_id,
+                "nom": personne.nom,
+                "prenom": personne.prenom,
+                "date_naissance": personne.date_naissance,
+                "sexe": personne.sexe,
                 "type_lien": ayant_droit.type_lien,
                 "date_debut": ayant_droit.date_debut,
                 "date_fin": ayant_droit.date_fin,
                 "statut": ayant_droit.statut,
-            }
+            },
+            nom_adherent=adherent.id_personne.nom,
+            date_adhesion=adherent.date_adhesion,
         )
-
-        form.fields["id_personne"].choices = [
-            (
-                str(p.id_personne),
-                f"{p.numero_personne or ''} - {p.nom} {p.prenom}"
-            )
-            for p in personnes
-        ]
-
-        form.fields["id_adherent"].choices = [
-            (str(a.id_adherent), a.numero_adherent)
-            for a in adherents
-        ]
 
     return render(
         request,
@@ -5341,6 +5319,7 @@ def ayant_droit_modifier(request, id_ayant_droit):
         {
             "form": form,
             "titre": "Modifier l'ayant droit",
+            "adherent_preselectionne": adherent,
         }
     )
 def ayant_droit_radier(request, id_ayant_droit):
