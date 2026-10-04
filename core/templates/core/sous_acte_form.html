@@ -1,337 +1,141 @@
+{% extends "core/base.html" %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="fr">
+{% block title %}{{ titre }} - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des sous-actes{% endblock %}
+{% block header_sub %}Création et modification de sous-acte{% endblock %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block extra_css %}
+<style>
+    .page-title { margin-bottom: 25px; }
+    .page-title h1 {
+        margin: 0 0 8px;
+        color: #123b65;
+        font-size: 28px;
+    }
+    .page-title p { margin: 0; color: #607d8b; }
 
-    <title>{{ titre }} - Tiers Payant</title>
+    .card {
+        background: white;
+        border-radius: 14px;
+        padding: 30px;
+        box-shadow: 0 4px 18px rgba(0,0,0,.07);
+        max-width: 850px;
+        margin: 0 auto;
+    }
 
-    <style>
+    .form-group { margin-bottom: 20px; }
 
-        * {
-            box-sizing: border-box;
-        }
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: #123b65;
+    }
 
-        body {
-            margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f4f7fb;
-            color: #263238;
-        }
+    input, select, textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #d5dce5;
+        border-radius: 8px;
+        font-size: 15px;
+        background: white;
+    }
 
-        header {
-            min-height: 95px;
-            background: #123b65;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 15px 30px;
-            color: white;
-        }
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: #1976d2;
+        box-shadow: 0 0 0 3px rgba(25,118,210,.10);
+    }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
+    textarea { resize: vertical; min-height: 100px; }
 
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
+    .errorlist {
+        margin: 6px 0 0;
+        padding: 0;
+        list-style: none;
+        color: #c62828;
+        font-size: 14px;
+    }
 
-        .brand-title {
-            font-size: 22px;
-            font-weight: bold;
-        }
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #edf1f5;
+    }
 
-        .header-actions a {
-            color: white;
-            text-decoration: none;
-            margin-left: 10px;
-            padding: 10px 16px;
-            border-radius: 7px;
-            background: rgba(255,255,255,.12);
-        }
+    .btn {
+        display: inline-block;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 8px;
+        text-decoration: none;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: bold;
+    }
 
-        .header-actions a:hover {
-            background: rgba(255,255,255,.22);
-        }
+    .btn-primary { background: #1976d2; color: white; }
+    .btn-primary:hover { background: #125ea7; }
+    .btn-secondary { background: #e8eef5; color: #123b65; }
+    .btn-secondary:hover { background: #dce5ef; }
 
-        main {
-            max-width: 850px;
-            margin: 35px auto;
-            padding: 0 20px;
-        }
+    .messages { margin-bottom: 20px; }
+    .message {
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
 
-        .page-title {
-            margin-bottom: 25px;
-        }
+    @media (max-width: 700px) {
+        .card { padding: 20px; }
+        .form-actions { flex-direction: column-reverse; }
+        .btn { width: 100%; text-align: center; }
+    }
+</style>
+{% endblock %}
 
-        .page-title h1 {
-            margin: 0 0 8px;
-            color: #123b65;
-            font-size: 28px;
-        }
+{% block content %}
 
-        .page-title p {
-            margin: 0;
-            color: #607d8b;
-        }
+<div class="page-title">
+    <h1>{{ titre }}</h1>
+    <p>Création d'un nouveau sous-acte médical.</p>
+</div>
 
-        .card {
-            background: white;
-            border-radius: 14px;
-            padding: 30px;
-            box-shadow: 0 4px 18px rgba(0,0,0,.07);
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #123b65;
-        }
-
-        input,
-        select,
-        textarea {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1px solid #d5dce5;
-            border-radius: 8px;
-            font-size: 15px;
-            background: white;
-        }
-
-        input:focus,
-        select:focus,
-        textarea:focus {
-            outline: none;
-            border-color: #1976d2;
-            box-shadow: 0 0 0 3px rgba(25,118,210,.10);
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .errorlist {
-            margin: 6px 0 0;
-            padding: 0;
-            list-style: none;
-            color: #c62828;
-            font-size: 14px;
-        }
-
-        .form-actions {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #edf1f5;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            text-decoration: none;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: bold;
-        }
-
-        .btn-primary {
-            background: #1976d2;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #125ea7;
-        }
-
-        .btn-secondary {
-            background: #e8eef5;
-            color: #123b65;
-        }
-
-        .btn-secondary:hover {
-            background: #dce5ef;
-        }
-
-        .messages {
-            margin-bottom: 20px;
-        }
-
-        .message {
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-
-        footer {
-            margin-top: 50px;
-            padding: 20px;
-            text-align: center;
-            color: #78909c;
-            font-size: 14px;
-        }
-
-        @media (max-width: 700px) {
-
-            header {
-                padding: 15px;
-            }
-
-            .brand-title {
-                display: none;
-            }
-
-            .card {
-                padding: 20px;
-            }
-
-            .form-actions {
-                flex-direction: column-reverse;
-            }
-
-            .btn {
-                width: 100%;
-                text-align: center;
-            }
-        }
-
-    </style>
-</head>
-
-<body>
-
-<header>
-
-    <div class="brand">
-
-        <a href="{% url 'accueil' %}">
-            <img src="{% static 'core/img/logo-sagps.png' %}" alt="SAGPS">
-        </a>
-
-        <div class="brand-title">
-            Plateforme Tiers Payant
-        </div>
-
+{% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <div class="message">{{ message }}</div>
+        {% endfor %}
     </div>
+{% endif %}
 
-    <div class="header-actions">
+<div class="card">
 
-        <a href="{% url 'sous_actes' %}">
-            ← Sous-actes
-        </a>
+    <form method="post">
 
-        <a href="{% url 'accueil' %}">
-            Accueil
-        </a>
+        {% csrf_token %}
 
-    </div>
-
-</header>
-
-
-<main>
-
-    <div class="page-title">
-
-        <h1>{{ titre }}</h1>
-
-        <p>
-            Création d'un nouveau sous-acte médical.
-        </p>
-
-    </div>
-
-
-    {% if messages %}
-
-        <div class="messages">
-
-            {% for message in messages %}
-
-                <div class="message">
-                    {{ message }}
-                </div>
-
-            {% endfor %}
-
-        </div>
-
-    {% endif %}
-
-
-    <div class="card">
-
-        <form method="post">
-
-            {% csrf_token %}
-
-            {% for field in form %}
-
-                <div class="form-group">
-
-                    {{ field.label_tag }}
-
-                    {{ field }}
-
-                    {% if field.errors %}
-
-                        {{ field.errors }}
-
-                    {% endif %}
-
-                </div>
-
-            {% endfor %}
-
-
-            <div class="form-actions">
-
-                <a
-                    href="{% url 'sous_actes' %}"
-                    class="btn btn-secondary"
-                >
-                    Annuler
-                </a>
-
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                >
-                    Enregistrer
-                </button>
-
+        {% for field in form %}
+            <div class="form-group">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.errors %}{{ field.errors }}{% endif %}
             </div>
+        {% endfor %}
 
-        </form>
+        <div class="form-actions">
+            <a href="{% url 'sous_actes' %}" class="btn btn-secondary">Annuler</a>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+        </div>
 
-    </div>
+    </form>
 
-</main>
+</div>
 
-
-<footer>
-    © 2026 — Plateforme Tiers Payant SAGPS
-</footer>
-
-</body>
-</html>
+{% endblock %}

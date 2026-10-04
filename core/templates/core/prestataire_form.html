@@ -1,333 +1,177 @@
-﻿{% load static %}
+﻿{% extends "core/base.html" %}
+{% load static %}
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block title %}Prestataire - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des prestataires{% endblock %}
+{% block header_sub %}Création et modification de prestataire{% endblock %}
 
-    <title>Prestataire - Tiers Payant</title>
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 18px rgba(0,0,0,.07);
+        max-width: 900px;
+        margin: 0 auto;
+    }
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+    .card h2 {
+        margin: 0 0 8px;
+        color: #123b65;
+        font-size: 22px;
+    }
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
+    .subtitle {
+        margin: 0 0 25px;
+        color: #6b7280;
+        font-size: 14px;
+    }
 
-        .header {
-            background: #123b65;
-            color: white;
-            min-height: 95px;
-            padding: 15px 35px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            box-shadow: 0 3px 12px rgba(0,0,0,.10);
-        }
+    .info-box {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e40af;
+        padding: 14px 16px;
+        border-radius: 9px;
+        margin-bottom: 25px;
+        font-size: 14px;
+    }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 22px;
-        }
+    .field {
+        margin-bottom: 22px;
+    }
 
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #374151;
+    }
 
-        .header h1 {
-            margin: 0;
-            font-size: 25px;
-            font-weight: 600;
-        }
+    input,
+    select,
+    textarea {
+        width: 100%;
+        padding: 12px 13px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        background: white;
+        font-size: 14px;
+        color: #1f2937;
+        transition: .2s;
+    }
 
-        .back {
-            color: white;
-            text-decoration: none;
-            background: #1f4f7d;
-            padding: 11px 18px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            transition: .2s;
-        }
+    input:focus,
+    select:focus,
+    textarea:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
 
-        .back:hover {
-            background: #2563eb;
-            transform: translateY(-1px);
-        }
+    textarea {
+        resize: vertical;
+        min-height: 110px;
+    }
 
-        .container {
-            max-width: 900px;
-            margin: 35px auto;
-            padding: 0 20px;
-        }
+    .errors {
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+        padding: 10px 13px;
+        border-radius: 8px;
+        margin-top: 8px;
+        font-size: 13px;
+    }
 
-        .card {
-            background: white;
-            padding: 30px;
-            border-radius: 14px;
-            box-shadow: 0 5px 18px rgba(0,0,0,.08);
-            border: 1px solid #e5e7eb;
-        }
+    .errors ul {
+        margin: 5px 0 0;
+        padding-left: 20px;
+    }
 
-        .card h2 {
-            margin: 0 0 8px;
-            color: #123b65;
-            font-size: 22px;
-        }
+    .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 30px;
+        padding-top: 22px;
+        border-top: 1px solid #e5e7eb;
+        flex-wrap: wrap;
+    }
 
-        .subtitle {
-            margin: 0 0 25px;
-            color: #6b7280;
-            font-size: 14px;
-        }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 20px;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: .2s;
+    }
 
-        .info-box {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            color: #1e40af;
-            padding: 14px 16px;
-            border-radius: 9px;
-            margin-bottom: 25px;
-            font-size: 14px;
-        }
+    .btn:hover {
+        transform: translateY(-1px);
+        opacity: .92;
+    }
 
-        .field {
-            margin-bottom: 22px;
-        }
+    .btn-secondary {
+        background: #6b7280;
+    }
 
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #374151;
-        }
+    @media (max-width: 700px) {
+        .card { padding: 22px; }
+        .actions { flex-direction: column; }
+        .btn { width: 100%; }
+    }
+</style>
+{% endblock %}
 
-        input,
-        select,
-        textarea {
-            width: 100%;
-            padding: 12px 13px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            background: white;
-            font-size: 14px;
-            color: #1f2937;
-            transition: border-color .2s, box-shadow .2s;
-        }
+{% block content %}
 
-        input:focus,
-        select:focus,
-        textarea:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37,99,235,.12);
-        }
+<div class="card">
 
-        textarea {
-            resize: vertical;
-            min-height: 110px;
-        }
+    <h2>{{ titre }}</h2>
+    <p class="subtitle">Renseignez les informations du prestataire.</p>
 
-        .errors {
-            background: #fef2f2;
-            color: #b91c1c;
-            border: 1px solid #fecaca;
-            padding: 10px 13px;
-            border-radius: 8px;
-            margin-top: 8px;
-            font-size: 13px;
-        }
-
-        .errors ul {
-            margin: 5px 0 0;
-            padding-left: 20px;
-        }
-
-        .actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 30px;
-            padding-top: 22px;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 11px 20px;
-            background: #2563eb;
-            color: white;
-            text-decoration: none;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: .2s;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-            opacity: .92;
-        }
-
-        .btn-secondary {
-            background: #6b7280;
-        }
-
-        .footer {
-            text-align: center;
-            color: #6b7280;
-            font-size: 13px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        @media (max-width: 700px) {
-
-            .header {
-                padding: 15px 20px;
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .brand {
-                gap: 15px;
-            }
-
-            .brand img {
-                width: 110px;
-                height: 55px;
-            }
-
-            .header h1 {
-                font-size: 20px;
-            }
-
-            .back {
-                width: 100%;
-                text-align: center;
-            }
-
-            .card {
-                padding: 22px;
-            }
-
-            .actions {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="header">
-
-    <div class="brand">
-
-        <img
-            src="{% static 'core/img/logo-sagps.png' %}"
-            alt="SAGPS"
-        >
-
-        <h1>Gestion des prestataires</h1>
-
+    <div class="info-box">
+        🏥 Les informations saisies seront utilisées pour gérer
+        les prestataires et leurs conventions.
     </div>
 
-    <a
-        class="back"
-        href="{% url 'prestataires' %}"
-    >
-        ← Retour aux prestataires
-    </a>
+    {% if form.errors %}
+        <div class="errors">
+            <strong>Veuillez corriger les erreurs :</strong>
+            {{ form.non_field_errors }}
+        </div>
+    {% endif %}
 
-</div>
+    <form method="post">
 
-<div class="container">
+        {% csrf_token %}
 
-    <div class="card">
+        {% for field in form %}
+            <div class="field">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.errors %}
+                    <div class="errors">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
 
-        <h2>{{ titre }}</h2>
-
-        <p class="subtitle">
-            Renseignez les informations du prestataire.
-        </p>
-
-        <div class="info-box">
-            🏥 Les informations saisies seront utilisées pour gérer
-            les prestataires et leurs conventions.
+        <div class="actions">
+            <button type="submit" class="btn">💾 Enregistrer</button>
+            <a href="{% url 'prestataires' %}" class="btn btn-secondary">← Annuler</a>
         </div>
 
-        {% if form.errors %}
-            <div class="errors">
-                <strong>Veuillez corriger les erreurs :</strong>
-                {{ form.non_field_errors }}
-            </div>
-        {% endif %}
-
-        <form method="post">
-
-            {% csrf_token %}
-
-            {% for field in form %}
-
-                <div class="field">
-
-                    {{ field.label_tag }}
-
-                    {{ field }}
-
-                    {% if field.errors %}
-                        <div class="errors">
-                            {{ field.errors }}
-                        </div>
-                    {% endif %}
-
-                </div>
-
-            {% endfor %}
-
-            <div class="actions">
-
-                <button type="submit" class="btn">
-                    💾 Enregistrer
-                </button>
-
-                <a
-                    href="{% url 'prestataires' %}"
-                    class="btn btn-secondary"
-                >
-                    ← Annuler
-                </a>
-
-            </div>
-
-        </form>
-
-    </div>
+    </form>
 
 </div>
 
-<div class="footer">
-    © 2026 — Plateforme Tiers Payant
-</div>
-
-</body>
-</html>
+{% endblock %}

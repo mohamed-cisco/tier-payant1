@@ -1,336 +1,172 @@
+{% extends "core/base.html" %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block title %}Adhésion - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des adhésions{% endblock %}
+{% block header_sub %}Création et modification d'adhésion{% endblock %}
 
-    <title>Adhésion - Tiers Payant</title>
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 32px;
+        border-radius: 14px;
+        box-shadow: 0 5px 20px rgba(15,23,42,.08);
+        border: 1px solid #e5e7eb;
+        max-width: 900px;
+        margin: 0 auto;
+    }
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+    .card h2 {
+        margin-top: 0;
+        margin-bottom: 28px;
+        color: #123b65;
+        font-size: 24px;
+    }
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
+    .field { margin-bottom: 20px; }
 
-        .header {
-            min-height: 95px;
-            background: #123b65;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 15px 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,.10);
-            gap: 20px;
-        }
+    label {
+        display: block;
+        font-weight: bold;
+        color: #334155;
+        margin-bottom: 7px;
+        font-size: 14px;
+    }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
+    input,
+    select,
+    textarea {
+        width: 100%;
+        padding: 11px 13px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #fff;
+        color: #1f2937;
+        font-size: 15px;
+        outline: none;
+        transition: .2s;
+    }
 
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
+    input:focus,
+    select:focus,
+    textarea:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+    }
 
-        .brand-text h1 {
-            margin: 0;
-            font-size: 24px;
-        }
+    input[readonly] {
+        background: #f8fafc;
+        color: #475569;
+        cursor: not-allowed;
+    }
 
-        .brand-text p {
-            margin: 6px 0 0;
-            font-size: 13px;
-            opacity: .85;
-        }
+    .errors {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        padding: 12px 14px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
 
-        .back {
-            color: white;
-            text-decoration: none;
-            background: rgba(255,255,255,.12);
-            padding: 11px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
-            white-space: nowrap;
-        }
+    .field .errors {
+        margin-top: 7px;
+        margin-bottom: 0;
+        font-size: 13px;
+    }
 
-        .back:hover {
-            background: rgba(255,255,255,.20);
-        }
+    .actions {
+        margin-top: 30px;
+        padding-top: 22px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
 
-        .container {
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 20px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        font-size: 15px;
+        font-weight: bold;
+    }
 
-        .card {
-            background: white;
-            padding: 32px;
-            border-radius: 14px;
-            box-shadow: 0 5px 20px rgba(15,23,42,.08);
-            border: 1px solid #e5e7eb;
-        }
+    .btn-primary { background: #123b65; color: white; }
+    .btn-primary:hover { background: #0d2d4d; }
+    .btn-secondary { background: #64748b; color: white; }
+    .btn-secondary:hover { background: #475569; }
 
-        .card h2 {
-            margin-top: 0;
-            margin-bottom: 28px;
-            color: #123b65;
-            font-size: 24px;
-        }
+    @media (max-width: 700px) {
+        .card { padding: 22px; }
+        .actions { flex-direction: column; }
+        .btn { width: 100%; }
+    }
+</style>
+{% endblock %}
 
-        .field {
-            margin-bottom: 20px;
-        }
+{% block content %}
 
-        label {
-            display: block;
-            font-weight: bold;
-            color: #334155;
-            margin-bottom: 7px;
-            font-size: 14px;
-        }
+<div class="card">
 
-        input,
-        select,
-        textarea {
-            width: 100%;
-            padding: 11px 13px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            background: #fff;
-            color: #1f2937;
-            font-size: 15px;
-            outline: none;
-            transition: .2s;
-        }
+    <h2>{{ titre }}</h2>
 
-        input:focus,
-        select:focus,
-        textarea:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37,99,235,.10);
-        }
+    {% if form.errors %}
+        <div class="errors">
+            <strong>Veuillez corriger les erreurs :</strong>
+            {{ form.errors }}
+        </div>
+    {% endif %}
 
-        input[readonly] {
-            background: #f8fafc;
-            color: #475569;
-            cursor: not-allowed;
-        }
+    <form method="post">
 
-        .errors {
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            color: #b91c1c;
-            padding: 12px 14px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
+        {% csrf_token %}
 
-        .field .errors {
-            margin-top: 7px;
-            margin-bottom: 0;
-            font-size: 13px;
-        }
+        {% for field in form %}
 
-        .actions {
-            margin-top: 30px;
-            padding-top: 22px;
-            border-top: 1px solid #e5e7eb;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
+            {% if field.name == "id_contrat" and contrat_preselectionne %}
 
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 12px 20px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 15px;
-            font-weight: bold;
-        }
+                <div class="field">
+                    <label>Contrat :</label>
+                    <input
+                        type="text"
+                        value="{{ contrat_preselectionne.numero_contrat }}"
+                        readonly
+                    >
+                    <input
+                        type="hidden"
+                        name="id_contrat"
+                        value="{{ contrat_preselectionne.id_contrat }}"
+                    >
+                </div>
 
-        .btn-primary {
-            background: #123b65;
-            color: white;
-        }
+            {% else %}
 
-        .btn-primary:hover {
-            background: #0d2d4d;
-        }
+                <div class="field">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="errors">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
 
-        .btn-secondary {
-            background: #64748b;
-            color: white;
-        }
+            {% endif %}
 
-        .btn-secondary:hover {
-            background: #475569;
-        }
+        {% endfor %}
 
-        .footer {
-            text-align: center;
-            padding: 25px 15px;
-            color: #64748b;
-            font-size: 13px;
-        }
-
-        @media (max-width: 700px) {
-            .header {
-                padding: 15px 20px;
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .brand img {
-                width: 110px;
-                height: 55px;
-            }
-
-            .brand-text h1 {
-                font-size: 19px;
-            }
-
-            .container {
-                margin: 25px auto;
-            }
-
-            .card {
-                padding: 22px;
-            }
-
-            .actions {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="header">
-
-    <div class="brand">
-
-        <img src="{% static 'core/img/logo-sagps.png' %}" alt="Logo SAGPS">
-
-        <div class="brand-text">
-            <h1>Gestion des adhésions</h1>
-            <p>Plateforme Tiers Payant</p>
+        <div class="actions">
+            <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+            <a href="{% url 'adhesions' %}" class="btn btn-secondary">Annuler</a>
         </div>
 
-    </div>
-
-    <a class="back" href="{% url 'adhesions' %}">
-        ← Retour aux adhésions
-    </a>
+    </form>
 
 </div>
 
-<div class="container">
-
-    <div class="card">
-
-        <h2>{{ titre }}</h2>
-
-        {% if form.errors %}
-            <div class="errors">
-                <strong>Veuillez corriger les erreurs :</strong>
-                {{ form.errors }}
-            </div>
-        {% endif %}
-
-        <form method="post">
-
-            {% csrf_token %}
-
-            {% for field in form %}
-
-                {% if field.name == "id_contrat" and contrat_preselectionne %}
-
-                    <div class="field">
-
-                        <label>Contrat :</label>
-
-                        <input
-                            type="text"
-                            value="{{ contrat_preselectionne.numero_contrat }}"
-                            readonly
-                        >
-
-                        <input
-                            type="hidden"
-                            name="id_contrat"
-                            value="{{ contrat_preselectionne.id_contrat }}"
-                        >
-
-                    </div>
-
-                {% else %}
-
-                    <div class="field">
-
-                        {{ field.label_tag }}
-
-                        {{ field }}
-
-                        {% if field.errors %}
-                            <div class="errors">
-                                {{ field.errors }}
-                            </div>
-                        {% endif %}
-
-                    </div>
-
-                {% endif %}
-
-            {% endfor %}
-
-            <div class="actions">
-
-                <button type="submit" class="btn btn-primary">
-                    💾 Enregistrer
-                </button>
-
-                <a
-                    href="{% url 'adhesions' %}"
-                    class="btn btn-secondary"
-                >
-                    Annuler
-                </a>
-
-            </div>
-
-        </form>
-
-    </div>
-
-</div>
-
-<div class="footer">
-    © 2026 — Plateforme Tiers Payant
-</div>
-
-</body>
-</html>
+{% endblock %}

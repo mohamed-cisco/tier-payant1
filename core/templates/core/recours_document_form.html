@@ -1,351 +1,184 @@
+{% extends "core/base.html" %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block title %}{{ titre }}{% endblock %}
+{% block header_title %}Pièces jointes du recours{% endblock %}
+{% block header_sub %}Ajout d'un document{% endblock %}
 
-    <title>{{ titre }}</title>
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 28px;
+        border-radius: 14px;
+        box-shadow: 0 4px 15px rgba(15, 23, 42, .07);
+        border: 1px solid #e5e7eb;
+        max-width: 800px;
+        margin: 0 auto;
+    }
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+    .card-header {
+        margin-bottom: 22px;
+    }
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
+    .card-header h2 {
+        margin: 0;
+        color: #123b65;
+        font-size: 21px;
+    }
 
-        .header {
-            min-height: 95px;
-            background: #123b65;
-            color: white;
-            padding: 15px 30px;
-            display: flex;
-            align-items: center;
-        }
+    .card-header p {
+        margin: 7px 0 0;
+        color: #64748b;
+        font-size: 14px;
+    }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
+    .info {
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        padding: 16px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        line-height: 1.7;
+        font-size: 14px;
+    }
 
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
+    .info strong { color: #475569; }
 
-        .header-title h1 {
-            margin: 0;
-            font-size: 23px;
-        }
+    .field { margin-bottom: 21px; }
 
-        .header-title p {
-            margin: 5px 0 0;
-            font-size: 13px;
-            opacity: .85;
-        }
+    label {
+        display: block;
+        font-weight: bold;
+        color: #374151;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
 
-        .container {
-            max-width: 800px;
-            margin: 35px auto;
-            padding: 0 20px 40px;
-        }
+    input,
+    select {
+        width: 100%;
+        padding: 12px 13px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: white;
+        color: #1f2937;
+        font-size: 14px;
+        transition: .2s;
+    }
 
-        .card {
-            background: white;
-            padding: 28px;
-            border-radius: 14px;
-            box-shadow: 0 4px 15px rgba(15, 23, 42, .07);
-            border: 1px solid #e5e7eb;
-        }
+    input:focus,
+    select:focus {
+        outline: none;
+        border-color: #123b65;
+        box-shadow: 0 0 0 3px rgba(18, 59, 101, .10);
+    }
 
-        .card-header {
-            margin-bottom: 22px;
-        }
+    .errorlist {
+        color: #b91c1c;
+        background: #fef2f2;
+        border-radius: 7px;
+        margin: 7px 0 0;
+        padding: 8px 12px 8px 30px;
+        font-size: 13px;
+        list-style: none;
+    }
 
-        .card-header h2 {
-            margin: 0;
-            color: #123b65;
-            font-size: 21px;
-        }
+    .non-field-errors { margin-bottom: 18px; }
 
-        .card-header p {
-            margin: 7px 0 0;
-            color: #64748b;
-            font-size: 14px;
-        }
+    .help {
+        color: #64748b;
+        font-size: 13px;
+        margin-top: 6px;
+    }
 
-        .info {
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
-            padding: 16px;
-            border-radius: 10px;
-            margin-bottom: 25px;
-            line-height: 1.7;
-        }
+    .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 28px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+        flex-wrap: wrap;
+    }
 
-        .info strong {
-            color: #475569;
-        }
+    .btn {
+        display: inline-block;
+        padding: 11px 18px;
+        border: none;
+        border-radius: 8px;
+        background: #123b65;
+        color: white;
+        text-decoration: none;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        transition: .2s;
+    }
 
-        .field {
-            margin-bottom: 21px;
-        }
+    .btn:hover { background: #1d4f82; }
+    .btn-secondary { background: #64748b; }
+    .btn-secondary:hover { background: #475569; }
 
-        label {
-            display: block;
-            font-weight: bold;
-            color: #374151;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
+    @media (max-width: 650px) {
+        .card { padding: 20px; }
+        .actions { flex-direction: column; }
+        .actions .btn { text-align: center; }
+    }
+</style>
+{% endblock %}
 
-        input,
-        select {
-            width: 100%;
-            padding: 12px 13px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            background: white;
-            color: #1f2937;
-            font-size: 14px;
-            transition: .2s;
-        }
+{% block content %}
 
-        input:focus,
-        select:focus {
-            outline: none;
-            border-color: #123b65;
-            box-shadow: 0 0 0 3px rgba(18, 59, 101, .10);
-        }
+<div class="card">
 
-        .errorlist {
-            color: #b91c1c;
-            background: #fef2f2;
-            border-radius: 7px;
-            margin: 7px 0 0;
-            padding: 8px 12px 8px 30px;
-            font-size: 13px;
-        }
-
-        .non-field-errors {
-            margin-bottom: 18px;
-        }
-
-        .help {
-            color: #64748b;
-            font-size: 13px;
-            margin-top: 6px;
-        }
-
-        .actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 28px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 11px 18px;
-            border: none;
-            border-radius: 8px;
-            background: #123b65;
-            color: white;
-            text-decoration: none;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
-            transition: .2s;
-        }
-
-        .btn:hover {
-            background: #1d4f82;
-        }
-
-        .btn-secondary {
-            background: #64748b;
-        }
-
-        .btn-secondary:hover {
-            background: #475569;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #64748b;
-            font-size: 13px;
-        }
-
-        @media (max-width: 650px) {
-            .header {
-                padding: 15px 20px;
-            }
-
-            .brand img {
-                width: 125px;
-                height: 55px;
-            }
-
-            .header-title h1 {
-                font-size: 19px;
-            }
-
-            .container {
-                margin-top: 20px;
-                padding: 0 15px 30px;
-            }
-
-            .card {
-                padding: 20px;
-            }
-
-            .actions {
-                flex-direction: column;
-            }
-
-            .actions .btn {
-                text-align: center;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="header">
-
-    <div class="brand">
-
-        <img
-            src="{% static 'core/img/logo-sagps.png' %}"
-            alt="SAGPS"
-        >
-
-        <div class="header-title">
-            <h1>{{ titre }}</h1>
-            <p>Plateforme Tiers Payant</p>
-        </div>
-
+    <div class="card-header">
+        <h2>Ajouter un document au recours</h2>
+        <p>Ajoutez une pièce jointe associée à cette demande de recours.</p>
     </div>
 
-</div>
-
-
-<div class="container">
-
-    <div class="card">
-
-        <div class="card-header">
-
-            <h2>Ajouter un document au recours</h2>
-
-            <p>
-                Ajoutez une pièce jointe associée à cette demande de recours.
-            </p>
-
-        </div>
-
-
-        <div class="info">
-
-            <strong>Demande :</strong>
-            {{ demande.numero_demande }}
-
-            <br>
-
-            <strong>Statut :</strong>
-            {{ demande.statut }}
-
-        </div>
-
-
-        <form method="post" enctype="multipart/form-data">
-
-            {% csrf_token %}
-
-            <div class="non-field-errors">
-                {{ form.non_field_errors }}
-            </div>
-
-
-            <div class="field">
-
-                {{ form.fichier.label_tag }}
-
-                {{ form.fichier }}
-
-                {{ form.fichier.errors }}
-
-                <div class="help">
-                    Exemple : ordonnance.pdf, justificatif.pdf, document.jpg
-                </div>
-
-            </div>
-
-
-            <div class="field">
-
-                {{ form.type_document.label_tag }}
-
-                {{ form.type_document }}
-
-                {{ form.type_document.errors }}
-
-                <div class="help">
-                    Exemple : Ordonnance médicale, Justificatif, Analyse...
-                </div>
-
-            </div>
-
-
-            <div class="field">
-
-                {{ form.statut.label_tag }}
-
-                {{ form.statut }}
-
-                {{ form.statut.errors }}
-
-            </div>
-
-
-            <div class="actions">
-
-                <button type="submit" class="btn">
-                    Ajouter la pièce jointe
-                </button>
-
-
-                <a
-                    href="{% url 'recours_detail' recours.id_recours %}"
-                    class="btn btn-secondary"
-                >
-                    Annuler
-                </a>
-
-            </div>
-
-        </form>
-
+    <div class="info">
+        <strong>Recours :</strong> {{ recours.numero_recours }}
+        <br>
+        <strong>Statut :</strong> {{ recours.statut }}
     </div>
 
+    <form method="post" enctype="multipart/form-data">
+
+        {% csrf_token %}
+
+        <div class="non-field-errors">{{ form.non_field_errors }}</div>
+
+        <div class="field">
+            {{ form.fichier.label_tag }}
+            {{ form.fichier }}
+            {{ form.fichier.errors }}
+            <div class="help">
+                Exemple : ordonnance.pdf, justificatif.pdf, document.jpg
+            </div>
+        </div>
+
+        <div class="field">
+            {{ form.type_document.label_tag }}
+            {{ form.type_document }}
+            {{ form.type_document.errors }}
+            <div class="help">
+                Exemple : Ordonnance médicale, Justificatif, Analyse...
+            </div>
+        </div>
+
+        <div class="field">
+            {{ form.statut.label_tag }}
+            {{ form.statut }}
+            {{ form.statut.errors }}
+        </div>
+
+        <div class="actions">
+            <button type="submit" class="btn">Ajouter la pièce jointe</button>
+            <a href="{% url 'recours_detail' recours.id_recours %}" class="btn btn-secondary">Annuler</a>
+        </div>
+
+    </form>
+
 </div>
 
-
-<div class="footer">
-    © 2026 — Plateforme Tiers Payant SAGPS
-</div>
-
-</body>
-</html>
+{% endblock %}

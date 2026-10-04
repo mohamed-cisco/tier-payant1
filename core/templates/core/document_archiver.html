@@ -1,387 +1,190 @@
+{% extends "core/base.html" %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block title %}Archiver le document{% endblock %}
+{% block header_title %}Archiver le document{% endblock %}
+{% block header_sub %}Confirmation d'archivage{% endblock %}
 
-    <title>Archiver le document</title>
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 14px;
+        box-shadow: 0 3px 14px rgba(15,23,42,.07);
+        border: 1px solid #e5eaf0;
+        max-width: 800px;
+        margin: 0 auto;
+    }
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+    .warning {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        background: #fff7ed;
+        color: #9a3412;
+        border: 1px solid #fed7aa;
+        padding: 18px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        line-height: 1.6;
+    }
 
-        body {
-            margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
+    .warning-icon {
+        font-size: 25px;
+        line-height: 1;
+    }
 
-        .header {
-            min-height: 95px;
-            background: #123b65;
-            color: white;
-            padding: 15px 35px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            box-shadow: 0 3px 12px rgba(0,0,0,.12);
-        }
+    .card h2 {
+        margin: 0 0 12px;
+        color: #123b65;
+        font-size: 22px;
+    }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
+    .subtitle {
+        color: #64748b;
+        margin: 0 0 25px;
+        line-height: 1.6;
+        font-size: 14px;
+    }
 
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
+    .info {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0 25px;
+        border: 1px solid #e5e7eb;
+    }
 
-        .header-title h1 {
-            margin: 0;
-            font-size: 24px;
-        }
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 12px 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
 
-        .header-title p {
-            margin: 6px 0 0;
-            color: #dbeafe;
-            font-size: 13px;
-        }
+    .info-row:last-child { border-bottom: none; }
 
-        .back {
-            color: white;
-            text-decoration: none;
-            background: rgba(255,255,255,.12);
-            border: 1px solid rgba(255,255,255,.2);
-            padding: 11px 17px;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: .2s;
-        }
+    .info-label {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+    }
 
-        .back:hover {
-            background: rgba(255,255,255,.2);
-        }
+    .info-value {
+        text-align: right;
+        font-weight: 600;
+        color: #334155;
+    }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 35px 30px;
-        }
+    .status {
+        display: inline-block;
+        padding: 6px 11px;
+        border-radius: 20px;
+        background: #e0f2fe;
+        color: #0369a1;
+        font-size: 12px;
+        font-weight: 700;
+    }
 
-        .card {
-            background: white;
-            padding: 30px;
-            border-radius: 14px;
-            box-shadow: 0 3px 14px rgba(15,23,42,.07);
-            border: 1px solid #e5eaf0;
-        }
+    .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+    }
 
-        .warning {
-            display: flex;
-            align-items: flex-start;
-            gap: 15px;
-            background: #fff7ed;
-            color: #9a3412;
-            border: 1px solid #fed7aa;
-            padding: 18px;
-            border-radius: 10px;
-            margin-bottom: 25px;
-            line-height: 1.6;
-        }
+    .btn {
+        display: inline-block;
+        padding: 11px 18px;
+        border: none;
+        border-radius: 8px;
+        text-decoration: none;
+        cursor: pointer;
+        color: white;
+        background: #dc2626;
+        font-size: 14px;
+        font-weight: 600;
+        transition: .2s;
+    }
 
-        .warning-icon {
-            font-size: 25px;
-            line-height: 1;
-        }
+    .btn:hover {
+        background: #b91c1c;
+        transform: translateY(-1px);
+    }
 
-        .card h2 {
-            margin: 0 0 12px;
-            color: #123b65;
-            font-size: 22px;
-        }
+    .btn-secondary { background: #64748b; }
+    .btn-secondary:hover { background: #475569; }
 
-        .subtitle {
-            color: #64748b;
-            margin: 0 0 25px;
-            line-height: 1.6;
-        }
-
-        .info {
-            background: #f8fafc;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0 25px;
-            border: 1px solid #e5e7eb;
-        }
-
+    @media (max-width: 700px) {
+        .card { padding: 20px; }
         .info-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-            padding: 12px 0;
-            border-bottom: 1px solid #e5e7eb;
+            flex-direction: column;
+            gap: 5px;
         }
+        .info-value { text-align: left; }
+        .actions { flex-direction: column; }
+        .btn { text-align: center; }
+    }
+</style>
+{% endblock %}
 
-        .info-row:last-child {
-            border-bottom: none;
-        }
+{% block content %}
 
-        .info-label {
-            color: #64748b;
-            font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .3px;
-        }
+<div class="card">
 
-        .info-value {
-            text-align: right;
-            font-weight: 600;
-            color: #334155;
-        }
+    <div class="warning">
+        <div class="warning-icon">⚠️</div>
+        <div>
+            <strong>Attention</strong><br>
+            Voulez-vous vraiment archiver ce document ?
+            Cette action modifiera son statut.
+        </div>
+    </div>
 
-        .status {
-            display: inline-block;
-            padding: 6px 11px;
-            border-radius: 20px;
-            background: #e0f2fe;
-            color: #0369a1;
-            font-size: 12px;
-            font-weight: 700;
-        }
+    <h2>Confirmation d'archivage</h2>
 
-        .actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-        }
+    <p class="subtitle">
+        Vérifiez les informations du document avant de confirmer son archivage.
+    </p>
 
-        .btn {
-            display: inline-block;
-            padding: 11px 18px;
-            border: none;
-            border-radius: 8px;
-            text-decoration: none;
-            cursor: pointer;
-            color: white;
-            background: #dc2626;
-            font-size: 14px;
-            font-weight: 600;
-            transition: .2s;
-        }
+    <div class="info">
 
-        .btn:hover {
-            background: #b91c1c;
-            transform: translateY(-1px);
-        }
+        <div class="info-row">
+            <div class="info-label">Nom du document</div>
+            <div class="info-value">{{ document.nom_fichier }}</div>
+        </div>
 
-        .btn-secondary {
-            background: #64748b;
-        }
+        <div class="info-row">
+            <div class="info-label">Type</div>
+            <div class="info-value">{{ document.type_document|default:"-" }}</div>
+        </div>
 
-        .btn-secondary:hover {
-            background: #475569;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #64748b;
-            font-size: 12px;
-        }
-
-        @media (max-width: 700px) {
-
-            .header {
-                padding: 15px 20px;
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .container {
-                padding: 20px 15px;
-            }
-
-            .card {
-                padding: 20px;
-            }
-
-            .brand img {
-                width: 125px;
-            }
-
-            .info-row {
-                flex-direction: column;
-                gap: 5px;
-            }
-
-            .info-value {
-                text-align: left;
-            }
-
-            .actions {
-                flex-direction: column;
-            }
-
-            .btn {
-                text-align: center;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="header">
-
-    <div class="brand">
-
-        <img
-            src="{% static 'core/img/logo-sagps.png' %}"
-            alt="SAGPS"
-        >
-
-        <div class="header-title">
-
-            <h1>Archiver le document</h1>
-
-            <p>
-                Gestion et archivage des documents
-            </p>
-
+        <div class="info-row">
+            <div class="info-label">Statut actuel</div>
+            <div class="info-value">
+                <span class="status">{{ document.statut }}</span>
+            </div>
         </div>
 
     </div>
 
+    <form method="post">
 
-    <a
-        class="back"
-        href="{% url 'documents' %}"
-    >
-        ← Retour aux documents
-    </a>
+        {% csrf_token %}
 
-</div>
-
-
-<div class="container">
-
-    <div class="card">
-
-        <div class="warning">
-
-            <div class="warning-icon">
-                ⚠️
-            </div>
-
-            <div>
-                <strong>Attention</strong><br>
-                Voulez-vous vraiment archiver ce document ?
-                Cette action modifiera son statut.
-            </div>
-
+        <div class="actions">
+            <button type="submit" class="btn">✓ Confirmer l'archivage</button>
+            <a href="{% url 'documents' %}" class="btn btn-secondary">Annuler</a>
         </div>
 
-
-        <h2>Confirmation d'archivage</h2>
-
-        <p class="subtitle">
-            Vérifiez les informations du document avant de confirmer
-            son archivage.
-        </p>
-
-
-        <div class="info">
-
-            <div class="info-row">
-
-                <div class="info-label">
-                    Nom du document
-                </div>
-
-                <div class="info-value">
-                    {{ document.nom_fichier }}
-                </div>
-
-            </div>
-
-
-            <div class="info-row">
-
-                <div class="info-label">
-                    Type
-                </div>
-
-                <div class="info-value">
-                    {{ document.type_document|default:"-" }}
-                </div>
-
-            </div>
-
-
-            <div class="info-row">
-
-                <div class="info-label">
-                    Statut actuel
-                </div>
-
-                <div class="info-value">
-
-                    <span class="status">
-                        {{ document.statut }}
-                    </span>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <form method="post">
-
-            {% csrf_token %}
-
-            <div class="actions">
-
-                <button
-                    type="submit"
-                    class="btn"
-                >
-                    ✓ Confirmer l'archivage
-                </button>
-
-
-                <a
-                    href="{% url 'documents' %}"
-                    class="btn btn-secondary"
-                >
-                    Annuler
-                </a>
-
-            </div>
-
-        </form>
-
-    </div>
+    </form>
 
 </div>
 
-
-<div class="footer">
-    © 2026 — Plateforme Tiers Payant
-</div>
-
-</body>
-</html>
+{% endblock %}

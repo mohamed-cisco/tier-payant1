@@ -1,280 +1,142 @@
+{% extends "core/base.html" %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block title %}{{ titre }} - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des contrats{% endblock %}
+{% block header_sub %}Création et modification de contrat{% endblock %}
 
-    <title>{{ titre }} - Tiers Payant</title>
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 18px rgba(0,0,0,.07);
+        max-width: 900px;
+        margin: 0 auto;
+    }
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+    .card-title {
+        margin: 0 0 25px;
+        color: #123b65;
+        font-size: 23px;
+    }
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
+    .field { margin-bottom: 20px; }
 
-        .header {
-            min-height: 95px;
-            background: #123b65;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 15px 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,.10);
-            gap: 20px;
-        }
+    label {
+        display: block;
+        margin-bottom: 8px;
+        color: #374151;
+        font-weight: bold;
+        font-size: 14px;
+    }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
+    input,
+    select,
+    textarea {
+        width: 100%;
+        padding: 12px 13px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #fff;
+        color: #1f2937;
+        font-size: 14px;
+        transition: .2s;
+    }
 
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
+    input:focus,
+    select:focus,
+    textarea:focus {
+        outline: none;
+        border-color: #123b65;
+        box-shadow: 0 0 0 3px rgba(18,59,101,.10);
+    }
 
-        .brand-text h1 {
-            margin: 0;
-            font-size: 24px;
-        }
+    textarea { min-height: 110px; resize: vertical; }
 
-        .brand-text p {
-            margin: 6px 0 0;
-            font-size: 13px;
-            opacity: .85;
-        }
+    .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 7px 0 0;
+        color: #b91c1c;
+        font-size: 13px;
+    }
 
-        .container {
-            max-width: 900px;
-            margin: 35px auto;
-            padding: 0 20px;
-        }
+    .form-errors {
+        background: #fee2e2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
 
-        .card {
-            background: white;
-            padding: 32px;
-            border-radius: 14px;
-            box-shadow: 0 5px 20px rgba(15,23,42,.08);
-            border: 1px solid #e5e7eb;
-        }
+    .actions {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
 
-        .card-title {
-            margin: 0 0 25px;
-            color: #123b65;
-            font-size: 23px;
-        }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 18px;
+        background: #123b65;
+        color: white;
+        text-decoration: none;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+    }
 
-        .field {
-            margin-bottom: 20px;
-        }
+    .btn:hover { background: #0d2d4d; }
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #374151;
-            font-weight: bold;
-            font-size: 14px;
-        }
+    .btn-secondary { background: #64748b; }
+    .btn-secondary:hover { background: #475569; }
 
-        input,
-        select,
-        textarea {
-            width: 100%;
-            padding: 12px 13px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            background: #fff;
-            color: #1f2937;
-            font-family: Arial, sans-serif;
-            font-size: 14px;
-            transition: border-color .2s, box-shadow .2s;
-        }
+    @media (max-width: 700px) {
+        .card { padding: 22px; }
+        .actions .btn { width: 100%; }
+    }
+</style>
+{% endblock %}
 
-        input:focus,
-        select:focus,
-        textarea:focus {
-            outline: none;
-            border-color: #123b65;
-            box-shadow: 0 0 0 3px rgba(18,59,101,.10);
-        }
+{% block content %}
 
-        textarea {
-            min-height: 110px;
-            resize: vertical;
-        }
+<div class="card">
 
-        .errorlist {
-            list-style: none;
-            padding: 0;
-            margin: 7px 0 0;
-            color: #b91c1c;
-            font-size: 13px;
-        }
+    <h2 class="card-title">{{ titre }}</h2>
 
-        .form-errors {
-            background: #fee2e2;
-            border: 1px solid #fecaca;
-            color: #991b1b;
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
+    <form method="post">
 
-        .actions {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+        {% csrf_token %}
 
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 11px 18px;
-            background: #123b65;
-            color: white;
-            text-decoration: none;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-        }
+        {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
 
-        .btn:hover {
-            background: #0d2d4d;
-        }
+        {% for field in form %}
+            <div class="field">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.errors %}{{ field.errors }}{% endif %}
+            </div>
+        {% endfor %}
 
-        .btn-secondary {
-            background: #64748b;
-        }
-
-        .btn-secondary:hover {
-            background: #475569;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 25px 15px;
-            color: #64748b;
-            font-size: 13px;
-        }
-
-        @media (max-width: 700px) {
-            .header {
-                padding: 15px 20px;
-            }
-
-            .brand img {
-                width: 110px;
-                height: 55px;
-            }
-
-            .brand-text h1 {
-                font-size: 19px;
-            }
-
-            .card {
-                padding: 22px;
-            }
-
-            .actions .btn {
-                width: 100%;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="header">
-
-    <div class="brand">
-
-        <img
-            src="{% static 'core/img/logo-sagps.png' %}"
-            alt="Logo SAGPS"
-        >
-
-        <div class="brand-text">
-            <h1>{{ titre }}</h1>
-            <p>Plateforme Tiers Payant</p>
+        <div class="actions">
+            <button type="submit" class="btn">Enregistrer</button>
+            <a href="{% url 'contrats' %}" class="btn btn-secondary">Annuler</a>
         </div>
 
-    </div>
+    </form>
 
 </div>
 
-<div class="container">
-
-    <div class="card">
-
-        <h2 class="card-title">{{ titre }}</h2>
-
-        <form method="post">
-
-            {% csrf_token %}
-
-            {% if form.non_field_errors %}
-                <div class="form-errors">
-                    {{ form.non_field_errors }}
-                </div>
-            {% endif %}
-
-            {% for field in form %}
-
-                <div class="field">
-
-                    {{ field.label_tag }}
-
-                    {{ field }}
-
-                    {% if field.errors %}
-                        {{ field.errors }}
-                    {% endif %}
-
-                </div>
-
-            {% endfor %}
-
-            <div class="actions">
-
-                <button type="submit" class="btn">
-                    Enregistrer
-                </button>
-
-                <a
-                    href="{% url 'contrats' %}"
-                    class="btn btn-secondary"
-                >
-                    Annuler
-                </a>
-
-            </div>
-
-        </form>
-
-    </div>
-
-</div>
-
-<div class="footer">
-    © 2026 — Plateforme Tiers Payant
-</div>
-
-</body>
-</html>
+{% endblock %}

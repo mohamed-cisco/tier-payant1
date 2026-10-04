@@ -1,346 +1,167 @@
-﻿{% load static %}
+﻿{% extends "core/base.html" %}
+{% load static %}
 
-<!DOCTYPE html>
-<html lang="fr">
+{% block title %}Importer des prestataires{% endblock %}
+{% block header_title %}Importation des prestataires{% endblock %}
+{% block header_sub %}Import depuis un fichier Excel{% endblock %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 18px rgba(0,0,0,.07);
+        max-width: 850px;
+        margin: 0 auto;
+    }
 
-    <title>Importer des prestataires</title>
+    .card h2 {
+        margin: 0 0 8px;
+        color: #123b65;
+        font-size: 22px;
+    }
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+    .subtitle {
+        margin: 0 0 25px;
+        color: #6b7280;
+        font-size: 14px;
+    }
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
+    .info {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e40af;
+        padding: 18px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        line-height: 1.7;
+        font-size: 14px;
+    }
 
-        .header {
-            background: #123b65;
-            color: white;
-            min-height: 95px;
-            padding: 15px 35px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            box-shadow: 0 3px 12px rgba(0,0,0,.10);
-        }
+    .columns {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px 18px;
+        margin-top: 12px;
+        padding: 15px;
+        background: white;
+        border: 1px solid #dbeafe;
+        border-radius: 8px;
+    }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 22px;
-        }
+    .column {
+        font-family: Consolas, monospace;
+        font-size: 13px;
+        color: #374151;
+    }
 
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
+    .field {
+        margin-bottom: 25px;
+    }
 
-        .header h1 {
-            margin: 0;
-            font-size: 25px;
-            font-weight: 600;
-        }
+    .field label {
+        display: block;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 9px;
+    }
 
-        .back {
-            color: white;
-            text-decoration: none;
-            background: #1f4f7d;
-            padding: 11px 18px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            transition: .2s;
-        }
+    .field input[type="file"] {
+        width: 100%;
+        padding: 12px;
+        border: 1px dashed #93c5fd;
+        border-radius: 9px;
+        background: #f8fafc;
+        cursor: pointer;
+        font-size: 14px;
+    }
 
-        .back:hover {
-            background: #2563eb;
-            transform: translateY(-1px);
-        }
+    .field input[type="file"]:hover {
+        background: #eff6ff;
+        border-color: #2563eb;
+    }
 
-        .container {
-            max-width: 850px;
-            margin: 35px auto;
-            padding: 0 20px;
-        }
+    .actions {
+        display: flex;
+        gap: 12px;
+        padding-top: 22px;
+        border-top: 1px solid #e5e7eb;
+    }
 
-        .card {
-            background: white;
-            padding: 30px;
-            border-radius: 14px;
-            box-shadow: 0 5px 18px rgba(0,0,0,.08);
-            border: 1px solid #e5e7eb;
-        }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 20px;
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: .2s;
+    }
 
-        .card h2 {
-            margin: 0 0 8px;
-            color: #123b65;
-            font-size: 22px;
-        }
+    .btn:hover {
+        transform: translateY(-1px);
+        opacity: .92;
+    }
 
-        .subtitle {
-            margin: 0 0 25px;
-            color: #6b7280;
-            font-size: 14px;
-        }
+    .btn-secondary {
+        background: #6b7280;
+        text-decoration: none;
+    }
 
-        .info {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            color: #1e40af;
-            padding: 18px;
-            border-radius: 10px;
-            margin-bottom: 25px;
-            line-height: 1.7;
-            font-size: 14px;
-        }
+    @media (max-width: 700px) {
+        .card { padding: 22px; }
+        .columns { grid-template-columns: 1fr; }
+        .actions { flex-direction: column; }
+        .btn { width: 100%; }
+    }
+</style>
+{% endblock %}
 
-        .columns {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px 18px;
-            margin-top: 12px;
-            padding: 15px;
-            background: white;
-            border: 1px solid #dbeafe;
-            border-radius: 8px;
-        }
+{% block content %}
 
-        .column {
-            font-family: Consolas, monospace;
-            font-size: 13px;
-            color: #374151;
-        }
+<div class="card">
 
-        .field {
-            margin-bottom: 25px;
-        }
+    <h2>Importer un fichier Excel</h2>
+    <p class="subtitle">Importez plusieurs prestataires à partir d'un fichier Excel.</p>
 
-        .field label {
-            display: block;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 9px;
-        }
-
-        .field input[type="file"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px dashed #93c5fd;
-            border-radius: 9px;
-            background: #f8fafc;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .field input[type="file"]:hover {
-            background: #eff6ff;
-            border-color: #2563eb;
-        }
-
-        .actions {
-            display: flex;
-            gap: 12px;
-            padding-top: 22px;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 11px 20px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: .2s;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-            opacity: .92;
-        }
-
-        .btn-secondary {
-            background: #6b7280;
-            text-decoration: none;
-        }
-
-        .footer {
-            text-align: center;
-            color: #6b7280;
-            font-size: 13px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        @media (max-width: 700px) {
-
-            .header {
-                padding: 15px 20px;
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .brand {
-                gap: 15px;
-            }
-
-            .brand img {
-                width: 110px;
-                height: 55px;
-            }
-
-            .header h1 {
-                font-size: 20px;
-            }
-
-            .back {
-                width: 100%;
-                text-align: center;
-            }
-
-            .card {
-                padding: 22px;
-            }
-
-            .columns {
-                grid-template-columns: 1fr;
-            }
-
-            .actions {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="header">
-
-    <div class="brand">
-
-        <img
-            src="{% static 'core/img/logo-sagps.png' %}"
-            alt="SAGPS"
-        >
-
-        <h1>Importation des prestataires</h1>
-
+    <div class="info">
+        <strong>📋 Format attendu</strong>
+        <p>Le fichier Excel doit contenir les colonnes suivantes :</p>
+        <div class="columns">
+            <div class="column">code_prestataire</div>
+            <div class="column">raison_sociale</div>
+            <div class="column">type_prestataire</div>
+            <div class="column">nif</div>
+            <div class="column">registre_commerce</div>
+            <div class="column">adresse</div>
+            <div class="column">telephone</div>
+            <div class="column">email</div>
+            <div class="column">statut</div>
+        </div>
     </div>
 
-    <a
-        href="{% url 'prestataires' %}"
-        class="back"
-    >
-        ← Retour aux prestataires
-    </a>
+    <form method="post" enctype="multipart/form-data">
 
-</div>
+        {% csrf_token %}
 
-<div class="container">
-
-    <div class="card">
-
-        <h2>Importer un fichier Excel</h2>
-
-        <p class="subtitle">
-            Importez plusieurs prestataires à partir d'un fichier Excel.
-        </p>
-
-        <div class="info">
-
-            <strong>📋 Format attendu</strong>
-
-            <p>
-                Le fichier Excel doit contenir les colonnes suivantes :
-            </p>
-
-            <div class="columns">
-
-                <div class="column">code_prestataire</div>
-                <div class="column">raison_sociale</div>
-                <div class="column">type_prestataire</div>
-                <div class="column">nif</div>
-                <div class="column">registre_commerce</div>
-                <div class="column">adresse</div>
-                <div class="column">telephone</div>
-                <div class="column">email</div>
-                <div class="column">statut</div>
-
-            </div>
-
+        <div class="field">
+            <label for="fichier">Fichier Excel (.xlsx)</label>
+            <input type="file" id="fichier" name="fichier" accept=".xlsx" required>
         </div>
 
-        <form
-            method="post"
-            enctype="multipart/form-data"
-        >
+        <div class="actions">
+            <button type="submit" class="btn">📥 Importer les prestataires</button>
+            <a href="{% url 'prestataires' %}" class="btn btn-secondary">← Annuler</a>
+        </div>
 
-            {% csrf_token %}
-
-            <div class="field">
-
-                <label for="fichier">
-                    Fichier Excel (.xlsx)
-                </label>
-
-                <input
-                    type="file"
-                    id="fichier"
-                    name="fichier"
-                    accept=".xlsx"
-                    required
-                >
-
-            </div>
-
-            <div class="actions">
-
-                <button
-                    type="submit"
-                    class="btn"
-                >
-                    📥 Importer les prestataires
-                </button>
-
-                <a
-                    href="{% url 'prestataires' %}"
-                    class="btn btn-secondary"
-                >
-                    ← Annuler
-                </a>
-
-            </div>
-
-        </form>
-
-    </div>
+    </form>
 
 </div>
 
-<div class="footer">
-    © 2026 — Plateforme Tiers Payant
-</div>
-
-</body>
-
-</html>
+{% endblock %}

@@ -1,414 +1,221 @@
-﻿{% load static %}
+﻿{% extends "core/base.html" %}
+{% load static %}
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block title %}{{ titre }}{% endblock %}
+{% block header_title %}Gestion des plafonds{% endblock %}
+{% block header_sub %}Création et modification de plafond{% endblock %}
 
-    <title>{{ titre }}</title>
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 14px;
+        box-shadow: 0 5px 18px rgba(0,0,0,.08);
+        border: 1px solid #e5e7eb;
+        max-width: 850px;
+        margin: 0 auto;
+    }
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+    .card h2 {
+        margin: 0 0 8px;
+        color: #123b65;
+        font-size: 22px;
+    }
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
+    .subtitle {
+        margin: 0 0 25px;
+        color: #6b7280;
+        font-size: 14px;
+    }
 
-        .header {
-            background: #123b65;
-            color: white;
-            min-height: 95px;
-            padding: 15px 35px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            box-shadow: 0 3px 12px rgba(0,0,0,.10);
-        }
+    .info-box {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e40af;
+        padding: 14px 16px;
+        border-radius: 9px;
+        margin-bottom: 25px;
+        font-size: 14px;
+    }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 22px;
-        }
+    .field { margin-bottom: 22px; }
 
-        .brand img {
-            width: 150px;
-            height: 65px;
-            object-fit: contain;
-        }
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #374151;
+    }
 
-        .header h1 {
-            margin: 0;
-            font-size: 25px;
-            font-weight: 600;
-        }
+    input,
+    select,
+    textarea {
+        width: 100%;
+        padding: 12px 13px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        background: white;
+        font-size: 14px;
+        color: #1f2937;
+        transition: border-color .2s, box-shadow .2s;
+    }
 
-        .back {
-            color: white;
-            text-decoration: none;
-            background: #1f4f7d;
-            padding: 11px 18px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-        }
+    input:focus,
+    select:focus,
+    textarea:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
 
-        .back:hover {
-            background: #2563eb;
-        }
+    .help {
+        margin-top: 7px;
+        color: #6b7280;
+        font-size: 13px;
+        line-height: 1.5;
+    }
 
-        .container {
-            max-width: 850px;
-            margin: 35px auto;
-            padding: 0 20px;
-        }
+    .errorlist {
+        color: #b91c1c;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 7px;
+        margin: 7px 0 0;
+        padding: 8px 12px 8px 28px;
+        font-size: 13px;
+        list-style: none;
+    }
 
-        .card {
-            background: white;
-            padding: 30px;
-            border-radius: 14px;
-            box-shadow: 0 5px 18px rgba(0,0,0,.08);
-            border: 1px solid #e5e7eb;
-        }
+    .non-field-errors { margin-bottom: 20px; }
 
-        .card h2 {
-            margin: 0 0 8px;
-            color: #123b65;
-            font-size: 22px;
-        }
+    .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 30px;
+        padding-top: 22px;
+        border-top: 1px solid #e5e7eb;
+    }
 
-        .subtitle {
-            margin: 0 0 25px;
-            color: #6b7280;
-            font-size: 14px;
-        }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 20px;
+        border: none;
+        border-radius: 8px;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+    }
 
-        .info-box {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            color: #1e40af;
-            padding: 14px 16px;
-            border-radius: 9px;
-            margin-bottom: 25px;
-            font-size: 14px;
-        }
+    .btn:hover { opacity: .92; transform: translateY(-1px); }
+    .btn-secondary { background: #6b7280; }
 
-        .field {
-            margin-bottom: 22px;
-        }
+    @media (max-width: 700px) {
+        .card { padding: 22px; }
+        .actions { flex-direction: column; }
+        .btn { width: 100%; }
+    }
+</style>
+{% endblock %}
 
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #374151;
-        }
+{% block content %}
 
-        input,
-        select,
-        textarea {
-            width: 100%;
-            padding: 12px 13px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            background: white;
-            font-size: 14px;
-            color: #1f2937;
-            transition: border-color .2s, box-shadow .2s;
-        }
+<div class="card">
 
-        input:focus,
-        select:focus,
-        textarea:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37,99,235,.12);
-        }
+    <h2>{{ titre }}</h2>
 
-        .help {
-            margin-top: 7px;
-            color: #6b7280;
-            font-size: 13px;
-            line-height: 1.5;
-        }
+    <p class="subtitle">
+        Définissez les règles de plafond applicables à une garantie et à un acte.
+    </p>
 
-        .errorlist {
-            color: #b91c1c;
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            border-radius: 7px;
-            margin: 7px 0 0;
-            padding: 8px 12px 8px 28px;
-            font-size: 13px;
-        }
-
-        .non-field-errors {
-            margin-bottom: 20px;
-        }
-
-        .actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 30px;
-            padding-top: 22px;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 11px 20px;
-            border: none;
-            border-radius: 8px;
-            background: #2563eb;
-            color: white;
-            text-decoration: none;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .btn:hover {
-            opacity: .92;
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: #6b7280;
-        }
-
-        .footer {
-            text-align: center;
-            color: #6b7280;
-            font-size: 13px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        @media (max-width: 700px) {
-
-            .header {
-                padding: 15px 20px;
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .brand {
-                gap: 15px;
-            }
-
-            .brand img {
-                width: 110px;
-                height: 55px;
-            }
-
-            .header h1 {
-                font-size: 20px;
-            }
-
-            .back {
-                width: 100%;
-                text-align: center;
-            }
-
-            .card {
-                padding: 22px;
-            }
-
-            .actions {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="header">
-
-    <div class="brand">
-
-        <img
-            src="{% static 'core/img/logo-sagps.png' %}"
-            alt="SAGPS"
-        >
-
-        <h1>{{ titre }}</h1>
-
+    <div class="info-box">
+        💰 Configurez le type de plafond, sa période, son niveau
+        d'application et ses limites éventuelles.
     </div>
 
-    <a
-        class="back"
-        href="{% url 'plafonds' %}"
-    >
-        ← Retour aux plafonds
-    </a>
+    <form method="post">
 
-</div>
+        {% csrf_token %}
 
-<div class="container">
+        {% if form.non_field_errors %}
+            <div class="errorlist non-field-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
 
-    <div class="card">
-
-        <h2>{{ titre }}</h2>
-
-        <p class="subtitle">
-            Définissez les règles de plafond applicables à une garantie et à un acte.
-        </p>
-
-        <div class="info-box">
-            💰 Configurez le type de plafond, sa période, son niveau
-            d'application et ses limites éventuelles.
+        <div class="field">
+            {{ form.id_garantie_acte.label_tag }}
+            {{ form.id_garantie_acte }}
+            {{ form.id_garantie_acte.errors }}
+            <div class="help">
+                Sélectionnez la garantie et l'acte auxquels le plafond s'applique.
+            </div>
         </div>
 
-        <form method="post">
+        <div class="field">
+            {{ form.type_plafond.label_tag }}
+            {{ form.type_plafond }}
+            {{ form.type_plafond.errors }}
+        </div>
 
-            {% csrf_token %}
+        <div class="field">
+            {{ form.niveau_application.label_tag }}
+            {{ form.niveau_application }}
+            {{ form.niveau_application.errors }}
+        </div>
 
-            {% if form.non_field_errors %}
-                <div class="errorlist non-field-errors">
-                    {{ form.non_field_errors }}
-                </div>
-            {% endif %}
+        <div class="field">
+            {{ form.periode.label_tag }}
+            {{ form.periode }}
+            {{ form.periode.errors }}
+        </div>
 
-            <div class="field">
-
-                {{ form.id_garantie_acte.label_tag }}
-
-                {{ form.id_garantie_acte }}
-
-                {{ form.id_garantie_acte.errors }}
-
-                <div class="help">
-                    Sélectionnez la garantie et l'acte auxquels le plafond s'applique.
-                </div>
-
+        <div class="field">
+            {{ form.montant_max.label_tag }}
+            {{ form.montant_max }}
+            {{ form.montant_max.errors }}
+            <div class="help">
+                Laisser vide lorsque le plafond est uniquement basé sur la quantité.
             </div>
+        </div>
 
-            <div class="field">
-
-                {{ form.type_plafond.label_tag }}
-
-                {{ form.type_plafond }}
-
-                {{ form.type_plafond.errors }}
-
+        <div class="field">
+            {{ form.quantite_max.label_tag }}
+            {{ form.quantite_max }}
+            {{ form.quantite_max.errors }}
+            <div class="help">
+                Laisser vide lorsque le plafond est uniquement basé sur le montant.
             </div>
+        </div>
 
-            <div class="field">
+        <div class="field">
+            {{ form.date_debut.label_tag }}
+            {{ form.date_debut }}
+            {{ form.date_debut.errors }}
+        </div>
 
-                {{ form.niveau_application.label_tag }}
+        <div class="field">
+            {{ form.date_fin.label_tag }}
+            {{ form.date_fin }}
+            {{ form.date_fin.errors }}
+        </div>
 
-                {{ form.niveau_application }}
+        <div class="field">
+            {{ form.statut.label_tag }}
+            {{ form.statut }}
+            {{ form.statut.errors }}
+        </div>
 
-                {{ form.niveau_application.errors }}
+        <div class="actions">
+            <button type="submit" class="btn">💾 Enregistrer</button>
+            <a href="{% url 'plafonds' %}" class="btn btn-secondary">← Annuler</a>
+        </div>
 
-            </div>
-
-            <div class="field">
-
-                {{ form.periode.label_tag }}
-
-                {{ form.periode }}
-
-                {{ form.periode.errors }}
-
-            </div>
-
-            <div class="field">
-
-                {{ form.montant_max.label_tag }}
-
-                {{ form.montant_max }}
-
-                {{ form.montant_max.errors }}
-
-                <div class="help">
-                    Laisser vide lorsque le plafond est uniquement basé sur la quantité.
-                </div>
-
-            </div>
-
-            <div class="field">
-
-                {{ form.quantite_max.label_tag }}
-
-                {{ form.quantite_max }}
-
-                {{ form.quantite_max.errors }}
-
-                <div class="help">
-                    Laisser vide lorsque le plafond est uniquement basé sur le montant.
-                </div>
-
-            </div>
-
-            <div class="field">
-
-                {{ form.date_debut.label_tag }}
-
-                {{ form.date_debut }}
-
-                {{ form.date_debut.errors }}
-
-            </div>
-
-            <div class="field">
-
-                {{ form.date_fin.label_tag }}
-
-                {{ form.date_fin }}
-
-                {{ form.date_fin.errors }}
-
-            </div>
-
-            <div class="field">
-
-                {{ form.statut.label_tag }}
-
-                {{ form.statut }}
-
-                {{ form.statut.errors }}
-
-            </div>
-
-            <div class="actions">
-
-                <button type="submit" class="btn">
-                    💾 Enregistrer
-                </button>
-
-                <a
-                    href="{% url 'plafonds' %}"
-                    class="btn btn-secondary"
-                >
-                    ← Annuler
-                </a>
-
-            </div>
-
-        </form>
-
-    </div>
+    </form>
 
 </div>
 
-<div class="footer">
-    © 2026 — Plateforme Tiers Payant
-</div>
-
-</body>
-</html>
+{% endblock %}

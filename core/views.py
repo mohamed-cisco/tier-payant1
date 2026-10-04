@@ -500,6 +500,7 @@ def utilisateur_create(request):
         {
             "form": form,
             "titre": "Nouvel utilisateur",
+            "page": "utilisateurs",
         }
     )
 
@@ -688,6 +689,7 @@ def utilisateur_roles(request, id_utilisateur):
             "utilisateur": utilisateur,
             "roles": roles,
             "roles_actuels": roles_actuels,
+            "page": "utilisateurs",
         }
     )
 def roles(request):
@@ -789,6 +791,7 @@ def role_create(request):
         "core/role_form.html",
         {
             "titre": "Nouveau rôle",
+            "page": "roles",
         }
     )
 def role_detail(request, id_role):
@@ -842,6 +845,7 @@ def role_detail(request, id_role):
         {
             "role": role,
             "permissions_role": permissions_role,
+            "page": "roles",
         }
     )
 def role_permissions(request, id_role):
@@ -939,6 +943,7 @@ def role_permissions(request, id_role):
             "role": role,
             "permissions": permissions,
             "permissions_role": permissions_role,
+            "page": "roles",
         }
     )
 def role_modifier(request, id_role):
@@ -1917,6 +1922,7 @@ def souscripteur_create(request):
         {
             "form": form,
             "titre": "Nouveau souscripteur",
+            "page": "souscripteurs",
         }
     )
 def souscripteur_modifier(request, id_souscripteur):
@@ -2458,6 +2464,7 @@ def contrat_create(request):
         {
             "form": form,
             "titre": "Nouveau contrat",
+            "page": "contrats",
         }
     )
 
@@ -3495,6 +3502,8 @@ def sous_acte_create(request):
             "form": form,
             "titre": "Nouveau sous-acte",
             "permissions": permissions,
+            "page": "actes",
+            "page": "sous_actes",
         }
     )
 
@@ -3583,6 +3592,7 @@ def sous_acte_modifier(request, id_sous_acte):
             "form": form,
             "titre": "Modifier le sous-acte",
             "permissions": permissions,
+            "page": "actes",
         }
     )
 
@@ -3783,6 +3793,7 @@ def tarif_sous_acte_create(request):
             "form": form,
             "titre": "Nouveau tarif sous-acte",
             "permissions": permissions,
+            "page": "tarifs_sous_actes",
         }
     )
 
@@ -4549,6 +4560,7 @@ def garantie_acte_create(request):
             "form": form,
             "titre": "Associer un acte Ã  une garantie",
             "garantie_preselectionnee": garantie_preselectionnee,
+            "page": "garantie_actes",
         }
     )
 
@@ -5016,6 +5028,7 @@ def adhesion_create(request):
             "form": form,
             "titre": "Nouvelle adhésion",
             "contrat_preselectionne": contrat_preselectionne,
+            "page": "adhesions",
         }
     )
 
@@ -5597,6 +5610,7 @@ def personne_create(request):
         {
             "form": form,
             "titre": "Nouvelle personne",
+            "page": "adherents",
         }
     )
 
@@ -6279,6 +6293,7 @@ def prestataire_create(request):
         {
             "form": form,
             "titre": "Nouveau prestataire",
+            "page": "prestataires",
         }
     )
 def prestataire_modifier(request, id_prestataire):
@@ -6615,6 +6630,7 @@ def convention_create(request):
         {
             "form": form,
             "titre": "Nouvelle convention",
+            "page": "conventions",
         }
     )
 def convention_modifier(request, id_convention):
@@ -6825,6 +6841,7 @@ def convention_cloturer(request, id_convention):
         "core/convention_cloturer.html",
         {
             "convention": convention,
+            "page": "conventions",
         }
     )
 def plafond_create(request):
@@ -6956,6 +6973,7 @@ def plafond_create(request):
         {
             "form": form,
             "titre": "Nouveau plafond",
+            "page": "plafonds",
         }
     )
 def plafond_modifier(request, id_plafond):
@@ -7226,6 +7244,7 @@ def plafond_desactiver(request, id_plafond):
         "core/plafond_desactiver.html",
         {
             "plafond": plafond,
+            "page": "plafonds",
         }
     )
 def plafonds(request):
@@ -7424,6 +7443,7 @@ def document_create(request):
         {
             "form": form,
             "titre": "Déposer un document",
+            "page": "documents",
         }
     )
 def document_modifier(request, id_document):
@@ -7646,6 +7666,7 @@ def document_archiver(request, id_document):
         "core/document_archiver.html",
         {
             "document": document,
+            "page": "documents",
         }
     )
 def document_ouvrir(request, id_document):
@@ -8128,6 +8149,7 @@ def demande_tp_create(request):
                             "prestataires": prestataires,
                             "personnes": personnes,
                             "contrat_preselectionne": contrat_preselectionne,
+                            "page": "demandes_tp",
                         }
                     )
 
@@ -8389,6 +8411,7 @@ def demande_tp_detail_create(request, id_demande):
                             "form": form,
                             "demande": demande,
                             "titre": "Ajouter un acte à la demande",
+                            "page": "demandes_tp"
                         }
                     )
 
@@ -8637,6 +8660,7 @@ def demande_tp_document_create(request, id_demande):
             "form": form,
             "demande": demande,
             "titre": "Ajouter une pièce jointe",
+            "page": "demandes_tp",
         }
     )
 def _dates_periode_plafond(date_reference, periode):
@@ -9632,6 +9656,7 @@ def demande_tp_valider(request, id_demande):
             "calculs": calculs,
             "montant_accepte_total": montant_accepte_total,
             "montant_rejete_total": montant_rejete_total,
+            "page": "demandes_tp"
         }
     )
 def consommation_create(request, id_detail_pec):
@@ -9770,6 +9795,7 @@ def consommation_create(request, id_detail_pec):
                             "form": form,
                             "detail_pec": detail_pec,
                             "titre": "Nouvelle consommation",
+                            "page": "consommations"
                         }
                     )
 
@@ -10110,6 +10136,7 @@ def type_prestation_create(request):
         {
             "form": form,
             "titre": "Nouveau type de prestation",
+            "page": "types_prestation",
         }
     )
 
@@ -10757,6 +10784,7 @@ def facture_create(request):
                             "form": form,
                             "titre": "Nouvelle facture",
                             "consommations": consommations,
+                            "page": "factures"
                         }
                     )
 
@@ -11334,6 +11362,7 @@ def reglement_create(request):
                             "form": form,
                             "titre": "Nouveau règlement",
                             "factures": factures,
+                            "page": "reglements"
                         }
                     )
 
@@ -12029,6 +12058,7 @@ def recours_create(request):
         {
             "form": form,
             "permissions": permissions,
+            "page": "recours",
         }
     )
 def recours_document_create(request, id_recours):
@@ -12192,6 +12222,7 @@ def recours_document_create(request, id_recours):
         "form": form,
         "recours": recours_obj,
         "permissions": permissions,
+        "page": "recours",
     }
 )
 
@@ -12281,6 +12312,7 @@ def recours_traiter(request, id_recours):
             "recours": recours_obj,
             "form": form,
             "permissions": permissions,
+            "page": "recours",
         }
     )
 
@@ -13442,6 +13474,7 @@ def prestataire_import_excel(request):
         "core/prestataire_import_excel.html",
         {
             "permissions": permissions,
+            "page": "prestataires",
         }
     )
 def prestataire_export_excel(request):
