@@ -68,6 +68,7 @@
 
         <div class="actions">
             {% if "CONTRAT_CREATE" in permissions %}
+            
                 <a class="btn btn-success" href="{% url 'contrat_create' %}">➕ Nouveau contrat</a>
             {% endif %}
         </div>
@@ -107,6 +108,12 @@
                     <td>
                         <div class="row-actions">
                             {% if "CONTRAT_VIEW" in permissions %}
+                            <a href="{% url 'contrat_pdf' c.id_contrat %}"
+   target="_blank"
+   class="btn btn-danger"
+   style="background: #dc2626;">
+    📄 PDF
+</a>
                                 <a class="btn" href="{% url 'contrat_detail' c.id_contrat %}">Détails</a>
                             {% endif %}
                             {% if "CONTRAT_UPDATE" in permissions %}

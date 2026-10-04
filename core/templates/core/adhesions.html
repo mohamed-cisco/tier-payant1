@@ -71,6 +71,7 @@
                 <a href="{% url 'adhesion_export_excel' %}" class="btn btn-secondary">📤 Exporter Excel</a>
             {% endif %}
             {% if "ADHESION_CREATE" in permissions %}
+            
                 <a class="btn btn-success" href="{% url 'adhesion_create' %}">➕ Nouvelle adhésion</a>
             {% endif %}
         </div>
@@ -103,6 +104,14 @@
                     </td>
                     <td>
                         <div class="row-actions">
+                            {% if "ADHESION_VIEW" in permissions %}
+            <a href="{% url 'adhesion_pdf' a.id_adhesion %}"
+               target="_blank"
+               class="btn btn-danger"
+               style="background: #dc2626;">
+                📄 PDF
+            </a>
+        {% endif %}
                             {% if "ADHESION_UPDATE" in permissions %}
                                 <a href="{% url 'adhesion_modifier' a.id_adhesion %}"
                                    class="btn btn-secondary">Modifier</a>

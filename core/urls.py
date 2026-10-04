@@ -25,6 +25,7 @@ from .views import (
     contrat_create,
     contrat_modifier, 
     contrat_radier,
+    contrat_pdf, 
     garanties,
     garantie_detail,
     garantie_create,
@@ -55,6 +56,7 @@ from .views import (
     adhesion_modifier,
     adhesion_radier,
     adhesion_export_excel,
+    adhesion_pdf,
     personne_create,
     ayant_droits,
     ayant_droit_create,
@@ -206,6 +208,12 @@ path(
     "contrats/<int:id_contrat>/radier/",
     contrat_radier,
     name="contrat_radier",
+),
+
+path(
+    "contrats/<int:id_contrat>/pdf/",
+    contrat_pdf,
+    name="contrat_pdf"
 ),
 
 path(
@@ -370,6 +378,11 @@ path(
     name="adhesion_radier",
 ),
 path(
+    "adhesions/<int:id_adhesion>/pdf/",
+    adhesion_pdf,
+    name="adhesion_pdf"
+),
+path(
     "adhesions/export-excel/",
     adhesion_export_excel,
     name="adhesion_export_excel"
@@ -488,6 +501,11 @@ path(
     "demandes-tp/<int:id_demande>/documents/nouveau/",
     demande_tp_document_create,
     name="demande_tp_document_create",
+),
+path(
+    "demandes-tp/<int:id_demande>/pdf/",
+    demande_tp_pdf,
+    name="demande_tp_pdf"
 ),
 path(
     "prises-en-charge/",
