@@ -1,0 +1,328 @@
+{# core/templates/core/base.html #}
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Tiers Payant{% endblock %}</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        /* ================= LAYOUT ================= */
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ================= SIDEBAR ================= */
+        .sidebar {
+            width: 235px;
+            background: #123b65;
+            flex-shrink: 0;
+            padding: 22px 14px;
+            overflow-y: auto;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .sidebar-title {
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin: 0 10px 14px;
+            opacity: .7;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: white;
+            text-decoration: none;
+            padding: 10px 12px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            transition: background .18s;
+        }
+
+        .sidebar a:hover { background: rgba(255,255,255,.12); }
+
+        .sidebar a.active {
+            background: rgba(255,255,255,.22);
+            font-weight: 600;
+        }
+
+        .sidebar .sep {
+            height: 1px;
+            background: rgba(255,255,255,.12);
+            margin: 12px 10px;
+        }
+
+        .sidebar .logout {
+            color: #fca5a5;
+        }
+
+        .sidebar .logout:hover {
+            background: rgba(220, 38, 38, .18);
+        }
+
+        /* ================= MAIN ================= */
+        .main-wrap {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ================= HEADER ================= */
+        .app-header {
+            min-height: 82px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.04);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .app-header .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .app-header .brand img {
+            width: 130px;
+            height: 55px;
+            object-fit: contain;
+        }
+
+        .app-header .brand-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #123b65;
+        }
+
+        .app-header .brand-sub {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .app-header .user-box {
+            text-align: right;
+            font-size: 13px;
+        }
+
+        .app-header .user-box strong {
+            display: block;
+            color: #123b65;
+        }
+
+        .app-header .user-box span {
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        /* ================= CONTENT ================= */
+        .app-content {
+            padding: 30px 35px 45px;
+            flex: 1;
+        }
+
+        .page-title {
+            margin: 0 0 22px;
+        }
+
+        .page-title h1 {
+            margin: 0;
+            color: #123b65;
+            font-size: 24px;
+        }
+
+        .page-title p {
+            margin: 6px 0 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        /* ================= FOOTER ================= */
+        .app-footer {
+            text-align: center;
+            padding: 18px;
+            color: #9ca3af;
+            font-size: 12px;
+            border-top: 1px solid #e8edf3;
+        }
+
+        /* ================= RESPONSIVE ================= */
+        @media (max-width: 900px) {
+            .app-layout { flex-direction: column; }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+                padding: 14px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .sidebar-title { width: 100%; }
+            .sidebar a { margin-bottom: 0; font-size: 12px; padding: 8px 10px; }
+            .sidebar .sep { display: none; }
+            .app-content { padding: 20px; }
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+<div class="app-layout">
+
+    {# ================ MENU LATÉRAL ================ #}
+    <aside class="sidebar">
+        <div class="sidebar-title">Navigation</div>
+
+        <a href="{% url 'accueil' %}" class="{% if page == 'accueil' %}active{% endif %}">🏠 Tableau de bord</a>
+
+        <div class="sep"></div>
+
+        {% if "ADHERENT_VIEW" in permissions %}
+            <a href="{% url 'adherents' %}" class="{% if page == 'adherents' %}active{% endif %}">👥 Adhérents</a>
+        {% endif %}
+        {% if "AYANT_DROIT_VIEW" in permissions %}
+            <a href="{% url 'ayant_droits' %}" class="{% if page == 'ayant_droits' %}active{% endif %}">👨‍👩‍👧 Ayants droit</a>
+        {% endif %}
+        {% if "ADHESION_VIEW" in permissions %}
+            <a href="{% url 'adhesions' %}" class="{% if page == 'adhesions' %}active{% endif %}">📋 Adhésions</a>
+        {% endif %}
+
+        <div class="sep"></div>
+
+        {% if "SOUSCRIPTEUR_VIEW" in permissions %}
+            <a href="{% url 'souscripteurs' %}" class="{% if page == 'souscripteurs' %}active{% endif %}">🏢 Souscripteurs</a>
+        {% endif %}
+        {% if "CONTRAT_VIEW" in permissions %}
+            <a href="{% url 'contrats' %}" class="{% if page == 'contrats' %}active{% endif %}">📄 Contrats</a>
+        {% endif %}
+        {% if "GARANTIE_VIEW" in permissions %}
+            <a href="{% url 'garanties' %}" class="{% if page == 'garanties' %}active{% endif %}">🛡️ Garanties</a>
+            <a href="{% url 'garantie_actes' %}" class="{% if page == 'garantie_actes' %}active{% endif %}">🔗 Garantie ↔ Acte</a>
+            <a href="{% url 'plafonds' %}" class="{% if page == 'plafonds' %}active{% endif %}">💰 Plafonds</a>
+        {% endif %}
+
+        <div class="sep"></div>
+
+        {% if "ACTE_VIEW" in permissions %}
+            <a href="{% url 'types_prestation' %}" class="{% if page == 'types_prestation' %}active{% endif %}">📚 Types de prestation</a>
+            <a href="{% url 'actes' %}" class="{% if page == 'actes' %}active{% endif %}">🩺 Actes</a>
+            <a href="{% url 'sous_actes' %}" class="{% if page == 'sous_actes' %}active{% endif %}">📊 Sous-actes</a>
+            <a href="{% url 'tarifs_sous_actes' %}" class="{% if page == 'tarifs_sous_actes' %}active{% endif %}">💵 Tarifs sous-actes</a>
+        {% endif %}
+
+        <div class="sep"></div>
+
+        {% if "PRESTATAIRE_VIEW" in permissions %}
+            <a href="{% url 'prestataires' %}" class="{% if page == 'prestataires' %}active{% endif %}">🏥 Prestataires</a>
+        {% endif %}
+        {% if "CONVENTION_VIEW" in permissions %}
+            <a href="{% url 'conventions' %}" class="{% if page == 'conventions' %}active{% endif %}">🤝 Conventions</a>
+        {% endif %}
+
+        <div class="sep"></div>
+
+        {% if "DEMANDE_VIEW" in permissions %}
+            <a href="{% url 'demandes_tp' %}" class="{% if page == 'demandes_tp' %}active{% endif %}">📝 Demandes TP</a>
+            <a href="{% url 'prises_en_charge' %}" class="{% if page == 'prises_en_charge' %}active{% endif %}">🏥 Prises en charge</a>
+        {% endif %}
+        {% if "CONSOMMATION_VIEW" in permissions %}
+            <a href="{% url 'consommations' %}" class="{% if page == 'consommations' %}active{% endif %}">🧾 Consommations</a>
+        {% endif %}
+
+        <div class="sep"></div>
+
+        {% if "FACTURE_VIEW" in permissions %}
+            <a href="{% url 'factures' %}" class="{% if page == 'factures' %}active{% endif %}">💰 Factures</a>
+        {% endif %}
+        {% if "REGLEMENT_VIEW" in permissions %}
+            <a href="{% url 'reglements' %}" class="{% if page == 'reglements' %}active{% endif %}">💳 Règlements</a>
+        {% endif %}
+        {% if "RECOURS_VIEW" in permissions %}
+            <a href="{% url 'recours' %}" class="{% if page == 'recours' %}active{% endif %}">⚖️ Recours</a>
+        {% endif %}
+
+        <div class="sep"></div>
+
+        {% if "DOCUMENT_VIEW" in permissions %}
+            <a href="{% url 'documents' %}" class="{% if page == 'documents' %}active{% endif %}">📎 Documents</a>
+        {% endif %}
+        {% if "AUDIT_VIEW" in permissions %}
+            <a href="{% url 'audit_logs' %}" class="{% if page == 'audit' %}active{% endif %}">🔎 Audit</a>
+        {% endif %}
+
+        <div class="sep"></div>
+
+        {% if "USER_VIEW" in permissions %}
+            <a href="{% url 'utilisateurs' %}" class="{% if page == 'utilisateurs' %}active{% endif %}">👤 Utilisateurs</a>
+        {% endif %}
+        {% if "ROLE_VIEW" in permissions %}
+            <a href="{% url 'roles' %}" class="{% if page == 'roles' %}active{% endif %}">🛡️ Rôles & Permissions</a>
+        {% endif %}
+
+        <div class="sep"></div>
+
+        <a href="{% url 'deconnexion' %}" class="logout">🚪 Déconnexion</a>
+    </aside>
+
+    {# ================ ZONE PRINCIPALE ================ #}
+    <div class="main-wrap">
+
+        <header class="app-header">
+            <div class="brand">
+                <img src="{% static 'core/img/logo-sagps.png' %}" alt="SAGPS">
+                <div>
+                    <div class="brand-title">{% block header_title %}Tiers Payant{% endblock %}</div>
+                    <div class="brand-sub">{% block header_sub %}Gestion des prestations de santé{% endblock %}</div>
+                </div>
+            </div>
+
+            {% if utilisateur %}
+            <div class="user-box">
+                <strong>{{ utilisateur.prenom }} {{ utilisateur.nom }}</strong>
+                <span>
+                    {% for ur in roles %}{{ ur.id_role.libelle }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
+                </span>
+            </div>
+            {% endif %}
+        </header>
+
+        <main class="app-content">
+            {% block content %}{% endblock %}
+        </main>
+
+        <div class="app-footer">© 2026 — Plateforme Tiers Payant SAGPS</div>
+    </div>
+
+</div>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>
