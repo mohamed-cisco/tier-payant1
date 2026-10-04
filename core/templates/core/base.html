@@ -288,7 +288,9 @@
         {% endif %}
 
         <div class="sep"></div>
+<a href="{% url 'aide' %}" class="{% if page == 'aide' %}active{% endif %}">❓ Aide</a>
 
+<div class="sep"></div>
         <a href="{% url 'deconnexion' %}" class="logout">🚪 Déconnexion</a>
     </aside>
 

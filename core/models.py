@@ -726,3 +726,76 @@ class UtilisateurRole(models.Model):
         managed = True
         db_table = 'utilisateur_role'
 
+# ============================================================
+# CHAMPS PERSONNALISÉS (paramétrage dynamique)
+# ============================================================
+
+class ChampPersonnalise(models.Model):
+    """Définit un champ personnalisé ajoutable à une entité."""
+
+    ENTITES = [
+        ("ADHERENT", "Adhérent"),
+        ("AYANT_DROIT", "Ayant droit"),
+        ("PRESTATAIRE", "Prestataire"),
+        ("SOUSCRIPTEUR", "Souscripteur"),
+        ("CONTRAT", "Contrat"),
+        ("FACTURE", "Facture"),
+        ("DEMANDE_TP", "Demande TP"),
+    ]
+
+    TYPES = [
+        ("TEXT", "Texte court"),
+        ("TEXT_LONG", "Texte long"),
+        ("NUMBER", "Nombre"),
+        ("DECIMAL", "Nombre décimal"),
+        ("DATE", "Date"),
+        ("BOOLEAN", "Oui / Non"),
+        ("CHOICE", "Liste de choix"),
+    ]
+
+    entite = models.CharField(max_length=30, choices=ENTITES)
+    nom_technique = models.CharField(max_length=50)
+    libelle = models.CharField(max_length=200)
+    type_champ = models.CharField(max_length=20, choices=TYPES)
+    obligatoire = models.BooleanField(default=False)
+    valeur_defaut = models.CharField(max_length=200, blank=True, null=True)
+    choix_possibles = models.TextField(
+        blank=True, null=True,
+        help_text="Pour le type CHOICE : une valeur par ligne"
+    )
+    ordre_affichage = models.IntegerField(default=0)
+    statut = models.CharField(max_length=20, default="ACTIF")
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = True
+        db_table = "champ_personnalise"
+        unique_together = (("entite", "nom_technique"),)
+        ordering = ["entite", "ordre_affichage", "id"]
+
+    def __str__(self):
+        return f"{self.get_entite_display()} → {self.libelle}"
+
+
+class ValeurChampPersonnalise(models.Model):
+    """Contient la valeur d'un champ personnalisé pour un enregistrement."""
+
+    champ = models.ForeignKey(
+        ChampPersonnalise,
+        models.CASCADE,
+        db_column="id_champ",
+        related_name="valeurs",
+    )
+    id_enregistrement = models.BigIntegerField()
+    valeur = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = True
+        db_table = "valeur_champ_personnalise"
+        unique_together = (("champ", "id_enregistrement"),)
+        indexes = [
+            models.Index(fields=["champ", "id_enregistrement"]),
+        ]
+
+    def __str__(self):
+        return f"{self.champ.libelle} = {self.valeur}"

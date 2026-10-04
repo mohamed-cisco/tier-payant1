@@ -1,18 +1,17 @@
-from .models import Utilisateur, UtilisateurRole, RolePermission
-
-
 def utilisateur_context(request):
     """Ajoute utilisateur, rôles et permissions à TOUS les templates."""
     id_utilisateur = request.session.get("id_utilisateur")
     if not id_utilisateur:
         return {}
 
+    from .models import Utilisateur, UtilisateurRole, RolePermission
+
     try:
         utilisateur = Utilisateur.objects.get(id_utilisateur=id_utilisateur)
     except Utilisateur.DoesNotExist:
         return {}
 
-    roles = (
+    roles = list(
         UtilisateurRole.objects
         .filter(id_utilisateur=utilisateur, statut="ACTIF")
         .select_related("id_role")

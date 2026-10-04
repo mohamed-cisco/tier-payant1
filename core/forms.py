@@ -9,6 +9,7 @@ from .models import (
     Convention,
     Plafond,
     SousActe,
+    ChampPersonnalise,
 )
 
 
@@ -1268,3 +1269,104 @@ class TypePrestationForm(forms.Form):
         ],
         initial="ACTIF"
     )
+
+    # ============================================================
+# CHAMPS PERSONNALISÉS
+# ============================================================
+
+
+
+
+class ChampPersonnaliseForm(forms.ModelForm):
+    """Formulaire de création/modification d'un champ personnalisé."""
+
+    class Meta:
+        model = ChampPersonnalise
+        fields = [
+            "entite",
+            "nom_technique",
+            "libelle",
+            "type_champ",
+            "obligatoire",
+            "valeur_defaut",
+            "choix_possibles",
+            "ordre_affichage",
+            "statut",
+        ]
+        widgets = {
+            "choix_possibles": forms.Textarea(
+                attrs={
+                    "rows": 5,
+                    "placeholder": "Une valeur par ligne\nExemple :\nCNAS\nCASNOS\nAUTRE",
+                }
+            ),
+            "valeur_defaut": forms.TextInput(
+                attrs={"placeholder": "Valeur par défaut (optionnel)"}
+            ),
+        }
+        labels = {
+            "entite": "Entité",
+            "nom_technique": "Nom technique",
+            "libelle": "Libellé affiché",
+            "type_champ": "Type de champ",
+            "obligatoire": "Champ obligatoire",
+            "valeur_defaut": "Valeur par défaut",
+            "choix_possibles": "Choix possibles",
+            "ordre_affichage": "Ordre d'affichage",
+            "statut": "Statut",
+        }
+        help_texts = {
+            "nom_technique": "Uniquement des lettres, chiffres et underscores (ex: numero_cnas)",
+            "libelle": "Ce que l'utilisateur verra sur les formulaires",
+            "ordre_affichage": "Plus le chiffre est petit, plus le champ apparaît en premier",
+        }
+
+    def clean_nom_technique(self):
+        """Valide le nom technique (doit être un identifiant Python valide)."""
+        nom = self.cleaned_data.get("nom_technique", "").strip().lower()
+
+        if not nom:
+            raise forms.ValidationError("Le nom technique est obligatoire.")
+
+        # Vérifier que c'est un identifiant valide
+        import re
+        if not re.match(r"^[a-z][a-z0-9_]*$", nom):
+            raise forms.ValidationError(
+                "Le nom technique doit commencer par une lettre "
+                "et ne contenir que des lettres minuscules, chiffres "
+                "et underscores."
+            )
+
+        return nom
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        entite = cleaned_data.get("entite")
+        nom_technique = cleaned_data.get("nom_technique")
+        type_champ = cleaned_data.get("type_champ")
+        choix_possibles = cleaned_data.get("choix_possibles")
+
+        # Vérifier l'unicité (entité + nom_technique)
+        if entite and nom_technique:
+            qs = ChampPersonnalise.objects.filter(
+                entite=entite,
+                nom_technique=nom_technique,
+            )
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+
+            if qs.exists():
+                self.add_error(
+                    "nom_technique",
+                    "Un champ avec ce nom existe déjà pour cette entité."
+                )
+
+        # Si le type est CHOICE, il faut des choix
+        if type_champ == "CHOICE" and not choix_possibles:
+            self.add_error(
+                "choix_possibles",
+                "Vous devez saisir au moins un choix pour ce type de champ."
+            )
+
+        return cleaned_data

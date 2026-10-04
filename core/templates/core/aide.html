@@ -1,0 +1,827 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Aide - Tiers Payant{% endblock %}
+{% block header_title %}Centre d'aide{% endblock %}
+{% block header_sub %}Guide utilisateur et documentation{% endblock %}
+
+{% block extra_css %}
+<style>
+    .aide-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 25px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* ===== MENU LATÉRAL AIDE ===== */
+    .aide-nav {
+        background: white;
+        border-radius: 14px;
+        padding: 20px 15px;
+        box-shadow: 0 3px 14px rgba(0,0,0,.07);
+        border: 1px solid #e5e7eb;
+        position: sticky;
+        top: 20px;
+        height: fit-content;
+        max-height: calc(100vh - 60px);
+        overflow-y: auto;
+    }
+
+    .aide-nav h3 {
+        margin: 0 0 15px;
+        color: #123b65;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+
+    .aide-nav a {
+        display: block;
+        padding: 10px 12px;
+        margin-bottom: 4px;
+        color: #374151;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: .2s;
+    }
+
+    .aide-nav a:hover {
+        background: #f1f5f9;
+        color: #123b65;
+        padding-left: 16px;
+    }
+
+    /* ===== CONTENU ===== */
+    .aide-content {
+        background: white;
+        border-radius: 14px;
+        padding: 35px;
+        box-shadow: 0 3px 14px rgba(0,0,0,.07);
+        border: 1px solid #e5e7eb;
+    }
+
+    .aide-content h1 {
+        color: #123b65;
+        font-size: 28px;
+        margin: 0 0 10px;
+        padding-bottom: 15px;
+        border-bottom: 3px solid #123b65;
+    }
+
+    .aide-content h2 {
+        color: #123b65;
+        font-size: 22px;
+        margin: 40px 0 15px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+    .aide-content h3 {
+        color: #1e5b91;
+        font-size: 18px;
+        margin: 25px 0 12px;
+    }
+
+    .aide-content h4 {
+        color: #374151;
+        font-size: 15px;
+        margin: 18px 0 8px;
+    }
+
+    .aide-content p {
+        color: #4b5563;
+        line-height: 1.7;
+        margin: 10px 0;
+        font-size: 14px;
+    }
+
+    .aide-content ul,
+    .aide-content ol {
+        color: #4b5563;
+        line-height: 1.8;
+        font-size: 14px;
+        padding-left: 25px;
+    }
+
+    .aide-content li {
+        margin: 5px 0;
+    }
+
+    .aide-content code {
+        background: #f1f5f9;
+        color: #0f172a;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        font-size: 13px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .aide-content pre {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 15px;
+        overflow-x: auto;
+        font-family: Consolas, monospace;
+        font-size: 13px;
+        color: #334155;
+    }
+
+    /* ===== ENCADRÉS ===== */
+    .info-box {
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+        font-size: 14px;
+        line-height: 1.6;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .info-box-icon {
+        font-size: 20px;
+        line-height: 1;
+    }
+
+    .info-box.info {
+        background: #eff6ff;
+        border-left: 5px solid #2563eb;
+        color: #1e40af;
+    }
+
+    .info-box.warning {
+        background: #fef3c7;
+        border-left: 5px solid #d97706;
+        color: #78350f;
+    }
+
+    .info-box.danger {
+        background: #fee2e2;
+        border-left: 5px solid #dc2626;
+        color: #991b1b;
+    }
+
+    .info-box.success {
+        background: #dcfce7;
+        border-left: 5px solid #16a34a;
+        color: #166534;
+    }
+
+    /* ===== TABLEAUX ===== */
+    .aide-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        font-size: 14px;
+    }
+
+    .aide-content th {
+        background: #123b65;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        font-size: 13px;
+    }
+
+    .aide-content td {
+        padding: 11px 12px;
+        border-bottom: 1px solid #e5e7eb;
+        color: #374151;
+    }
+
+    .aide-content tr:hover td {
+        background: #f8fafc;
+    }
+
+    /* ===== WORKFLOW ===== */
+    .workflow {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .workflow-step {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 12px 15px;
+        background: white;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        border-left: 4px solid #2563eb;
+    }
+
+    .workflow-step-num {
+        background: #2563eb;
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 13px;
+        flex-shrink: 0;
+    }
+
+    .workflow-step-text {
+        flex: 1;
+        font-size: 14px;
+        color: #374151;
+    }
+
+    .workflow-arrow {
+        text-align: center;
+        color: #94a3b8;
+        font-size: 18px;
+        margin: 4px 0;
+    }
+
+    /* ===== SOMMAIRE ===== */
+    .sommaire {
+        background: #f1f5f9;
+        border-radius: 10px;
+        padding: 20px 25px;
+        margin: 20px 0;
+    }
+
+    .sommaire h3 {
+        margin: 0 0 15px !important;
+        font-size: 16px !important;
+        color: #123b65 !important;
+    }
+
+    .sommaire ol {
+        padding-left: 25px !important;
+        margin: 0 !important;
+    }
+
+    .sommaire a {
+        color: #1e5b91;
+        text-decoration: none;
+    }
+
+    .sommaire a:hover {
+        text-decoration: underline;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1000px) {
+        .aide-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .aide-nav {
+            position: static;
+            max-height: none;
+        }
+
+        .aide-nav a {
+            display: inline-block;
+            margin: 2px;
+        }
+
+        .aide-content {
+            padding: 25px 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="aide-layout">
+
+    <!-- MENU LATÉRAL AIDE -->
+    <nav class="aide-nav">
+        <h3>📑 Sommaire</h3>
+        <a href="#presentation">1. Présentation</a>
+        <a href="#connexion">2. Connexion</a>
+        <a href="#dashboard">3. Tableau de bord</a>
+        <a href="#adherents">4. Adhérents</a>
+        <a href="#contrats">5. Contrats & Garanties</a>
+        <a href="#prestataires">6. Prestataires</a>
+        <a href="#demandes">7. Demandes TP</a>
+        <a href="#pec">8. PEC & Consommations</a>
+        <a href="#facturation">9. Facturation</a>
+        <a href="#recours">10. Recours</a>
+        <a href="#admin">11. Administration</a>
+        <a href="#workflows">12. Workflows</a>
+        <a href="#faq">13. FAQ</a>
+    </nav>
+
+    <!-- CONTENU -->
+    <div class="aide-content">
+
+        <h1>📖 Guide utilisateur</h1>
+        <p style="font-size: 16px; color: #6b7280;">
+            Plateforme Tiers Payant — Djazair Med
+        </p>
+
+        <div class="sommaire">
+            <h3>🎯 Bienvenue</h3>
+            <p>
+                Ce guide vous accompagne dans l'utilisation de la plateforme Tiers Payant.
+                Chaque section est accessible via le menu de gauche.
+                Pour toute question, contactez votre administrateur.
+            </p>
+        </div>
+
+        <!-- ============ 1. PRÉSENTATION ============ -->
+        <h2 id="presentation">1️⃣ Présentation générale</h2>
+
+        <h3>🎯 Objectif de la plateforme</h3>
+        <p>La plateforme Tiers Payant permet de gérer :</p>
+        <ul>
+            <li>Les <strong>adhérents</strong> et leurs ayants droit</li>
+            <li>Les <strong>contrats</strong> avec les souscripteurs</li>
+            <li>Les <strong>prestataires de santé</strong></li>
+            <li>Les <strong>demandes de prise en charge</strong></li>
+            <li>Les <strong>factures</strong> et <strong>règlements</strong></li>
+            <li>Les <strong>recours</strong> et l'audit</li>
+        </ul>
+
+        <div class="info-box info">
+            <span class="info-box-icon">🔐</span>
+            <div>
+                <strong>Sécurité :</strong> chaque utilisateur dispose d'un nom utilisateur unique,
+                d'un mot de passe personnel, et de rôles qui déterminent ses permissions.
+                Ne partagez jamais votre mot de passe.
+            </div>
+        </div>
+
+        <!-- ============ 2. CONNEXION ============ -->
+        <h2 id="connexion">2️⃣ Connexion et déconnexion</h2>
+
+        <h3>🚪 Se connecter</h3>
+        <ol>
+            <li>Ouvrez votre navigateur (Chrome, Edge, Firefox)</li>
+            <li>Saisissez l'adresse de la plateforme</li>
+            <li>Entrez votre <strong>nom utilisateur</strong> et <strong>mot de passe</strong></li>
+            <li>Cliquez sur <strong>🔐 Se connecter</strong></li>
+        </ol>
+
+        <h3>🚪 Se déconnecter</h3>
+        <p>Cliquez sur <strong>🚪 Déconnexion</strong> en bas du menu latéral.</p>
+
+        <div class="info-box warning">
+            <span class="info-box-icon">⚠️</span>
+            <div>
+                <strong>Important :</strong> déconnectez-vous toujours avant de quitter votre poste,
+                surtout sur un ordinateur partagé.
+            </div>
+        </div>
+
+        <!-- ============ 3. DASHBOARD ============ -->
+        <h2 id="dashboard">3️⃣ Tableau de bord</h2>
+
+        <p>Le tableau de bord offre une vue d'ensemble de votre activité :</p>
+
+        <h3>📊 Cartes statistiques</h3>
+        <ul>
+            <li>👥 <strong>Nombre d'adhérents</strong></li>
+            <li>📄 <strong>Contrats actifs</strong></li>
+            <li>📝 <strong>Demandes en attente</strong></li>
+            <li>💰 <strong>Factures en attente</strong></li>
+        </ul>
+
+        <h3>📈 Graphiques</h3>
+        <ul>
+            <li><strong>Évolution des demandes TP</strong> par mois</li>
+            <li><strong>Répartition par type de prestation</strong></li>
+            <li><strong>Factures par statut</strong></li>
+            <li><strong>Top 5 prestataires</strong> par montant validé</li>
+        </ul>
+
+        <h3>🔔 Alertes</h3>
+        <ul>
+            <li>Factures en retard (> 30 jours)</li>
+            <li>Conventions expirant dans moins de 30 jours</li>
+        </ul>
+
+        <h3>📅 Filtres de période</h3>
+        <p>Utilisez les boutons <strong>Ce mois</strong> / <strong>Ce trimestre</strong> / <strong>Cette année</strong> pour filtrer les graphiques.</p>
+
+        <!-- ============ 4. ADHÉRENTS ============ -->
+        <h2 id="adherents">4️⃣ Module Adhérents</h2>
+
+        <h3>👥 Créer un adhérent</h3>
+        <ol>
+            <li>Menu <strong>Adhérents</strong> → bouton <strong>➕ Nouvel adhérent</strong></li>
+            <li>Remplissez les informations (Nom et Prénom sont obligatoires)</li>
+            <li>Cliquez <strong>💾 Enregistrer</strong></li>
+        </ol>
+
+        <div class="info-box success">
+            <span class="info-box-icon">✅</span>
+            <div>
+                Le <strong>numéro d'adhérent</strong> est généré automatiquement au format
+                <code>ADH-2026-0001</code>.
+            </div>
+        </div>
+
+        <h3>👨‍👩‍👧 Ajouter un ayant droit</h3>
+        <ol>
+            <li>Ouvrez la fiche adhérent → <strong>Détails</strong></li>
+            <li>Section <strong>Ayants droit</strong> → <strong>+ Ajouter un ayant droit</strong></li>
+            <li>Remplissez :
+                <ul>
+                    <li>Nom (auto-rempli pour les enfants)</li>
+                    <li>Prénom, date de naissance, sexe</li>
+                    <li>Type de lien : Conjoint(e), Enfant, Parent, Autre</li>
+                </ul>
+            </li>
+            <li>Cliquez <strong>💾 Enregistrer</strong></li>
+        </ol>
+
+        <h3>🎫 Carte adhérent PDF</h3>
+        <p>Sur la fiche adhérent, cliquez sur <strong>🎫 Carte adhérent</strong>.</p>
+        <p>Le PDF contient :</p>
+        <ul>
+            <li>Infos du titulaire</li>
+            <li><strong>Section Ayants droit</strong></li>
+            <li>Zone de signature</li>
+        </ul>
+
+        <h3>📥 Import Excel</h3>
+        <p>Colonnes attendues dans le fichier :</p>
+        <pre>nom | prenom | date_naissance | sexe | adresse | telephone | email | date_adhesion</pre>
+
+        <!-- ============ 5. CONTRATS ============ -->
+        <h2 id="contrats">5️⃣ Contrats et Garanties</h2>
+
+        <h3>🏢 Créer un souscripteur</h3>
+        <p>Menu <strong>Souscripteurs</strong> → <strong>➕ Nouveau souscripteur</strong>.</p>
+
+        <h3>📄 Créer un contrat</h3>
+        <ol>
+            <li><strong>Contrats</strong> → <strong>➕ Nouveau contrat</strong></li>
+            <li>Sélectionnez le <strong>Souscripteur</strong></li>
+            <li>Remplissez dates, type, objet</li>
+        </ol>
+
+        <div class="info-box info">
+            <span class="info-box-icon">ℹ️</span>
+            <div>
+                Toutes les <strong>garanties actives</strong> sont automatiquement liées au nouveau contrat.
+            </div>
+        </div>
+
+        <h3>🛡️ Garanties et Actes</h3>
+        <p>Menu <strong>Garantie ↔ Acte</strong> → <strong>+ Associer un acte</strong></p>
+        <ul>
+            <li>Sélectionnez la garantie + l'acte</li>
+            <li><strong>Taux de prise en charge</strong> (%)</li>
+            <li><strong>Franchise</strong> (DA)</li>
+        </ul>
+
+        <h3>💰 Plafonds</h3>
+        <p>Menu <strong>Plafonds</strong> → <strong>➕ Nouveau plafond</strong></p>
+        <table>
+            <thead>
+                <tr><th>Type</th><th>Période</th><th>Niveau</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Montant</td><td>Jour</td><td>Adhérent</td></tr>
+                <tr><td>Quantité</td><td>Mois</td><td>Personne</td></tr>
+                <tr><td>Mixte</td><td>Trimestre / Semestre / Année</td><td>Contrat</td></tr>
+            </tbody>
+        </table>
+
+        <!-- ============ 6. PRESTATAIRES ============ -->
+        <h2 id="prestataires">6️⃣ Prestataires et Conventions</h2>
+
+        <h3>🏥 Créer un prestataire</h3>
+        <p><strong>Prestataires</strong> → <strong>➕ Nouveau prestataire</strong></p>
+        <p>Types disponibles : Pharmacie, Médecin, Clinique, Laboratoire, Centre de radiologie, Dentaire, Optique, Autre.</p>
+
+        <h3>🤝 Créer une convention</h3>
+        <p><strong>Conventions</strong> → <strong>➕ Nouvelle convention</strong></p>
+
+        <div class="info-box danger">
+            <span class="info-box-icon">⚠️</span>
+            <div>
+                <strong>Sans convention active</strong>, aucune demande TP ne peut être créée
+                pour ce prestataire.
+            </div>
+        </div>
+
+        <!-- ============ 7. DEMANDES TP ============ -->
+        <h2 id="demandes">7️⃣ Demandes de Tiers Payant</h2>
+
+        <h3>📝 Créer une demande TP</h3>
+        <ol>
+            <li><strong>Demandes TP</strong> → <strong>➕ Nouvelle demande</strong></li>
+            <li>Sélectionnez : bénéficiaire, contrat, prestataire (avec convention active)</li>
+            <li>Enregistrez — la demande est créée en <code>EN_ATTENTE</code></li>
+        </ol>
+
+        <h3>➕ Ajouter des actes</h3>
+        <p><strong>Workflow en cascade :</strong></p>
+        <div class="workflow">
+            <div class="workflow-step">
+                <div class="workflow-step-num">1</div>
+                <div class="workflow-step-text">Choisissez l'<strong>Acte</strong> → la page recharge</div>
+            </div>
+            <div class="workflow-arrow">↓</div>
+            <div class="workflow-step">
+                <div class="workflow-step-num">2</div>
+                <div class="workflow-step-text">Choisissez le <strong>Sous-acte</strong> → la page recharge</div>
+            </div>
+            <div class="workflow-arrow">↓</div>
+            <div class="workflow-step">
+                <div class="workflow-step-num">3</div>
+                <div class="workflow-step-text">Choisissez le <strong>Prestataire</strong> → le tarif se charge</div>
+            </div>
+            <div class="workflow-arrow">↓</div>
+            <div class="workflow-step">
+                <div class="workflow-step-num">4</div>
+                <div class="workflow-step-text">Saisissez la <strong>Quantité</strong> puis enregistrez</div>
+            </div>
+        </div>
+
+        <h3>✅ Valider une demande</h3>
+        <ol>
+            <li>Bouton <strong>✓ Valider la demande</strong></li>
+            <li>Vérifiez les calculs (taux, franchise, plafonds)</li>
+            <li>Cliquez <strong>✓ Valider et créer la PEC</strong></li>
+        </ol>
+
+        <div class="info-box success">
+            <span class="info-box-icon">✅</span>
+            <div>
+                Une <strong>Prise En Charge (PEC)</strong> est créée avec un numéro
+                <code>PEC-2026-XXXX</code>. Générez son PDF pour le prestataire.
+            </div>
+        </div>
+
+        <!-- ============ 8. PEC & CONSOMMATIONS ============ -->
+        <h2 id="pec">8️⃣ PEC et Consommations</h2>
+
+        <h3>🏥 Prises en charge</h3>
+        <ul>
+            <li>Liste complète sur <strong>Prises en charge</strong></li>
+            <li><strong>Détails</strong> → voir les actes pris en charge</li>
+            <li><strong>📄 Télécharger PDF</strong> → document officiel</li>
+        </ul>
+
+        <div class="info-box warning">
+            <span class="info-box-icon">⏰</span>
+            <div>
+                La PEC a une <strong>date d'expiration</strong> (30 jours par défaut).
+                Passée cette date, elle n'est plus valide.
+            </div>
+        </div>
+
+        <h3>🧾 Créer une consommation</h3>
+        <ol>
+            <li>Sur la fiche PEC → <strong>Créer une consommation</strong></li>
+            <li>Saisissez :
+                <ul>
+                    <li><strong>Sous-acte</strong></li>
+                    <li><strong>Date de prestation</strong></li>
+                    <li><strong>Quantité</strong></li>
+                </ul>
+            </li>
+            <li>Le tarif se charge automatiquement</li>
+        </ol>
+
+        <h3>✅ Valider / ❌ Annuler</h3>
+        <p>Sur la fiche consommation :</p>
+        <ul>
+            <li><strong>Valider</strong> → peut être facturée</li>
+            <li><strong>Annuler</strong> → peut être recréée</li>
+        </ul>
+
+        <!-- ============ 9. FACTURATION ============ -->
+        <h2 id="facturation">9️⃣ Facturation et Règlements</h2>
+
+        <h3>💰 Créer une facture</h3>
+        <ol>
+            <li><strong>Factures</strong> → <strong>➕ Nouvelle facture</strong></li>
+            <li>Sélectionnez le <strong>Prestataire</strong></li>
+            <li>La facture regroupe <strong>automatiquement</strong> toutes les consommations validées non facturées</li>
+        </ol>
+
+        <h3>📄 Exports disponibles</h3>
+        <ul>
+            <li><strong>📊 Exporter Excel</strong> → liste complète</li>
+            <li><strong>📄 Exporter PDF</strong> → liste en PDF</li>
+            <li>Sur la fiche facture → <strong>📄 Télécharger PDF</strong> → facture détaillée</li>
+        </ul>
+
+        <h3>💳 Créer un règlement</h3>
+        <ol>
+            <li><strong>Règlements</strong> → <strong>➕ Nouveau règlement</strong></li>
+            <li>Sélectionnez une facture <code>VALIDEE</code> ou <code>PARTIELLEMENT_PAYEE</code></li>
+            <li>Saisissez date, montant, mode (Virement / Chèque / Espèces)</li>
+        </ol>
+
+        <h3>✅ Valider un règlement</h3>
+        <p>Le statut de la facture est mis à jour automatiquement :</p>
+        <ul>
+            <li><strong>PAYEE</strong> si le total réglé ≥ montant validé</li>
+            <li><strong>PARTIELLEMENT_PAYEE</strong> sinon</li>
+        </ul>
+
+        <!-- ============ 10. RECOURS ============ -->
+        <h2 id="recours">🔟 Recours</h2>
+
+        <h3>⚖️ Créer un recours</h3>
+        <p><strong>Recours</strong> → <strong>➕ Nouveau recours</strong></p>
+        <ul>
+            <li>Personne concernée</li>
+            <li>Type : Médical / Facturation / Administratif</li>
+            <li>Date, objet, motif</li>
+        </ul>
+
+        <h3>🎯 Traiter un recours</h3>
+        <ol>
+            <li>Bouton <strong>Traiter</strong></li>
+            <li>Décision :
+                <ul>
+                    <li>Type : Acceptée / Rejetée / Acceptée partiellement</li>
+                    <li>Motif</li>
+                    <li>Montant accordé</li>
+                </ul>
+            </li>
+        </ol>
+
+        <!-- ============ 11. ADMINISTRATION ============ -->
+        <h2 id="admin">1️⃣1️⃣ Administration</h2>
+
+        <h3>👤 Créer un utilisateur</h3>
+        <ol>
+            <li><strong>Utilisateurs</strong> → <strong>+ Nouvel utilisateur</strong></li>
+            <li>Remplissez les informations</li>
+            <li>Définissez un mot de passe</li>
+        </ol>
+
+        <h3>🎭 Attribuer des rôles</h3>
+        <p>Sur la ligne de l'utilisateur → <strong>Rôles</strong> → cochez les rôles → Enregistrer.</p>
+
+        <h3>🛡️ Créer un rôle avec permissions</h3>
+        <ol>
+            <li><strong>Rôles</strong> → <strong>+ Nouveau rôle</strong></li>
+            <li>Sur la ligne du rôle → <strong>Permissions</strong></li>
+            <li>Cochez les permissions par module</li>
+            <li><strong>Enregistrer les permissions</strong></li>
+        </ol>
+
+        <h3>🔎 Audit</h3>
+        <p>Journal complet des actions : qui a fait quoi, quand, depuis quelle IP.</p>
+
+        <!-- ============ 12. WORKFLOWS ============ -->
+        <h2 id="workflows">1️⃣2️⃣ Workflows complets</h2>
+
+        <h3>🔄 Workflow n°1 — Adhésion complète</h3>
+        <div class="workflow">
+            <div class="workflow-step">
+                <div class="workflow-step-num">1</div>
+                <div class="workflow-step-text">Créer un <strong>Adhérent</strong></div>
+            </div>
+            <div class="workflow-arrow">↓</div>
+            <div class="workflow-step">
+                <div class="workflow-step-num">2</div>
+                <div class="workflow-step-text">Créer le <strong>Contrat</strong></div>
+            </div>
+            <div class="workflow-arrow">↓</div>
+            <div class="workflow-step">
+                <div class="workflow-step-num">3</div>
+                <div class="workflow-step-text">Créer une <strong>Adhésion</strong></div>
+            </div>
+            <div class="workflow-arrow">↓</div>
+            <div class="workflow-step">
+                <div class="workflow-step-num">4</div>
+                <div class="workflow-step-text">Ajouter les <strong>Ayants droit</strong></div>
+            </div>
+            <div class="workflow-arrow">↓</div>
+            <div class="workflow-step">
+                <div class="workflow-step-num">5</div>
+                <div class="workflow-step-text">Générer la <strong>Carte adhérent</strong> PDF</div>
+            </div>
+        </div>
+
+        <h3>🔄 Workflow n°2 — Demande TP</h3>
+        <div class="workflow">
+            <div class="workflow-step">
+                <div class="workflow-step-num">1</div>
+                <div class="workflow-step-text">Créer la <strong>Demande TP</strong></div>
+            </div>
+            <div class="workflow-arrow">↓</div>
+            <div class="workflow-step">
+                <div class="workflow-step-num">2</div>
+                <div class="workflow-step-text">Ajouter les <strong>Actes</strong></div>
+            </div>
+            <div class="workflow-arrow">↓</div>
+            <div class="workflow-step">
+                <div class="workflow-step-num">3</div>
+                <div class="workflow-step-text"><strong>Valider</strong> la demande → crée une <strong>PEC</strong></div>
+            </div>
+            <div class="workflow-arrow">↓</div>
+            <div class="workflow-step">
+                <div class="workflow-step-num">4</div>
+                <div class="workflow-step-text">Créer les <strong>Consommations</strong></div>
+            </div>
+            <div class="workflow-arrow">↓</div>
+            <div class="workflow-step">
+                <div class="workflow-step-num">5</div>
+                <div class="workflow-step-text"><strong>Valider</strong> les consommations</div>
+            </div>
+        </div>
+
+        <h3>🔄 Workflow n°3 — Facturation</h3>
+        <div class="workflow">
+            <div class="workflow-step">
+                <div class="workflow-step-num">1</div>
+                <div class="workflow-step-text">Créer la <strong>Facture</strong></div>
+            </div>
+            <div class="workflow-arrow">↓</div>
+            <div class="workflow-step">
+                <div class="workflow-step-num">2</div>
+                <div class="workflow-step-text"><strong>Valider</strong> la facture</div>
+            </div>
+            <div class="workflow-arrow">↓</div>
+            <div class="workflow-step">
+                <div class="workflow-step-num">3</div>
+                <div class="workflow-step-text">Créer un <strong>Règlement</strong></div>
+            </div>
+            <div class="workflow-arrow">↓</div>
+            <div class="workflow-step">
+                <div class="workflow-step-num">4</div>
+                <div class="workflow-step-text"><strong>Valider</strong> le règlement → facture payée</div>
+            </div>
+        </div>
+
+        <!-- ============ 13. FAQ ============ -->
+        <h2 id="faq">1️⃣3️⃣ FAQ et dépannage</h2>
+
+        <h3>❓ Questions fréquentes</h3>
+
+        <h4>J'ai oublié mon mot de passe</h4>
+        <p>Contactez l'administrateur pour qu'il le réinitialise.</p>
+
+        <h4>Je ne vois pas certains menus</h4>
+        <p>Vous n'avez pas les permissions nécessaires. Contactez l'administrateur.</p>
+
+        <h4>« Aucune convention active avec ce prestataire »</h4>
+        <p>Créez une convention pour ce prestataire, à la date d'aujourd'hui.</p>
+
+        <h4>« Aucun tarif actif pour ce sous-acte »</h4>
+        <p>Créez un tarif pour ce sous-acte + prestataire + date.</p>
+
+        <h4>Le calcul de la PEC donne 0 DA</h4>
+        <p>Vérifiez que la garantie-acte a bien un taux > 0 et que le plafond n'est pas épuisé.</p>
+
+        <h4>La carte adhérent ne contient pas les ayants droit</h4>
+        <p>Vérifiez que leurs statuts sont ACTIF et qu'ils sont bien rattachés à cet adhérent.</p>
+
+        <h3>🐛 Erreurs courantes</h3>
+        <table>
+            <thead>
+                <tr><th>Erreur</th><th>Cause</th><th>Solution</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Nom utilisateur ou mot de passe incorrect</td>
+                    <td>Mauvais login</td>
+                    <td>Redemander les identifiants</td>
+                </tr>
+                <tr>
+                    <td>Aucune convention active</td>
+                    <td>Pas de convention</td>
+                    <td>Créer une convention</td>
+                </tr>
+                <tr>
+                    <td>Aucun tarif actif</td>
+                    <td>Tarif manquant</td>
+                    <td>Créer le tarif</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box info" style="margin-top: 40px;">
+            <span class="info-box-icon">☎️</span>
+            <div>
+                <strong>Support</strong><br>
+                Pour toute question technique, contactez votre administrateur.
+            </div>
+        </div>
+
+        <p style="text-align: center; color: #9ca3af; font-size: 13px; margin-top: 40px;">
+            © 2026 — Plateforme Tiers Payant SAGPS — Djazair Med
+        </p>
+
+    </div>
+
+</div>
+
+{% endblock %}

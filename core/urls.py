@@ -2,6 +2,7 @@
 
 from .views import (
     accueil,
+    aide,
     connexion,
     deconnexion,
     types_prestation,
@@ -48,6 +49,10 @@ from .views import (
     tarif_sous_acte_radier,
     ajax_tarif_sous_acte,
     ajax_prestataires_par_sous_acte,
+    champs_personnalises,
+    champ_personnalise_create,
+    champ_personnalise_modifier,
+    champ_personnalise_supprimer,
     acte_create,
     acte_modifier,
     acte_radier,
@@ -107,6 +112,7 @@ from .views import (
     recours_traiter,
     recours_detail,
     recours_document_create,
+    recours_pdf,
     audit_logs,
     documents,
     document_create,
@@ -126,11 +132,13 @@ from .views import (
     role_modifier,
     role_permissions,
     role_detail,
+    
 )
 
 
 urlpatterns = [
     path("", accueil, name="accueil"),
+    path("aide/", aide, name="aide"),
     path("connexion/", connexion, name="connexion"),
     path("deconnexion/", deconnexion, name="deconnexion"),
 path("adherents/", adherents, name="adherents"),
@@ -632,6 +640,11 @@ path(
     name="recours_detail",
 ),
 path(
+    "recours/<int:id_recours>/pdf/",
+    recours_pdf,
+    name="recours_pdf"
+),
+path(
     "recours/<int:id_recours>/documents/nouveau/",
     recours_document_create,
     name="recours_document_create",
@@ -640,6 +653,26 @@ path(
     "audit/",
     audit_logs,
     name="audit_logs",
+),
+path(
+    "champs-personnalises/",
+    champs_personnalises,
+    name="champs_personnalises",
+),
+path(
+    "champs-personnalises/nouveau/",
+    champ_personnalise_create,
+    name="champ_personnalise_create",
+),
+path(
+    "champs-personnalises/<int:id_champ>/modifier/",
+    champ_personnalise_modifier,
+    name="champ_personnalise_modifier",
+),
+path(
+    "champs-personnalises/<int:id_champ>/supprimer/",
+    champ_personnalise_supprimer,
+    name="champ_personnalise_supprimer",
 ),
 path(
     "documents/",
@@ -720,6 +753,7 @@ path(
     role_detail,
     name="role_detail",
 ),
+
     path(
         "ajax/tarif/",
         ajax_tarif_sous_acte,

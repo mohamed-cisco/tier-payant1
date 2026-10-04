@@ -153,3 +153,11 @@ X_FRAME_OPTIONS = 'DENY'
 if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SESSION_COOKIE_HTTPONLY = True
+
+    CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "tiers-payant-cache",
+        "TIMEOUT": 300,  # 5 minutes
+    }
+}

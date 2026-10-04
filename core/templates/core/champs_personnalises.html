@@ -1,0 +1,258 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Champs personnalisés - Tiers Payant{% endblock %}
+{% block header_title %}Champs personnalisés{% endblock %}
+{% block header_sub %}Paramétrage dynamique des entités{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-title { margin-bottom: 22px; }
+    .page-title h2 { margin: 0; color: #123b65; font-size: 24px; }
+    .page-title p { margin: 6px 0 0; color: #6b7280; font-size: 14px; }
+
+    .info-box {
+        background: #eff6ff;
+        border-left: 4px solid #2563eb;
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin-bottom: 22px;
+        color: #1e40af;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .card {
+        background: white;
+        padding: 24px;
+        border-radius: 14px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 4px 15px rgba(0,0,0,.05);
+    }
+
+    .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+
+    .filters {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .filters input,
+    .filters select {
+        height: 42px;
+        padding: 0 12px;
+        border: 1px solid #d5dde7;
+        border-radius: 8px;
+        background: white;
+        font-size: 13px;
+    }
+
+    .filters input { width: 300px; }
+
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 9px 14px;
+        background: #123b65;
+        color: white;
+        text-decoration: none;
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: .2s;
+    }
+
+    .btn:hover { background: #1d5d91; }
+    .btn-secondary { background: #6b7280; }
+    .btn-success { background: #15803d; }
+    .btn-danger { background: #dc2626; }
+    .btn-sm { min-height: 34px; padding: 7px 10px; font-size: 12px; }
+
+    .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid #e5ebf2;
+        border-radius: 10px;
+    }
+
+    table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+
+    th, td {
+        padding: 13px 12px;
+        text-align: left;
+        border-bottom: 1px solid #edf1f5;
+        font-size: 13px;
+    }
+
+    th {
+        background: #f7f9fc;
+        color: #123b65;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    tbody tr:hover { background: #f8fbfe; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .code { font-family: Consolas, monospace; color: #123b65; font-weight: 600; font-size: 12px; }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .badge-actif { color: #166534; background: #dcfce7; }
+    .badge-inactif { color: #991b1b; background: #fee2e2; }
+    .badge-entite { color: #1e40af; background: #dbeafe; }
+    .badge-type { color: #6b21a8; background: #f3e8ff; }
+    .badge-oblig { color: #9a3412; background: #ffedd5; }
+
+    .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .empty-message {
+        text-align: center;
+        color: #6b7280;
+        padding: 35px !important;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-title">
+    <h2>Champs personnalisés</h2>
+    <p>Ajoutez des champs supplémentaires à vos entités sans toucher au code.</p>
+</div>
+
+<div class="info-box">
+    💡 <strong>À quoi ça sert ?</strong><br>
+    Exemple : ajouter un champ <em>« Numéro CNAS »</em> aux adhérents, 
+    ou <em>« Groupe sanguin »</em> à chaque personne.
+    Ce champ apparaîtra automatiquement dans les formulaires correspondants.
+</div>
+
+<div class="card">
+
+    <div class="toolbar">
+
+        <form method="get" class="filters">
+            <input type="text" name="recherche" value="{{ recherche }}"
+                   placeholder="Rechercher par libellé ou nom technique">
+
+            <select name="entite">
+                <option value="">Toutes les entités</option>
+                {% for code, libelle in entites %}
+                    <option value="{{ code }}" {% if entite_filtre == code %}selected{% endif %}>
+                        {{ libelle }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="btn">🔎 Rechercher</button>
+            <a href="{% url 'champs_personnalises' %}" class="btn btn-secondary">Réinitialiser</a>
+        </form>
+
+        <div class="actions">
+            <a class="btn btn-success" href="{% url 'champ_personnalise_create' %}">
+                ➕ Nouveau champ
+            </a>
+        </div>
+
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Entité</th>
+                    <th>Libellé</th>
+                    <th>Nom technique</th>
+                    <th>Type</th>
+                    <th>Obligatoire</th>
+                    <th>Ordre</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in champs %}
+                <tr>
+                    <td>{{ c.pk }}</td>
+                    <td>
+                        <span class="badge badge-entite">{{ c.get_entite_display }}</span>
+                    </td>
+                    <td><strong>{{ c.libelle }}</strong></td>
+                    <td><span class="code">{{ c.nom_technique }}</span></td>
+                    <td><span class="badge badge-type">{{ c.get_type_champ_display }}</span></td>
+                    <td>
+                        {% if c.obligatoire %}
+                            <span class="badge badge-oblig">Oui</span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ c.ordre_affichage }}</td>
+                    <td>
+                        {% if c.statut == "ACTIF" %}
+                            <span class="badge badge-actif">Actif</span>
+                        {% else %}
+                            <span class="badge badge-inactif">{{ c.statut }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            <a href="{% url 'champ_personnalise_modifier' c.pk %}"
+                               class="btn btn-sm btn-secondary">Modifier</a>
+
+                            {% if c.statut == "ACTIF" %}
+                                <form method="post"
+                                      action="{% url 'champ_personnalise_supprimer' c.pk %}"
+                                      style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger"
+                                            onclick="return confirm('Désactiver ce champ ?');">
+                                        Désactiver
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="empty-message">
+                        Aucun champ personnalisé pour l'instant.
+                        <br>
+                        <a href="{% url 'champ_personnalise_create' %}" style="color: #2563eb; text-decoration: none; font-weight: 600;">
+                            Cliquez ici pour en créer un →
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}
