@@ -3102,10 +3102,7 @@ def sous_acte_modifier(request, id_sous_acte):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
 
     if "ACTE_UPDATE" not in permissions:
@@ -3116,14 +3113,9 @@ def sous_acte_modifier(request, id_sous_acte):
         return redirect("sous_actes")
 
     try:
-        sous_acte = SousActe.objects.get(
-            id_sous_acte=id_sous_acte
-        )
+        sous_acte = SousActe.objects.get(id_sous_acte=id_sous_acte)
     except SousActe.DoesNotExist:
-        messages.error(
-            request,
-            "Sous-acte introuvable."
-        )
+        messages.error(request, "Sous-acte introuvable.")
         return redirect("sous_actes")
 
     actes = (
@@ -3131,52 +3123,47 @@ def sous_acte_modifier(request, id_sous_acte):
         .filter(statut="ACTIF")
         .order_by("libelle")
     )
-    id_acte_preselectionne = request.GET.get("id_acte", "").strip()
-    if request.method == "POST":
-          form = SousActeForm(request.POST)
 
-          form.fields["id_acte"].choices = [
-            (
-                acte.id_acte,
-                f"{acte.code_acte} - {acte.libelle}"
-            )
+    if request.method == "POST":
+        form = SousActeForm(request.POST)
+        form.fields["id_acte"].choices = [
+            (acte.id_acte, f"{acte.code_acte} - {acte.libelle}")
             for acte in actes
         ]
 
-    if form.is_valid():
-            id_acte = form.cleaned_data["id_acte"]
-            code_sous_acte = _generer_code_sous_acte()
+        if form.is_valid():
+            try:
+                sous_acte.id_acte_id = form.cleaned_data["id_acte"]
+                sous_acte.libelle = form.cleaned_data["libelle"]
+                sous_acte.description = form.cleaned_data["description"]
+                sous_acte.unite = form.cleaned_data["unite"]
+                sous_acte.statut = form.cleaned_data["statut"]
+                sous_acte.save()
 
-            sous_acte = SousActe.objects.create(
-                id_acte_id=id_acte,
-                code_sous_acte=code_sous_acte,
-                libelle=form.cleaned_data["libelle"],
-                description=form.cleaned_data["description"],
-                unite=form.cleaned_data["unite"],
-                statut="ACTIF",
-            )
+                messages.success(
+                    request,
+                    f"Sous-acte {sous_acte.code_sous_acte} modifié avec succès."
+                )
+                return redirect("sous_actes")
 
-            messages.success(
-                request,
-                f"Sous-acte {sous_acte.code_sous_acte} créé avec succès."
-            )
-
-            return redirect("sous_actes")
-
+            except Exception as e:
+                messages.error(
+                    request,
+                    f"Erreur lors de la modification : {e}"
+                )
     else:
-        id_acte_preselectionne = request.GET.get("id_acte", "").strip()
-
         form = SousActeForm(
             initial={
-                "id_acte": id_acte_preselectionne
+                "id_acte": sous_acte.id_acte_id,
+                "code_sous_acte": sous_acte.code_sous_acte,
+                "libelle": sous_acte.libelle,
+                "description": sous_acte.description,
+                "unite": sous_acte.unite,
+                "statut": sous_acte.statut,
             }
         )
-
         form.fields["id_acte"].choices = [
-            (
-                acte.id_acte,
-                f"{acte.code_acte} - {acte.libelle}"
-            )
+            (acte.id_acte, f"{acte.code_acte} - {acte.libelle}")
             for acte in actes
         ]
 
@@ -4394,17 +4381,7 @@ def adhesions(request):
         .all()
         .order_by("-id_adhesion")
     )
-    adhesions = (
-        Adhesion.objects
-        .select_related(
-            "id_adherent",
-            "id_adherent__id_personne",
-            "id_contrat",
-            "id_contrat__id_souscripteur",
-        )
-        .all()
-        .order_by("-id_adhesion")
-    )
+    
     
     if recherche:
         from django.db.models import Q
@@ -5255,10 +5232,7 @@ def ayant_droit_modifier(request, id_ayant_droit):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
 
     if "AYANT_DROIT_UPDATE" not in permissions:
@@ -5275,18 +5249,12 @@ def ayant_droit_modifier(request, id_ayant_droit):
             .get(id_ayant_droit=id_ayant_droit)
         )
     except AyantDroit.DoesNotExist:
-        messages.error(
-            request,
-            "Ayant droit introuvable."
-        )
+        messages.error(request, "Ayant droit introuvable.")
         return redirect("ayant_droits")
 
     personnes = (
         Personne.objects
         .filter(statut="ACTIF")
-        .exclude(
-            id_personne__in=Adherent.objects.values("id_personne")
-        )
         .order_by("nom", "prenom")
     )
 
@@ -5297,18 +5265,7 @@ def ayant_droit_modifier(request, id_ayant_droit):
     )
 
     if request.method == "POST":
-        form = AyantDroitForm(
-    request.POST,
-    nom_adherent=adherent_preselectionne.id_personne.nom,
-    date_adhesion=adherent_preselectionne.date_adhesion
-)
-
-        form.fields["id_adherent"].choices = [
-        (
-            str(adherent_preselectionne.id_adherent),
-            adherent_preselectionne.numero_adherent
-        )
-    ]
+        form = AyantDroitForm(request.POST)
 
         form.fields["id_personne"].choices = [
             (
@@ -5319,10 +5276,7 @@ def ayant_droit_modifier(request, id_ayant_droit):
         ]
 
         form.fields["id_adherent"].choices = [
-            (
-                str(a.id_adherent),
-                a.numero_adherent
-            )
+            (str(a.id_adherent), a.numero_adherent)
             for a in adherents
         ]
 
@@ -5332,7 +5286,6 @@ def ayant_droit_modifier(request, id_ayant_droit):
                     id_personne=form.cleaned_data["id_personne"],
                     statut="ACTIF"
                 )
-
                 adherent = Adherent.objects.get(
                     id_adherent=form.cleaned_data["id_adherent"],
                     statut="ACTIF"
@@ -5344,14 +5297,12 @@ def ayant_droit_modifier(request, id_ayant_droit):
                 ayant_droit.date_debut = form.cleaned_data["date_debut"]
                 ayant_droit.date_fin = form.cleaned_data["date_fin"]
                 ayant_droit.statut = form.cleaned_data["statut"]
-
                 ayant_droit.save()
 
                 messages.success(
                     request,
                     "Ayant droit modifié avec succès."
                 )
-
                 return redirect("ayant_droits")
 
             except Exception as e:
@@ -5359,16 +5310,11 @@ def ayant_droit_modifier(request, id_ayant_droit):
                     request,
                     f"Erreur lors de la modification : {e}"
                 )
-
     else:
         form = AyantDroitForm(
             initial={
-                "id_personne": str(
-                    ayant_droit.id_personne_id
-                ),
-                "id_adherent": str(
-                    ayant_droit.id_adherent_id
-                ),
+                "id_personne": str(ayant_droit.id_personne_id),
+                "id_adherent": str(ayant_droit.id_adherent_id),
                 "type_lien": ayant_droit.type_lien,
                 "date_debut": ayant_droit.date_debut,
                 "date_fin": ayant_droit.date_fin,
@@ -5385,10 +5331,7 @@ def ayant_droit_modifier(request, id_ayant_droit):
         ]
 
         form.fields["id_adherent"].choices = [
-            (
-                str(a.id_adherent),
-                a.numero_adherent
-            )
+            (str(a.id_adherent), a.numero_adherent)
             for a in adherents
         ]
 
@@ -5445,6 +5388,9 @@ def ayant_droit_radier(request, id_ayant_droit):
             request,
             "Ayant droit radié avec succès."
         )
+
+    return redirect("ayant_droits")   # ← AJOUTE CETTE LIGNE
+
 
 def ayant_droit_export_excel(request):
 
