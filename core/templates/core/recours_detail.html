@@ -99,8 +99,6 @@
         cursor: pointer;
     }
 
-    .btn-pdf { background: #10b981; color: white; }
-    .btn-pdf:hover { background: #059669; }
     .btn-back { background: #64748b; color: white; }
     .btn-back:hover { background: #475569; }
 
@@ -165,13 +163,8 @@
 
 {% block content %}
 
-<!-- Boutons d'action -->
+<!-- Bouton retour -->
 <div class="actions">
-    <a href="{% url 'recours_pdf' recours.id_recours %}"
-       target="_blank"
-       class="btn btn-pdf">
-        📄 Télécharger PDF
-    </a>
     <a href="{% url 'recours' %}" class="btn btn-back">
         ← Retour aux recours
     </a>
