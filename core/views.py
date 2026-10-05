@@ -8052,126 +8052,72 @@ def demande_tp_create(request):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
 
     if "DEMANDE_CREATE" not in permissions:
-        messages.error(
-            request,
-            "Vous n'avez pas l'autorisation de créer une demande."
-        )
+        messages.error(request, "Vous n'avez pas l'autorisation.")
         return redirect("demandes_tp")
 
-        personnes = Personne.objects.none()
-
     contrats = (
-        Contrat.objects
-        .filter(statut="ACTIF")
+        Contrat.objects.filter(statut="ACTIF")
         .select_related("id_souscripteur")
         .order_by("numero_contrat")
     )
 
-    id_contrat_preselectionne = request.GET.get(
-        "id_contrat",
-        ""
-    ).strip()
-
+    id_contrat_preselectionne = request.GET.get("id_contrat", "").strip()
     contrat_preselectionne = None
 
     if id_contrat_preselectionne:
         contrat_preselectionne = (
-            Contrat.objects
-            .filter(
-                id_contrat=id_contrat_preselectionne,
-                statut="ACTIF"
+            Contrat.objects.filter(
+                id_contrat=id_contrat_preselectionne, statut="ACTIF"
             )
             .select_related("id_souscripteur")
             .first()
         )
-        # Contrat utilisé pour charger les bénéficiaires
+
     id_contrat_beneficiaires = id_contrat_preselectionne
 
-    # Si aucun contrat n'est passé dans l'URL,
-    # sélectionner automatiquement le premier contrat actif
     if not id_contrat_beneficiaires:
         premier_contrat = contrats.first()
-
         if premier_contrat:
-            id_contrat_beneficiaires = str(
-                premier_contrat.id_contrat
-            )
+            id_contrat_beneficiaires = str(premier_contrat.id_contrat)
 
-    # En POST, utiliser le contrat sélectionné
     if request.method == "POST":
-        id_contrat_beneficiaires = request.POST.get(
-            "id_contrat",
-            ""
-        ).strip()
+        id_contrat_beneficiaires = request.POST.get("id_contrat", "").strip()
 
     personnes = Personne.objects.none()
 
     if id_contrat_beneficiaires:
         ids_adherents = (
             Adhesion.objects
-            .filter(
-                id_contrat=id_contrat_beneficiaires,
-                statut="ACTIF"
-            )
-            .values_list(
-                "id_adherent",
-                flat=True
-            )
+            .filter(id_contrat=id_contrat_beneficiaires, statut="ACTIF")
+            .values_list("id_adherent", flat=True)
         )
 
         ids_personnes_titulaires = (
             Adherent.objects
-            .filter(
-                id_adherent__in=ids_adherents,
-                statut="ACTIF"
-            )
-            .values_list(
-                "id_personne",
-                flat=True
-            )
+            .filter(id_adherent__in=ids_adherents, statut="ACTIF")
+            .values_list("id_personne", flat=True)
         )
 
         ids_personnes_ayants_droit = (
             AyantDroit.objects
-            .filter(
-                id_adherent__in=ids_adherents,
-                statut="ACTIF"
-            )
-            .values_list(
-                "id_personne",
-                flat=True
-            )
+            .filter(id_adherent__in=ids_adherents, statut="ACTIF")
+            .values_list("id_personne", flat=True)
         )
 
-        ids_beneficiaires = list(
-            ids_personnes_titulaires
-        ) + list(
-            ids_personnes_ayants_droit
-        )
+        ids_beneficiaires = list(ids_personnes_titulaires) + list(ids_personnes_ayants_droit)
 
         personnes = (
             Personne.objects
-            .filter(
-                id_personne__in=ids_beneficiaires,
-                statut="ACTIF"
-            )
-            .order_by(
-                "nom",
-                "prenom"
-            )
+            .filter(id_personne__in=ids_beneficiaires, statut="ACTIF")
+            .order_by("nom", "prenom")
         )
 
     prestataires = (
-        Prestataire.objects
-        .filter(statut="ACTIF")
-        .order_by("raison_sociale")
+        Prestataire.objects.filter(statut="ACTIF").order_by("raison_sociale")
     )
 
     if request.method == "POST":
@@ -8180,35 +8126,23 @@ def demande_tp_create(request):
         form.fields["statut"].widget = forms.HiddenInput()
 
         form.fields["id_personne_beneficiaire"].choices = [
-            (
-                str(p.id_personne),
-                _libelle_beneficiaire(p)
-            )
-            for p in personnes
+            (str(p.id_personne), _libelle_beneficiaire(p)) for p in personnes
         ]
 
         form.fields["id_contrat"].choices = [
-            (
-                str(c.id_contrat),
-                f"{c.numero_contrat} - {c.id_souscripteur.raison_sociale}"
-            )
+            (str(c.id_contrat), f"{c.numero_contrat} - {c.id_souscripteur.raison_sociale}")
             for c in contrats
         ]
 
         form.fields["id_prestataire"].choices = [
-            (
-                str(p.id_prestataire),
-                f"{p.code_prestataire} - {p.raison_sociale}"
-            )
+            (str(p.id_prestataire), f"{p.code_prestataire} - {p.raison_sociale}")
             for p in prestataires
         ]
 
         if form.is_valid():
             try:
                 personne = Personne.objects.get(
-                    id_personne=form.cleaned_data[
-                        "id_personne_beneficiaire"
-                    ],
+                    id_personne=form.cleaned_data["id_personne_beneficiaire"],
                     statut="ACTIF"
                 )
 
@@ -8216,27 +8150,24 @@ def demande_tp_create(request):
                     id_contrat=form.cleaned_data["id_contrat"],
                     statut="ACTIF"
                 )
-                beneficiaire = personne
 
-                titulaire_valide = (
-                    Adhesion.objects
-                    .filter(
-                        id_contrat=contrat,
-                        id_adherent__id_personne=beneficiaire,
-                        statut="ACTIF"
-                    )
-                    .exists()
+                prestataire = Prestataire.objects.get(
+                    id_prestataire=form.cleaned_data["id_prestataire"],
+                    statut="ACTIF"
                 )
 
-                ayant_droit_valide = (
-                    Adhesion.objects
-                    .filter(
-                        id_contrat=contrat,
-                        id_adherent__ayantdroit__id_personne=beneficiaire,
-                        statut="ACTIF"
-                    )
-                    .exists()
-                )
+                # Vérifier bénéficiaire rattaché
+                titulaire_valide = Adhesion.objects.filter(
+                    id_contrat=contrat,
+                    id_adherent__id_personne=personne,
+                    statut="ACTIF"
+                ).exists()
+
+                ayant_droit_valide = Adhesion.objects.filter(
+                    id_contrat=contrat,
+                    id_adherent__ayantdroit__id_personne=personne,
+                    statut="ACTIF"
+                ).exists()
 
                 if not titulaire_valide and not ayant_droit_valide:
                     messages.error(
@@ -8244,7 +8175,6 @@ def demande_tp_create(request):
                         "Le bénéficiaire sélectionné n'est pas rattaché "
                         "à une adhésion active de ce contrat."
                     )
-
                     return render(
                         request,
                         "core/demande_tp_form.html",
@@ -8255,105 +8185,116 @@ def demande_tp_create(request):
                             "prestataires": prestataires,
                             "personnes": personnes,
                             "contrat_preselectionne": contrat_preselectionne,
-                            "page": "demandes_tp",
                         }
                     )
 
-                prestataire = Prestataire.objects.get(
-                    id_prestataire=form.cleaned_data["id_prestataire"],
-                    statut="ACTIF"
-                )
+                # Vérifier convention active
                 date_demande = timezone.now().date()
-
                 convention_active = Convention.objects.filter(
-                  id_prestataire=prestataire,
-                  statut="ACTIF",
-                  date_debut__lte=date_demande
+                    id_prestataire=prestataire,
+                    statut="ACTIF",
+                    date_debut__lte=date_demande
                 ).filter(
-                  Q(date_fin__isnull=True) |
-                  Q(date_fin__gte=date_demande)
+                    Q(date_fin__isnull=True) | Q(date_fin__gte=date_demande)
                 ).exists()
 
                 if not convention_active:
-                  messages.error(
-                  request,
-                  "Impossible de créer la demande TP : "
-                  "aucune convention active avec ce prestataire "
-                  "à la date de la demande."
-                )
+                    messages.error(
+                        request,
+                        "Impossible de créer la demande TP : aucune convention "
+                        "active avec ce prestataire à la date de la demande."
+                    )
+                    return render(
+                        request,
+                        "core/demande_tp_form.html",
+                        {
+                            "form": form,
+                            "titre": "Nouvelle demande",
+                            "contrats": contrats,
+                            "prestataires": prestataires,
+                            "personnes": personnes,
+                            "contrat_preselectionne": contrat_preselectionne,
+                        }
+                    )
 
-                  return render(
-                  request,
-                  "core/demande_tp_form.html",
-                 {
-                       "form": form,
-                       "titre": "Nouvelle demande",
-                        "contrats": contrats,
-                        "prestataires": prestataires,
-                        "personnes": personnes,
-                        "contrat_preselectionne": contrat_preselectionne,
-                 }
-                )
+                # 🔍 DÉTECTION DE DOUBLON
+                doublon = DemandeTp.objects.filter(
+                    id_personne_beneficiaire=personne,
+                    id_prestataire=prestataire,
+                    date_demande__date=date_demande,
+                    statut__in=["EN_ATTENTE", "ACCEPTEE"],
+                ).first()
 
-                DemandeTp.objects.create(
+                if doublon and not request.POST.get("confirmer_doublon"):
+                    messages.warning(
+                        request,
+                        f"⚠️ Une demande existe déjà aujourd'hui pour ce "
+                        f"bénéficiaire chez ce prestataire : "
+                        f"{doublon.numero_demande} "
+                        f"({doublon.montant_demande} DA, statut {doublon.statut}). "
+                        f"Cliquez à nouveau sur Enregistrer pour créer quand même."
+                    )
+                    return render(
+                        request,
+                        "core/demande_tp_form.html",
+                        {
+                            "form": form,
+                            "titre": "Nouvelle demande",
+                            "contrats": contrats,
+                            "prestataires": prestataires,
+                            "personnes": personnes,
+                            "contrat_preselectionne": contrat_preselectionne,
+                            "doublon_detecte": doublon,
+                        }
+                    )
+
+                demande = DemandeTp.objects.create(
                     numero_demande=_generer_numero_demande(),
                     id_personne_beneficiaire=personne,
                     id_contrat=contrat,
                     id_prestataire=prestataire,
                     date_demande=timezone.now(),
-                    montant_demande=Decimal("0.00"),   # Calculé après ajout des actes
+                    montant_demande=Decimal("0.00"),
                     statut="EN_ATTENTE",
                     motif_rejet=form.cleaned_data["motif_rejet"] or None,
                     date_decision=None,
-                    utilisateur_creation=str(
-                        request.session.get("id_utilisateur")
-                    ),
+                    utilisateur_creation=str(request.session.get("id_utilisateur")),
                 )
 
-                messages.success(
-                    request,
-                    "Demande de tiers payant créée avec succès."
+                enregistrer_audit(
+                    request=request,
+                    type_action="CREATION",
+                    module="DEMANDE TP",
+                    table_cible="demande_tp",
+                    id_enregistrement=demande.id_demande,
+                    nouvelle_valeur=demande.numero_demande,
+                    description=f"Création de la demande {demande.numero_demande}",
                 )
 
+                messages.success(request, "Demande créée avec succès.")
                 return redirect("demandes_tp")
 
             except Exception as e:
-                messages.error(
-                    request,
-                    f"Erreur lors de la création : {e}"
-                )
-
+                messages.error(request, f"Erreur : {e}")
     else:
         form = DemandeTpForm()
         form.fields["statut"].initial = "EN_ATTENTE"
         form.fields["statut"].widget = forms.HiddenInput()
 
         form.fields["id_personne_beneficiaire"].choices = [
-            (
-                str(p.id_personne),
-                _libelle_beneficiaire(p)
-            )
-            for p in personnes
+            (str(p.id_personne), _libelle_beneficiaire(p)) for p in personnes
         ]
 
         form.fields["id_contrat"].choices = [
-            (
-                str(c.id_contrat),
-                f"{c.numero_contrat} - {c.id_souscripteur.raison_sociale}"
-            )
+            (str(c.id_contrat), f"{c.numero_contrat} - {c.id_souscripteur.raison_sociale}")
             for c in contrats
         ]
 
         if contrat_preselectionne:
-            form.initial["id_contrat"] = str(
-                contrat_preselectionne.id_contrat
-            )
+            form.initial["id_contrat"] = str(contrat_preselectionne.id_contrat)
 
         form.fields["id_prestataire"].choices = [
-            (
-                str(p.id_prestataire),
-                f"{p.code_prestataire} - {p.raison_sociale}"
-            )
+            (str(p.id_prestataire), f"{p.code_prestataire} - {p.raison_sociale}")
             for p in prestataires
         ]
 
@@ -8364,6 +8305,7 @@ def demande_tp_create(request):
             "form": form,
             "titre": "Nouvelle demande de Tiers Payant",
             "contrat_preselectionne": contrat_preselectionne,
+            "page": "demandes_tp",
         }
     )
 def demande_tp_detail_create(request, id_demande):
