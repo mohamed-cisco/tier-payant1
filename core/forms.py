@@ -413,6 +413,33 @@ class GarantieActeForm(forms.Form):
         max_length=20,
         initial="ACTIF"
     )
+
+    mode_calcul = forms.ChoiceField(
+        label="Mode de calcul",
+        choices=[
+            ("POURCENTAGE", "Pourcentage du montant"),
+            ("FORFAIT", "Montant fixe"),
+            ("FRAIS_REELS", "Frais réels (sans calcul)"),
+        ],
+        initial="POURCENTAGE",
+        widget=forms.Select(attrs={"id": "id_mode_calcul"})
+    )
+
+    montant_forfait = forms.DecimalField(
+        label="Montant forfaitaire (DA)",
+        max_digits=15,
+        decimal_places=2,
+        required=False,
+        min_value=0,
+    )
+
+    plafond_forfait = forms.DecimalField(
+        label="Plafond maximum (DA)",
+        max_digits=15,
+        decimal_places=2,
+        required=False,
+        min_value=0,
+    )
 class AdhesionForm(forms.Form):
 
     id_adherent = forms.ChoiceField(

@@ -165,6 +165,26 @@
 
             {% else %}
 
+        <!-- Mode de calcul -->
+        <div class="field">
+            {{ form.mode_calcul.label_tag }}
+            {{ form.mode_calcul }}
+            <div class="help">
+                Pourcentage = calcul avec taux. Forfait = montant fixe. Frais réels = 100%.
+            </div>
+        </div>
+
+        <!-- Montant forfaitaire (visible si mode FORFAIT) -->
+        <div class="field" id="bloc_forfait" style="display: none;">
+            {{ form.montant_forfait.label_tag }}
+            {{ form.montant_forfait }}
+        </div>
+
+        <div class="field" id="bloc_plafond_forfait" style="display: none;">
+            {{ form.plafond_forfait.label_tag }}
+            {{ form.plafond_forfait }}
+        </div>
+
                 <div class="field">
                     {{ field.label_tag }}
                     {{ field }}
@@ -185,5 +205,29 @@
     </form>
 
 </div>
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modeCalcul = document.getElementById("id_mode_calcul");
+    const blocForfait = document.getElementById("bloc_forfait");
+    const blocPlafondForfait = document.getElementById("bloc_plafond_forfait");
 
+    function toggleForfait() {
+        if (!modeCalcul) return;
+        if (modeCalcul.value === "FORFAIT") {
+            if (blocForfait) blocForfait.style.display = "block";
+            if (blocPlafondForfait) blocPlafondForfait.style.display = "block";
+        } else {
+            if (blocForfait) blocForfait.style.display = "none";
+            if (blocPlafondForfait) blocPlafondForfait.style.display = "none";
+        }
+    }
+
+    toggleForfait();
+    if (modeCalcul) {
+        modeCalcul.addEventListener("change", toggleForfait);
+    }
+});
+</script>
+{% endblock %}
 {% endblock %}

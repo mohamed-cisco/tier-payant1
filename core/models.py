@@ -385,6 +385,31 @@ class GarantieActe(models.Model):
     id_acte = models.ForeignKey(Acte, models.DO_NOTHING, db_column='id_acte')
     taux_prise_en_charge = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     franchise = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    MODES_CALCUL = [
+        ("POURCENTAGE", "Pourcentage du montant"),
+        ("FORFAIT", "Montant fixe"),
+        ("FRAIS_REELS", "Frais réels (sans calcul)"),
+    ]
+
+    mode_calcul = models.CharField(
+        max_length=20,
+        choices=MODES_CALCUL,
+        default="POURCENTAGE",
+    )
+    montant_forfait = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Utilisé uniquement si mode_calcul = FORFAIT",
+    )
+    plafond_forfait = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Plafond max à appliquer même en mode forfait",
+    )
     date_debut = models.DateField()
     date_fin = models.DateField(blank=True, null=True)
     statut = models.CharField(max_length=20)

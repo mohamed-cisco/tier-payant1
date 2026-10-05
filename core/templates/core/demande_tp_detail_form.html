@@ -213,15 +213,35 @@ document.addEventListener("DOMContentLoaded", function () {
     const champPrestataire = document.getElementById("id_id_prestataire");
     const champMontantUnitaire = document.getElementById("id_montant_unitaire");
 
-    // Si l'acte est pré-sélectionné mais absent de l'URL, recharger automatiquement
-    if (champActe && champActe.value) {
-        const params = new URLSearchParams(window.location.search);
-        if (!params.has("id_acte")) {
-            window.location.href = "/demandes-tp/" + idDemande + "/details/nouveau/?id_acte=" + champActe.value;
+    // Fonction pour charger le tarif
+    function chargerTarif() {
+        const idPrestataire = champPrestataire ? champPrestataire.value : "";
+        const idSousActe = champSousActe ? champSousActe.value : "";
+
+        if (!idSousActe || !idPrestataire) {
+            console.log("Tarif : sous-acte ou prestataire manquant");
+            return;
         }
+
+        console.log("Chargement tarif pour sous-acte=" + idSousActe + " prestataire=" + idPrestataire);
+
+        fetch("/ajax/tarif/?id_sous_acte=" + idSousActe + "&id_prestataire=" + idPrestataire)
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                console.log("Réponse tarif :", data);
+                if (data.tarif && champMontantUnitaire) {
+                    champMontantUnitaire.value = data.tarif;
+                    console.log("Tarif chargé :", data.tarif);
+                } else {
+                    console.log("Aucun tarif trouvé");
+                }
+            })
+            .catch(function (e) {
+                console.error("Erreur chargement tarif :", e);
+            });
     }
 
-    // Changement ACTE
+    // 1. Changement ACTE (rechargement)
     if (champActe) {
         champActe.addEventListener("change", function () {
             const idActe = this.value;
@@ -231,7 +251,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Changement SOUS-ACTE
+    // 2. Changement SOUS-ACTE (rechargement)
     if (champSousActe) {
         champSousActe.addEventListener("change", function () {
             const idActe = champActe ? champActe.value : "";
@@ -242,23 +262,24 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Changement PRESTATAIRE -> charge le tarif
+    // 3. Changement PRESTATAIRE -> charge le tarif
     if (champPrestataire) {
-        champPrestataire.addEventListener("change", function () {
-            const idPrestataire = this.value;
-            const idSousActe = champSousActe ? champSousActe.value : "";
-
-            if (!idSousActe || !idPrestataire) return;
-
-            fetch("/ajax/tarif/?id_sous_acte=" + idSousActe + "&id_prestataire=" + idPrestataire)
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    if (data.tarif && champMontantUnitaire) {
-                        champMontantUnitaire.value = data.tarif;
-                    }
-                });
-        });
+        champPrestataire.addEventListener("change", chargerTarif);
     }
+
+    // 4. CHARGEMENT INITIAL -> si prestataire déjà sélectionné, charger tout de suite
+    if (champPrestataire && champPrestataire.value) {
+        chargerTarif();
+    }
+
+    // 5. Si l'acte est pré-sélectionné mais absent de l'URL, recharger
+    if (champActe && champActe.value) {
+        const params = new URLSearchParams(window.location.search);
+        if (!params.has("id_acte")) {
+            window.location.href = "/demandes-tp/" + idDemande + "/details/nouveau/?id_acte=" + champActe.value;
+        }
+    }
+
 });
 </script>
 {% endblock %}

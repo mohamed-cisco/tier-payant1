@@ -9540,7 +9540,7 @@ def demande_tp_valider(request, id_demande):
                 montant_rejete_total += detail.montant_total
                 continue
 
-            taux = (
+                taux = (
                 garantie_acte.taux_prise_en_charge
                 or Decimal("0.00")
             )
@@ -9550,14 +9550,39 @@ def demande_tp_valider(request, id_demande):
                 or Decimal("0.00")
             )
 
-            montant_couvert = (
-                detail.montant_total * taux / Decimal("100")
-            )
+            mode_calcul = getattr(garantie_acte, "mode_calcul", "POURCENTAGE")
+            montant_forfait = getattr(garantie_acte, "montant_forfait", None)
+            plafond_forfait = getattr(garantie_acte, "plafond_forfait", None)
 
-            montant_accorde = max(
-                Decimal("0.00"),
-                montant_couvert - franchise
-            )
+            # 🔍 Calcul selon le mode
+            if mode_calcul == "FORFAIT" and montant_forfait:
+                # Mode forfait : montant fixe
+                montant_accorde = min(
+                    Decimal(montant_forfait),
+                    detail.montant_total,
+                )
+
+                # Appliquer un plafond si défini
+                if plafond_forfait:
+                    montant_accorde = min(
+                        montant_accorde,
+                        Decimal(plafond_forfait),
+                    )
+
+            elif mode_calcul == "FRAIS_REELS":
+                # Mode frais réels : remboursement intégral
+                montant_accorde = detail.montant_total
+
+            else:
+                # Mode pourcentage (par défaut) : calcul classique
+                montant_couvert = (
+                    detail.montant_total * taux / Decimal("100")
+                )
+
+                montant_accorde = max(
+                    Decimal("0.00"),
+                    montant_couvert - franchise
+                )
 
             # -------------------------------------------------
             # APPLICATION DU PLAFOND
@@ -9761,21 +9786,21 @@ def consommation_create(request, id_detail_pec):
         )
 
     consommation_existante = (
-    Consommation.objects
-    .filter(
-        id_detail_pec=detail_pec,
-        statut__in=["A_TRAITER", "VALIDEE"]    # ← AJOUTE ce filtre
+        Consommation.objects
+        .filter(
+            id_detail_pec=detail_pec,
+            statut__in=["A_TRAITER", "VALIDEE"],
+        )
+        .first()
     )
-    .first()
-)
 
     if consommation_existante:
-      messages.error(
-        request,
-        "Une consommation active existe déjà pour ce détail. "
-        "Annulez-la d'abord ou vérifiez son statut."
-    )
-    return redirect("consommations")
+        messages.error(
+            request,
+            f"Une consommation active existe déjà pour ce détail "
+            f"(statut : {consommation_existante.statut})."
+        )
+        return redirect("consommations")
 
     if request.method == "POST":
         form = ConsommationForm(request.POST)
@@ -10785,10 +10810,45 @@ def facture_create(request):
         if form.is_valid():
             try:
                 id_prestataire = form.cleaned_data["id_prestataire"]
+                prestataire = Prestataire.objects.get(
+                    id_prestataire=id_prestataire, statut="ACTIF"
+                )
 
+                # 🔍 DÉTECTION DE DOUBLON
+                # Facture existante pour ce prestataire dans les 30 derniers jours
+                date_limite = timezone.now().date() - timedelta(days=30)
+
+                doublon = Facture.objects.filter(
+                    id_prestataire=prestataire,
+                    date_facture__gte=date_limite,
+                    statut__in=["EN_ATTENTE", "VALIDEE"],
+                ).order_by("-date_facture").first()
+
+                if doublon and not request.POST.get("confirmer_doublon"):
+                    messages.warning(
+                        request,
+                        f"⚠️ Une facture récente existe déjà pour ce prestataire : "
+                        f"{doublon.numero_facture} "
+                        f"({doublon.date_facture.strftime('%d/%m/%Y')}, "
+                        f"{doublon.montant_valide} DA, statut {doublon.statut}). "
+                        f"Voulez-vous vraiment créer une nouvelle facture ?"
+                    )
+                    return render(
+                        request,
+                        "core/facture_form.html",
+                        {
+                            "form": form,
+                            "titre": "Nouvelle facture",
+                            "consommations": consommations,
+                            "page": "factures",
+                            "doublon_detecte": doublon,
+                            "champs_disponibles": get_champs_pour_entite("FACTURE"),
+                        }
+                    )
+
+                # Traiter les consommations
                 consommations_prestataire = [
-                    c for c in consommations
-                    if c.id_prestataire_id == int(id_prestataire)
+                    c for c in consommations if c.id_prestataire_id == int(id_prestataire)
                 ]
 
                 consommations_deja_facturees = set(
@@ -10797,10 +10857,8 @@ def facture_create(request):
 
                 consommations_prestataire = [
                     c for c in consommations_prestataire
-                    if (
-                        c.id_consommation not in consommations_deja_facturees
-                        and c.montant_prise_en_charge > 0
-                    )
+                    if c.id_consommation not in consommations_deja_facturees
+                    and c.montant_prise_en_charge > 0
                 ]
 
                 if not consommations_prestataire:
@@ -10815,14 +10873,10 @@ def facture_create(request):
                             "form": form,
                             "titre": "Nouvelle facture",
                             "consommations": consommations,
+                            "page": "factures",
                             "champs_disponibles": get_champs_pour_entite("FACTURE"),
                         }
                     )
-
-                prestataire = Prestataire.objects.get(
-                    id_prestataire=id_prestataire,
-                    statut="ACTIF",
-                )
 
                 montant_total = sum(c.montant_base for c in consommations_prestataire)
                 montant_valide = sum(c.montant_prise_en_charge for c in consommations_prestataire)
@@ -10848,9 +10902,7 @@ def facture_create(request):
                         id_consommation=consommation,
                         id_acte=consommation.id_acte,
                         quantite=consommation.quantite,
-                        montant_unitaire=(
-                            consommation.montant_base / consommation.quantite
-                        ),
+                        montant_unitaire=(consommation.montant_base / consommation.quantite),
                         montant_total=consommation.montant_base,
                         montant_valide=consommation.montant_prise_en_charge,
                         montant_rejete=consommation.montant_reste,
@@ -10858,9 +10910,16 @@ def facture_create(request):
                         id_motif_rejet=None,
                     )
 
-                # Sauvegarder les champs personnalisés
-                sauvegarder_valeurs_champs(
-                    request, "FACTURE", facture.id_facture
+                sauvegarder_valeurs_champs(request, "FACTURE", facture.id_facture)
+
+                enregistrer_audit(
+                    request=request,
+                    type_action="CREATION",
+                    module="FACTURE",
+                    table_cible="facture",
+                    id_enregistrement=facture.id_facture,
+                    nouvelle_valeur=facture.numero_facture,
+                    description=f"Création de la facture {facture.numero_facture}",
                 )
 
                 messages.success(
