@@ -2491,6 +2491,36 @@ def contrat_create(request):
                     statut="ACTIF"
                 )
 
+                # 🔍 DÉTECTION DE DOUBLON
+                doublon = Contrat.objects.filter(
+                    id_souscripteur=souscripteur,
+                    type_contrat=form.cleaned_data["type_contrat"],
+                    date_debut=form.cleaned_data["date_debut"],
+                    statut="ACTIF",
+                ).first()
+
+                if doublon and not request.POST.get("confirmer_doublon"):
+                    messages.warning(
+                        request,
+                        f"⚠️ Un contrat similaire existe déjà : "
+                        f"{doublon.numero_contrat} — "
+                        f"{doublon.id_souscripteur.raison_sociale} "
+                        f"({doublon.type_contrat}, début le "
+                        f"{doublon.date_debut.strftime('%d/%m/%Y')}). "
+                        f"Cliquez à nouveau sur Enregistrer pour créer quand même."
+                    )
+                    return render(
+                        request,
+                        "core/contrat_form.html",
+                        {
+                            "form": form,
+                            "titre": "Nouveau contrat",
+                            "page": "contrats",
+                            "doublon_detecte": doublon,
+                            "champs_disponibles": get_champs_pour_entite("CONTRAT"),
+                        }
+                    )
+
                 contrat = Contrat.objects.create(
                     id_souscripteur=souscripteur,
                     numero_contrat=_generer_numero_contrat(),
@@ -2504,7 +2534,7 @@ def contrat_create(request):
                     date_modification=None,
                 )
 
-                # Lier automatiquement toutes les garanties actives
+                # Lier automatiquement les garanties actives
                 garanties_actives = Garantie.objects.filter(statut="ACTIF")
                 for garantie in garanties_actives:
                     ContratGarantie.objects.get_or_create(
@@ -2517,15 +2547,23 @@ def contrat_create(request):
                         }
                     )
 
-                # Sauvegarder les champs personnalisés
                 sauvegarder_valeurs_champs(
                     request, "CONTRAT", contrat.id_contrat
                 )
 
+                enregistrer_audit(
+                    request=request,
+                    type_action="CREATION",
+                    module="CONTRAT",
+                    table_cible="contrat",
+                    id_enregistrement=contrat.id_contrat,
+                    nouvelle_valeur=f"{contrat.numero_contrat}",
+                    description=f"Création du contrat {contrat.numero_contrat}",
+                )
+
                 messages.success(
                     request,
-                    f"Contrat créé avec succès. "
-                    f"{garanties_actives.count()} garanties liées automatiquement."
+                    f"Contrat {contrat.numero_contrat} créé avec succès."
                 )
                 return redirect("contrats")
 
