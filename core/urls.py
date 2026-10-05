@@ -132,6 +132,11 @@ from .views import (
     role_modifier,
     role_permissions,
     role_detail,
+    sauvegardes_liste,
+    sauvegarde_creer,
+    sauvegarde_telecharger,
+    sauvegarde_supprimer,
+    sauvegarde_restaurer,
     
 )
 
@@ -658,6 +663,31 @@ path(
     "champs-personnalises/",
     champs_personnalises,
     name="champs_personnalises",
+),
+path(
+    "sauvegardes/",
+    sauvegardes_liste,
+    name="sauvegardes_liste",
+),
+path(
+    "sauvegardes/creer/",
+    sauvegarde_creer,
+    name="sauvegarde_creer",
+),
+path(
+    "sauvegardes/<str:nom_fichier>/telecharger/",
+    sauvegarde_telecharger,
+    name="sauvegarde_telecharger",
+),
+path(
+    "sauvegardes/<str:nom_fichier>/supprimer/",
+    sauvegarde_supprimer,
+    name="sauvegarde_supprimer",
+),
+path(
+    "sauvegardes/<str:nom_fichier>/restaurer/",
+    sauvegarde_restaurer,
+    name="sauvegarde_restaurer",
 ),
 path(
     "champs-personnalises/nouveau/",
