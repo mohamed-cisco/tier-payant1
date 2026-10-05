@@ -1184,7 +1184,7 @@ def adherent_detail(request, id_adherent):
     except Adherent.DoesNotExist:
         messages.error(
             request,
-            "Adh?rent introuvable."
+            "Adhérent introuvable."
         )
         return redirect("adherents")
 
@@ -1195,6 +1195,20 @@ def adherent_detail(request, id_adherent):
         .order_by("id_ayant_droit")
     )
 
+    # Charger les champs personnalisés pour chaque ayant droit
+    for ad in ayants_droit:
+        ad.champs_personnalises = get_valeurs_champs_entite(
+            "AYANT_DROIT", ad.id_ayant_droit
+        )
+
+    champs_perso_adherent = get_valeurs_champs_entite(
+        "ADHERENT", adherent.id_adherent
+    )
+    champs_perso_adherent = [
+        c for c in champs_perso_adherent
+        if c["valeur"] and str(c["valeur"]).strip()
+    ]
+
     return render(
         request,
         "core/adherent_detail.html",
@@ -1202,6 +1216,8 @@ def adherent_detail(request, id_adherent):
             "adherent": adherent,
             "ayants_droit": ayants_droit,
             "permissions": permissions,
+            "page": "adherents",
+            "champs_personnalises": champs_perso_adherent,
         }
     )
 
@@ -1253,6 +1269,15 @@ def adherent_carte_pdf(request, id_adherent):
         .filter(id_adherent=adherent, statut="ACTIF")
         .order_by("id_ayant_droit")
     )
+        # Récupérer les champs personnalisés
+    champs_perso = get_valeurs_champs_entite(
+        "ADHERENT", adherent.id_adherent
+    )
+    # Filtrer pour ne garder que ceux qui ont une valeur
+    champs_perso = [
+        item for item in champs_perso
+        if item["valeur"] and str(item["valeur"]).strip()
+    ]
 
     personne = adherent.id_personne
 
@@ -1334,6 +1359,13 @@ def adherent_carte_pdf(request, id_adherent):
         ["Au",
          adhesion.date_fin.strftime("%d/%m/%Y") if adhesion and adhesion.date_fin else "Illimité"],
     ]
+
+    # Ajouter les champs personnalisés
+    for item in champs_perso:
+        infos_data.append([
+            item["champ"].libelle,
+            str(item["valeur"]),
+        ])
 
     infos_table = Table(infos_data, colWidths=[4 * cm, 14.5 * cm])
     infos_table.setStyle(TableStyle([
@@ -1515,10 +1547,7 @@ def adherent_create(request):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
 
     if "ADHERENT_CREATE" not in permissions:
@@ -1600,6 +1629,11 @@ def adherent_create(request):
                         ),
                     )
 
+                    # Sauvegarder les champs personnalisés
+                    sauvegarder_valeurs_champs(
+                        request, "ADHERENT", adherent.id_adherent
+                    )
+
                 messages.success(
                     request,
                     "Adhérent créé avec succès."
@@ -1612,9 +1646,16 @@ def adherent_create(request):
                     request,
                     f"Erreur lors de la création : {e}"
                 )
-
     else:
         form = AdherentForm()
+
+    # Charger les champs personnalisés (dans tous les cas)
+    champs = get_champs_pour_entite("ADHERENT")
+    for c in champs:
+        c.valeur_actuelle = None
+        c.choix_possibles_list = [
+            x.strip() for x in (c.choix_possibles or "").split("\n") if x.strip()
+        ]
 
     return render(
         request,
@@ -1622,6 +1663,8 @@ def adherent_create(request):
         {
             "form": form,
             "titre": "Nouvel adhérent",
+            "page": "adherents",
+            "champs_disponibles": champs,
         }
     )
 def adherent_modifier(request, id_adherent):
@@ -1717,7 +1760,10 @@ def adherent_modifier(request, id_adherent):
                             form.cleaned_data["date_adhesion"]
                         )
                         adherent.save()
-
+                        # Mettre à jour les champs personnalisés
+                        sauvegarder_valeurs_champs(
+                            request, "ADHERENT", adherent.id_adherent
+                        )
                         messages.success(
                             request,
                             "Adhérent modifié avec succès."
@@ -1747,6 +1793,14 @@ def adherent_modifier(request, id_adherent):
             }
         )
 
+        # Charger les champs personnalisés avec valeurs actuelles
+    champs = get_champs_pour_entite("ADHERENT")
+    for c in champs:
+        c.valeur_actuelle = get_valeur_champ(c, adherent.id_adherent)
+        c.choix_possibles_list = [
+            x.strip() for x in (c.choix_possibles or "").split("\n") if x.strip()
+        ]
+
     return render(
         request,
         "core/adherent_form.html",
@@ -1754,6 +1808,7 @@ def adherent_modifier(request, id_adherent):
             "form": form,
             "titre": "Modifier l'adhérent",
             "page": "adherents",
+            "champs_disponibles": champs,
         }
     )
 def adherent_radier(request, id_adherent):
@@ -1934,17 +1989,11 @@ def souscripteur_create(request):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
 
     if "SOUSCRIPTEUR_CREATE" not in permissions:
-        messages.error(
-            request,
-            "Vous n'avez pas l'autorisation de créer un souscripteur."
-        )
+        messages.error(request, "Vous n'avez pas l'autorisation.")
         return redirect("souscripteurs")
 
     if request.method == "POST":
@@ -1952,7 +2001,7 @@ def souscripteur_create(request):
 
         if form.is_valid():
             try:
-                Souscripteur.objects.create(
+                souscripteur = Souscripteur.objects.create(
                     code_souscripteur=_generer_code_souscripteur(),
                     raison_sociale=form.cleaned_data["raison_sociale"],
                     type_souscripteur=form.cleaned_data["type_souscripteur"],
@@ -1965,21 +2014,25 @@ def souscripteur_create(request):
                     date_creation=timezone.now(),
                 )
 
-                messages.success(
-                    request,
-                    "Souscripteur créé avec succès."
+                # Sauvegarder les champs personnalisés
+                sauvegarder_valeurs_champs(
+                    request, "SOUSCRIPTEUR", souscripteur.id_souscripteur
                 )
 
+                messages.success(request, "Souscripteur créé avec succès.")
                 return redirect("souscripteurs")
 
             except Exception as e:
-                messages.error(
-                    request,
-                    f"Erreur lors de la création : {e}"
-                )
-
+                messages.error(request, f"Erreur : {e}")
     else:
         form = SouscripteurForm()
+
+    champs = get_champs_pour_entite("SOUSCRIPTEUR")
+    for c in champs:
+        c.valeur_actuelle = None
+        c.choix_possibles_list = [
+            x.strip() for x in (c.choix_possibles or "").split("\n") if x.strip()
+        ]
 
     return render(
         request,
@@ -1988,6 +2041,7 @@ def souscripteur_create(request):
             "form": form,
             "titre": "Nouveau souscripteur",
             "page": "souscripteurs",
+            "champs_disponibles": champs,
         }
     )
 def souscripteur_modifier(request, id_souscripteur):
@@ -2003,28 +2057,17 @@ def souscripteur_modifier(request, id_souscripteur):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
 
     if "SOUSCRIPTEUR_UPDATE" not in permissions:
-        messages.error(
-            request,
-            "Vous n'avez pas l'autorisation de modifier un souscripteur."
-        )
+        messages.error(request, "Vous n'avez pas l'autorisation.")
         return redirect("souscripteurs")
 
     try:
-        souscripteur = Souscripteur.objects.get(
-            id_souscripteur=id_souscripteur
-        )
+        souscripteur = Souscripteur.objects.get(id_souscripteur=id_souscripteur)
     except Souscripteur.DoesNotExist:
-        messages.error(
-            request,
-            "Souscripteur introuvable."
-        )
+        messages.error(request, "Souscripteur introuvable.")
         return redirect("souscripteurs")
 
     if request.method == "POST":
@@ -2032,47 +2075,26 @@ def souscripteur_modifier(request, id_souscripteur):
 
         if form.is_valid():
             try:
-                
-                souscripteur.raison_sociale = (
-                    form.cleaned_data["raison_sociale"]
-                )
-                souscripteur.type_souscripteur = (
-                    form.cleaned_data["type_souscripteur"]
-                )
-                souscripteur.nif = (
-                    form.cleaned_data["nif"] or None
-                )
-                souscripteur.registre_commerce = (
-                    form.cleaned_data["registre_commerce"] or None
-                )
-                souscripteur.adresse = (
-                    form.cleaned_data["adresse"] or None
-                )
-                souscripteur.telephone = (
-                    form.cleaned_data["telephone"] or None
-                )
-                souscripteur.email = (
-                    form.cleaned_data["email"] or None
-                )
-                souscripteur.statut = (
-                    form.cleaned_data["statut"]
-                )
-
+                souscripteur.raison_sociale = form.cleaned_data["raison_sociale"]
+                souscripteur.type_souscripteur = form.cleaned_data["type_souscripteur"]
+                souscripteur.nif = form.cleaned_data["nif"] or None
+                souscripteur.registre_commerce = form.cleaned_data["registre_commerce"] or None
+                souscripteur.adresse = form.cleaned_data["adresse"] or None
+                souscripteur.telephone = form.cleaned_data["telephone"] or None
+                souscripteur.email = form.cleaned_data["email"] or None
+                souscripteur.statut = form.cleaned_data["statut"]
                 souscripteur.save()
 
-                messages.success(
-                    request,
-                    "Souscripteur modifié avec succès."
+                # Mettre à jour les champs personnalisés
+                sauvegarder_valeurs_champs(
+                    request, "SOUSCRIPTEUR", souscripteur.id_souscripteur
                 )
 
+                messages.success(request, "Souscripteur modifié avec succès.")
                 return redirect("souscripteurs")
 
             except Exception as e:
-                messages.error(
-                    request,
-                    f"Erreur lors de la modification : {e}"
-                )
-
+                messages.error(request, f"Erreur : {e}")
     else:
         form = SouscripteurForm(
             initial={
@@ -2088,12 +2110,21 @@ def souscripteur_modifier(request, id_souscripteur):
             }
         )
 
+    champs = get_champs_pour_entite("SOUSCRIPTEUR")
+    for c in champs:
+        c.valeur_actuelle = get_valeur_champ(c, souscripteur.id_souscripteur)
+        c.choix_possibles_list = [
+            x.strip() for x in (c.choix_possibles or "").split("\n") if x.strip()
+        ]
+
     return render(
         request,
         "core/souscripteur_form.html",
         {
             "form": form,
             "titre": "Modifier le souscripteur",
+            "page": "souscripteurs",
+            "champs_disponibles": champs,
         }
     )
 
@@ -2436,31 +2467,20 @@ def contrat_create(request):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
 
     if "CONTRAT_CREATE" not in permissions:
-        messages.error(
-            request,
-            "Vous n'avez pas l'autorisation de créer un contrat."
-        )
+        messages.error(request, "Vous n'avez pas l'autorisation.")
         return redirect("contrats")
 
-    souscripteurs = Souscripteur.objects.filter(
-        statut="ACTIF"
-    ).order_by("raison_sociale")
+    souscripteurs = Souscripteur.objects.filter(statut="ACTIF").order_by("raison_sociale")
 
     if request.method == "POST":
         form = ContratForm(request.POST)
 
         form.fields["id_souscripteur"].choices = [
-            (
-                str(s.id_souscripteur),
-                f"{s.code_souscripteur} - {s.raison_sociale}"
-            )
+            (str(s.id_souscripteur), f"{s.code_souscripteur} - {s.raison_sociale}")
             for s in souscripteurs
         ]
 
@@ -2484,9 +2504,8 @@ def contrat_create(request):
                     date_modification=None,
                 )
 
-                # Lier automatiquement toutes les garanties actives à ce contrat
+                # Lier automatiquement toutes les garanties actives
                 garanties_actives = Garantie.objects.filter(statut="ACTIF")
-
                 for garantie in garanties_actives:
                     ContratGarantie.objects.get_or_create(
                         id_contrat=contrat,
@@ -2498,29 +2517,32 @@ def contrat_create(request):
                         }
                     )
 
+                # Sauvegarder les champs personnalisés
+                sauvegarder_valeurs_champs(
+                    request, "CONTRAT", contrat.id_contrat
+                )
+
                 messages.success(
                     request,
                     f"Contrat créé avec succès. "
                     f"{garanties_actives.count()} garanties liées automatiquement."
                 )
-
                 return redirect("contrats")
 
             except Exception as e:
-                messages.error(
-                    request,
-                    f"Erreur lors de la création : {e}"
-                )
-
+                messages.error(request, f"Erreur : {e}")
     else:
         form = ContratForm()
-
         form.fields["id_souscripteur"].choices = [
-            (
-                str(s.id_souscripteur),
-                f"{s.code_souscripteur} - {s.raison_sociale}"
-            )
+            (str(s.id_souscripteur), f"{s.code_souscripteur} - {s.raison_sociale}")
             for s in souscripteurs
+        ]
+
+    champs = get_champs_pour_entite("CONTRAT")
+    for c in champs:
+        c.valeur_actuelle = None
+        c.choix_possibles_list = [
+            x.strip() for x in (c.choix_possibles or "").split("\n") if x.strip()
         ]
 
     return render(
@@ -2530,6 +2552,7 @@ def contrat_create(request):
             "form": form,
             "titre": "Nouveau contrat",
             "page": "contrats",
+            "champs_disponibles": champs,
         }
     )
 
@@ -2546,41 +2569,26 @@ def contrat_modifier(request, id_contrat):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
+
     if "CONTRAT_UPDATE" not in permissions:
-        messages.error(
-            request,
-            "Vous n'avez pas l'autorisation de modifier un contrat."
-        )
+        messages.error(request, "Vous n'avez pas l'autorisation.")
         return redirect("contrats")
 
     try:
-        contrat = Contrat.objects.get(
-            id_contrat=id_contrat
-        )
+        contrat = Contrat.objects.get(id_contrat=id_contrat)
     except Contrat.DoesNotExist:
-        messages.error(
-            request,
-            "Contrat introuvable."
-        )
+        messages.error(request, "Contrat introuvable.")
         return redirect("contrats")
 
-    souscripteurs = Souscripteur.objects.filter(
-        statut="ACTIF"
-    ).order_by("raison_sociale")
+    souscripteurs = Souscripteur.objects.filter(statut="ACTIF").order_by("raison_sociale")
 
     if request.method == "POST":
         form = ContratForm(request.POST)
 
         form.fields["id_souscripteur"].choices = [
-            (
-                str(s.id_souscripteur),
-                f"{s.code_souscripteur} - {s.raison_sociale}"
-            )
+            (str(s.id_souscripteur), f"{s.code_souscripteur} - {s.raison_sociale}")
             for s in souscripteurs
         ]
 
@@ -2599,44 +2607,38 @@ def contrat_modifier(request, id_contrat):
                 contrat.objet = form.cleaned_data["objet"] or None
                 contrat.date_signature = form.cleaned_data["date_signature"]
                 contrat.date_modification = timezone.now()
-
                 contrat.save()
 
-                messages.success(
-                    request,
-                    "Contrat modifié avec succès."
+                sauvegarder_valeurs_champs(
+                    request, "CONTRAT", contrat.id_contrat
                 )
 
+                messages.success(request, "Contrat modifié avec succès.")
                 return redirect("contrats")
 
             except Exception as e:
-                messages.error(
-                    request,
-                    f"Erreur lors de la modification : {e}"
-                )
-
+                messages.error(request, f"Erreur : {e}")
     else:
-        form = ContratForm(
-            initial={
-                "numero_contrat": contrat.numero_contrat,
-                "id_souscripteur": str(
-                    contrat.id_souscripteur_id
-                ),
-                "date_debut": contrat.date_debut,
-                "date_fin": contrat.date_fin,
-                "type_contrat": contrat.type_contrat,
-                "statut": contrat.statut,
-                "objet": contrat.objet,
-                "date_signature": contrat.date_signature,
-            }
-        )
-
+        form = ContratForm(initial={
+            "numero_contrat": contrat.numero_contrat,
+            "id_souscripteur": str(contrat.id_souscripteur_id),
+            "date_debut": contrat.date_debut,
+            "date_fin": contrat.date_fin,
+            "type_contrat": contrat.type_contrat,
+            "statut": contrat.statut,
+            "objet": contrat.objet,
+            "date_signature": contrat.date_signature,
+        })
         form.fields["id_souscripteur"].choices = [
-            (
-                str(s.id_souscripteur),
-                f"{s.code_souscripteur} - {s.raison_sociale}"
-            )
+            (str(s.id_souscripteur), f"{s.code_souscripteur} - {s.raison_sociale}")
             for s in souscripteurs
+        ]
+
+    champs = get_champs_pour_entite("CONTRAT")
+    for c in champs:
+        c.valeur_actuelle = get_valeur_champ(c, contrat.id_contrat)
+        c.choix_possibles_list = [
+            x.strip() for x in (c.choix_possibles or "").split("\n") if x.strip()
         ]
 
     return render(
@@ -2645,6 +2647,8 @@ def contrat_modifier(request, id_contrat):
         {
             "form": form,
             "titre": "Modifier le contrat",
+            "page": "contrats",
+            "champs_disponibles": champs,
         }
     )
 
@@ -5767,54 +5771,37 @@ def ayant_droit_create(request):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
 
     if "AYANT_DROIT_CREATE" not in permissions:
-        messages.error(
-            request,
-            "Vous n'avez pas l'autorisation de créer un ayant droit."
-        )
+        messages.error(request, "Vous n'avez pas l'autorisation.")
         return redirect("ayant_droits")
 
-    id_adherent_preselectionne = request.GET.get(
-        "id_adherent",
-        ""
-    ).strip()
-
+    id_adherent_preselectionne = request.GET.get("id_adherent", "").strip()
     adherent_preselectionne = None
 
     if id_adherent_preselectionne:
         adherent_preselectionne = (
             Adherent.objects
-            .filter(
-                id_adherent=id_adherent_preselectionne,
-                statut="ACTIF"
-            )
+            .filter(id_adherent=id_adherent_preselectionne, statut="ACTIF")
             .select_related("id_personne")
             .first()
         )
 
     if not adherent_preselectionne:
-        messages.error(
-            request,
-            "Veuillez sélectionner un adhérent."
-        )
+        messages.error(request, "Veuillez sélectionner un adhérent.")
         return redirect("adherents")
 
     if request.method == "POST":
         form = AyantDroitForm(
-    request.POST,
-    nom_adherent=adherent_preselectionne.id_personne.nom
-)
+            request.POST,
+            nom_adherent=adherent_preselectionne.id_personne.nom
+        )
 
         if form.is_valid():
             try:
                 with transaction.atomic():
-
                     doublon = (
                         AyantDroit.objects
                         .filter(
@@ -5828,10 +5815,7 @@ def ayant_droit_create(request):
                     )
 
                     if doublon:
-                        messages.error(
-                            request,
-                            "Cet ayant droit existe déjà pour cet adhérent."
-                        )
+                        messages.error(request, "Cet ayant droit existe déjà.")
                         return render(
                             request,
                             "core/ayant_droit_form.html",
@@ -5839,7 +5823,7 @@ def ayant_droit_create(request):
                                 "form": form,
                                 "titre": "Nouvel ayant droit",
                                 "adherent_preselectionne": adherent_preselectionne,
-                                "page": "ayant_droits",
+                                "champs_disponibles": get_champs_pour_entite("AYANT_DROIT"),
                             }
                         )
 
@@ -5856,7 +5840,7 @@ def ayant_droit_create(request):
                         date_creation=timezone.now(),
                     )
 
-                    AyantDroit.objects.create(
+                    ayant_droit = AyantDroit.objects.create(
                         id_personne=personne,
                         id_adherent=adherent_preselectionne,
                         type_lien=form.cleaned_data["type_lien"],
@@ -5865,33 +5849,32 @@ def ayant_droit_create(request):
                         statut=form.cleaned_data["statut"],
                     )
 
-                messages.success(
-                    request,
-                    "Ayant droit créé avec succès."
-                )
+                    # Sauvegarder les champs personnalisés
+                    sauvegarder_valeurs_champs(
+                        request, "AYANT_DROIT", ayant_droit.id_ayant_droit
+                    )
 
-                return redirect(
-                    "adherent_detail",
-                    id_adherent=adherent_preselectionne.id_adherent
-                )
+                messages.success(request, "Ayant droit créé avec succès.")
+                return redirect("adherent_detail", id_adherent=adherent_preselectionne.id_adherent)
 
             except Exception as e:
-                messages.error(
-                    request,
-                    f"Erreur lors de la création de l'ayant droit : {e}"
-                )
-
+                messages.error(request, f"Erreur : {e}")
     else:
         form = AyantDroitForm(
-    initial={
-        "id_adherent": str(
-            adherent_preselectionne.id_adherent
-        ),
-        "statut": "ACTIF",
-    },
-    nom_adherent=adherent_preselectionne.id_personne.nom,
-    date_adhesion=adherent_preselectionne.date_adhesion
-)
+            initial={
+                "id_adherent": str(adherent_preselectionne.id_adherent),
+                "statut": "ACTIF",
+            },
+            nom_adherent=adherent_preselectionne.id_personne.nom,
+            date_adhesion=adherent_preselectionne.date_adhesion
+        )
+
+    champs = get_champs_pour_entite("AYANT_DROIT")
+    for c in champs:
+        c.valeur_actuelle = None
+        c.choix_possibles_list = [
+            x.strip() for x in (c.choix_possibles or "").split("\n") if x.strip()
+        ]
 
     return render(
         request,
@@ -5900,6 +5883,7 @@ def ayant_droit_create(request):
             "form": form,
             "titre": "Nouvel ayant droit",
             "adherent_preselectionne": adherent_preselectionne,
+            "champs_disponibles": champs,
         }
     )
 
@@ -5921,16 +5905,13 @@ def ayant_droit_modifier(request, id_ayant_droit):
     )
 
     if "AYANT_DROIT_UPDATE" not in permissions:
-        messages.error(
-            request,
-            "Vous n'avez pas l'autorisation de modifier un ayant droit."
-        )
+        messages.error(request, "Vous n'avez pas l'autorisation.")
         return redirect("ayant_droits")
 
     try:
         ayant_droit = (
             AyantDroit.objects
-            .select_related("id_personne", "id_adherent")
+            .select_related("id_personne", "id_adherent", "id_adherent__id_personne")
             .get(id_ayant_droit=id_ayant_droit)
         )
     except AyantDroit.DoesNotExist:
@@ -5950,8 +5931,6 @@ def ayant_droit_modifier(request, id_ayant_droit):
         if form.is_valid():
             try:
                 with transaction.atomic():
-
-                    # Mise à jour de la personne liée
                     personne.nom = form.cleaned_data["nom"].strip()
                     personne.prenom = form.cleaned_data["prenom"].strip()
                     personne.date_naissance = form.cleaned_data["date_naissance"]
@@ -5959,32 +5938,25 @@ def ayant_droit_modifier(request, id_ayant_droit):
                     personne.date_modification = timezone.now()
                     personne.save()
 
-                    # Mise à jour de l'ayant droit
-                    ayant_droit.id_adherent_id = (
-                        form.cleaned_data.get("id_adherent")
-                        or ayant_droit.id_adherent_id
-                    )
                     ayant_droit.type_lien = form.cleaned_data["type_lien"]
                     ayant_droit.date_debut = form.cleaned_data["date_debut"]
                     ayant_droit.date_fin = form.cleaned_data["date_fin"]
                     ayant_droit.statut = form.cleaned_data["statut"]
                     ayant_droit.save()
 
-                messages.success(
-                    request,
-                    "Ayant droit modifié avec succès."
-                )
-                return redirect("ayant_droits")
+                    sauvegarder_valeurs_champs(
+                        request, "AYANT_DROIT", ayant_droit.id_ayant_droit
+                    )
+
+                messages.success(request, "Ayant droit modifié avec succès.")
+                return redirect("adherent_detail", id_adherent=adherent.id_adherent)
 
             except Exception as e:
-                messages.error(
-                    request,
-                    f"Erreur lors de la modification : {e}"
-                )
+                messages.error(request, f"Erreur : {e}")
     else:
         form = AyantDroitForm(
             initial={
-                "id_adherent": ayant_droit.id_adherent_id,
+                "id_adherent": str(ayant_droit.id_adherent_id),
                 "nom": personne.nom,
                 "prenom": personne.prenom,
                 "date_naissance": personne.date_naissance,
@@ -5998,6 +5970,13 @@ def ayant_droit_modifier(request, id_ayant_droit):
             date_adhesion=adherent.date_adhesion,
         )
 
+    champs = get_champs_pour_entite("AYANT_DROIT")
+    for c in champs:
+        c.valeur_actuelle = get_valeur_champ(c, ayant_droit.id_ayant_droit)
+        c.choix_possibles_list = [
+            x.strip() for x in (c.choix_possibles or "").split("\n") if x.strip()
+        ]
+
     return render(
         request,
         "core/ayant_droit_form.html",
@@ -6005,6 +5984,7 @@ def ayant_droit_modifier(request, id_ayant_droit):
             "form": form,
             "titre": "Modifier l'ayant droit",
             "adherent_preselectionne": adherent,
+            "champs_disponibles": champs,
         }
     )
 def ayant_droit_radier(request, id_ayant_droit):
@@ -6305,17 +6285,11 @@ def prestataire_create(request):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
 
     if "PRESTATAIRE_CREATE" not in permissions:
-        messages.error(
-            request,
-            "Vous n'avez pas l'autorisation de créer un prestataire."
-        )
+        messages.error(request, "Vous n'avez pas l'autorisation.")
         return redirect("prestataires")
 
     if request.method == "POST":
@@ -6323,7 +6297,7 @@ def prestataire_create(request):
 
         if form.is_valid():
             try:
-                Prestataire.objects.create(
+                prestataire = Prestataire.objects.create(
                     code_prestataire=_generer_code_prestataire(),
                     raison_sociale=form.cleaned_data["raison_sociale"],
                     type_prestataire=form.cleaned_data["type_prestataire"],
@@ -6336,21 +6310,24 @@ def prestataire_create(request):
                     date_creation=timezone.now(),
                 )
 
-                messages.success(
-                    request,
-                    "Prestataire créé avec succès."
+                sauvegarder_valeurs_champs(
+                    request, "PRESTATAIRE", prestataire.id_prestataire
                 )
 
+                messages.success(request, "Prestataire créé avec succès.")
                 return redirect("prestataires")
 
             except Exception as e:
-                messages.error(
-                    request,
-                    f"Erreur lors de la création : {e}"
-                )
-
+                messages.error(request, f"Erreur : {e}")
     else:
         form = PrestataireForm()
+
+    champs = get_champs_pour_entite("PRESTATAIRE")
+    for c in champs:
+        c.valeur_actuelle = get_valeur_champ(c, prestataire.id_prestataire)
+        c.choix_possibles_list = [
+            x.strip() for x in (c.choix_possibles or "").split("\n") if x.strip()
+        ]
 
     return render(
         request,
@@ -6359,6 +6336,7 @@ def prestataire_create(request):
             "form": form,
             "titre": "Nouveau prestataire",
             "page": "prestataires",
+            "champs_disponibles": champs,
         }
     )
 def prestataire_modifier(request, id_prestataire):
@@ -6374,28 +6352,17 @@ def prestataire_modifier(request, id_prestataire):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
 
     if "PRESTATAIRE_UPDATE" not in permissions:
-        messages.error(
-            request,
-            "Vous n'avez pas l'autorisation de modifier un prestataire."
-        )
+        messages.error(request, "Vous n'avez pas l'autorisation.")
         return redirect("prestataires")
 
     try:
-        prestataire = Prestataire.objects.get(
-            id_prestataire=id_prestataire
-        )
+        prestataire = Prestataire.objects.get(id_prestataire=id_prestataire)
     except Prestataire.DoesNotExist:
-        messages.error(
-            request,
-            "Prestataire introuvable."
-        )
+        messages.error(request, "Prestataire introuvable.")
         return redirect("prestataires")
 
     if request.method == "POST":
@@ -6403,61 +6370,44 @@ def prestataire_modifier(request, id_prestataire):
 
         if form.is_valid():
             try:
-                
-                prestataire.raison_sociale = (
-                    form.cleaned_data["raison_sociale"]
-                )
-                prestataire.type_prestataire = (
-                    form.cleaned_data["type_prestataire"]
-                )
-                prestataire.nif = (
-                    form.cleaned_data["nif"] or None
-                )
-                prestataire.registre_commerce = (
-                    form.cleaned_data["registre_commerce"] or None
-                )
-                prestataire.adresse = (
-                    form.cleaned_data["adresse"] or None
-                )
-                prestataire.telephone = (
-                    form.cleaned_data["telephone"] or None
-                )
-                prestataire.email = (
-                    form.cleaned_data["email"] or None
-                )
-                prestataire.statut = (
-                    form.cleaned_data["statut"]
-                )
-
+                prestataire.raison_sociale = form.cleaned_data["raison_sociale"]
+                prestataire.type_prestataire = form.cleaned_data["type_prestataire"]
+                prestataire.nif = form.cleaned_data["nif"] or None
+                prestataire.registre_commerce = form.cleaned_data["registre_commerce"] or None
+                prestataire.adresse = form.cleaned_data["adresse"] or None
+                prestataire.telephone = form.cleaned_data["telephone"] or None
+                prestataire.email = form.cleaned_data["email"] or None
+                prestataire.statut = form.cleaned_data["statut"]
                 prestataire.save()
 
-                messages.success(
-                    request,
-                    "Prestataire modifié avec succès."
+                sauvegarder_valeurs_champs(
+                    request, "PRESTATAIRE", prestataire.id_prestataire
                 )
 
+                messages.success(request, "Prestataire modifié avec succès.")
                 return redirect("prestataires")
 
             except Exception as e:
-                messages.error(
-                    request,
-                    f"Erreur lors de la modification : {e}"
-                )
-
+                messages.error(request, f"Erreur : {e}")
     else:
-        form = PrestataireForm(
-            initial={
-                "code_prestataire": prestataire.code_prestataire,
-                "raison_sociale": prestataire.raison_sociale,
-                "type_prestataire": prestataire.type_prestataire,
-                "nif": prestataire.nif,
-                "registre_commerce": prestataire.registre_commerce,
-                "adresse": prestataire.adresse,
-                "telephone": prestataire.telephone,
-                "email": prestataire.email,
-                "statut": prestataire.statut,
-            }
-        )
+        form = PrestataireForm(initial={
+            "code_prestataire": prestataire.code_prestataire,
+            "raison_sociale": prestataire.raison_sociale,
+            "type_prestataire": prestataire.type_prestataire,
+            "nif": prestataire.nif,
+            "registre_commerce": prestataire.registre_commerce,
+            "adresse": prestataire.adresse,
+            "telephone": prestataire.telephone,
+            "email": prestataire.email,
+            "statut": prestataire.statut,
+        })
+
+    champs = get_champs_pour_entite("PRESTATAIRE")
+    for c in champs:
+        c.valeur_actuelle = get_valeur_champ(c, prestataire.id_prestataire)
+        c.choix_possibles_list = [
+            x.strip() for x in (c.choix_possibles or "").split("\n") if x.strip()
+        ]
 
     return render(
         request,
@@ -6465,6 +6415,8 @@ def prestataire_modifier(request, id_prestataire):
         {
             "form": form,
             "titre": "Modifier le prestataire",
+            "page": "prestataires",
+            "champs_disponibles": champs,
         }
     )
 def prestataire_radier(request, id_prestataire):
@@ -10775,33 +10727,19 @@ def facture_create(request):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
 
     if "FACTURE_CREATE" not in permissions:
-        messages.error(
-            request,
-            "Vous n'avez pas l'autorisation de créer une facture."
-        )
+        messages.error(request, "Vous n'avez pas l'autorisation.")
         return redirect("factures")
 
-    prestataires = (
-        Prestataire.objects
-        .filter(statut="ACTIF")
-        .order_by("raison_sociale")
-    )
+    prestataires = Prestataire.objects.filter(statut="ACTIF").order_by("raison_sociale")
 
     consommations = (
         Consommation.objects
         .filter(statut="VALIDEE")
-        .select_related(
-            "id_prestataire",
-            "id_acte",
-            "id_personne_beneficiaire",
-        )
+        .select_related("id_prestataire", "id_acte", "id_personne_beneficiaire")
         .order_by("date_prestation", "id_consommation")
     )
 
@@ -10809,10 +10747,7 @@ def facture_create(request):
         form = FactureForm(request.POST)
 
         form.fields["id_prestataire"].choices = [
-            (
-                str(p.id_prestataire),
-                f"{p.code_prestataire} - {p.raison_sociale}"
-            )
+            (str(p.id_prestataire), f"{p.code_prestataire} - {p.raison_sociale}")
             for p in prestataires
         ]
 
@@ -10826,21 +10761,21 @@ def facture_create(request):
                 ]
 
                 consommations_deja_facturees = set(
-                    DetailFacture.objects
-                    .values_list("id_consommation_id", flat=True)
+                    DetailFacture.objects.values_list("id_consommation_id", flat=True)
                 )
 
                 consommations_prestataire = [
-                c for c in consommations_prestataire
-                if (
-        c.id_consommation not in consommations_deja_facturees
-        and c.montant_prise_en_charge > 0
-                )
-        ]
+                    c for c in consommations_prestataire
+                    if (
+                        c.id_consommation not in consommations_deja_facturees
+                        and c.montant_prise_en_charge > 0
+                    )
+                ]
+
                 if not consommations_prestataire:
                     messages.error(
                         request,
-                        "Aucune consommation avec un montant pris en charge supérieur à 0 n'est disponible pour ce prestataire."
+                        "Aucune consommation disponible pour ce prestataire."
                     )
                     return render(
                         request,
@@ -10849,7 +10784,7 @@ def facture_create(request):
                             "form": form,
                             "titre": "Nouvelle facture",
                             "consommations": consommations,
-                            "page": "factures"
+                            "champs_disponibles": get_champs_pour_entite("FACTURE"),
                         }
                     )
 
@@ -10858,20 +10793,9 @@ def facture_create(request):
                     statut="ACTIF",
                 )
 
-                montant_total = sum(
-                    c.montant_base
-                    for c in consommations_prestataire
-                )
-
-                montant_valide = sum(
-                    c.montant_prise_en_charge
-                    for c in consommations_prestataire
-                )
-
-                montant_rejete = sum(
-                    c.montant_reste
-                    for c in consommations_prestataire
-                )
+                montant_total = sum(c.montant_base for c in consommations_prestataire)
+                montant_valide = sum(c.montant_prise_en_charge for c in consommations_prestataire)
+                montant_rejete = sum(c.montant_reste for c in consommations_prestataire)
 
                 facture = Facture.objects.create(
                     id_prestataire=prestataire,
@@ -10894,8 +10818,7 @@ def facture_create(request):
                         id_acte=consommation.id_acte,
                         quantite=consommation.quantite,
                         montant_unitaire=(
-                            consommation.montant_base
-                            / consommation.quantite
+                            consommation.montant_base / consommation.quantite
                         ),
                         montant_total=consommation.montant_base,
                         montant_valide=consommation.montant_prise_en_charge,
@@ -10904,28 +10827,31 @@ def facture_create(request):
                         id_motif_rejet=None,
                     )
 
+                # Sauvegarder les champs personnalisés
+                sauvegarder_valeurs_champs(
+                    request, "FACTURE", facture.id_facture
+                )
+
                 messages.success(
                     request,
                     f"Facture {facture.numero_facture} créée avec succès."
                 )
-
                 return redirect("factures")
 
             except Exception as e:
-                messages.error(
-                    request,
-                    f"Erreur lors de la création de la facture : {e}"
-                )
-
+                messages.error(request, f"Erreur : {e}")
     else:
         form = FactureForm()
-
         form.fields["id_prestataire"].choices = [
-            (
-                str(p.id_prestataire),
-                f"{p.code_prestataire} - {p.raison_sociale}"
-            )
+            (str(p.id_prestataire), f"{p.code_prestataire} - {p.raison_sociale}")
             for p in prestataires
+        ]
+
+    champs = get_champs_pour_entite("FACTURE")
+    for c in champs:
+        c.valeur_actuelle = None
+        c.choix_possibles_list = [
+            x.strip() for x in (c.choix_possibles or "").split("\n") if x.strip()
         ]
 
     return render(
@@ -10935,6 +10861,8 @@ def facture_create(request):
             "form": form,
             "titre": "Nouvelle facture",
             "consommations": consommations,
+            "page": "factures",
+            "champs_disponibles": champs,
         }
     )
 def factures(request):
@@ -11216,17 +11144,11 @@ def facture_detail(request, id_facture):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
 
     if "FACTURE_VIEW" not in permissions:
-        messages.error(
-            request,
-            "Vous n'avez pas l'autorisation de consulter le détail de la facture."
-        )
+        messages.error(request, "Vous n'avez pas l'autorisation.")
         return redirect("factures")
 
     try:
@@ -11236,21 +11158,18 @@ def facture_detail(request, id_facture):
             .get(id_facture=id_facture)
         )
     except Facture.DoesNotExist:
-        messages.error(
-            request,
-            "Facture introuvable."
-        )
+        messages.error(request, "Facture introuvable.")
         return redirect("factures")
 
     details = (
         DetailFacture.objects
-        .select_related(
-            "id_consommation",
-            "id_acte",
-        )
+        .select_related("id_consommation", "id_acte")
         .filter(id_facture=facture)
         .order_by("id_detail_facture")
     )
+
+    champs = get_valeurs_champs_entite("FACTURE", facture.id_facture)
+    champs = [c for c in champs if c["valeur"] and str(c["valeur"]).strip()]
 
     return render(
         request,
@@ -11258,38 +11177,10 @@ def facture_detail(request, id_facture):
         {
             "facture": facture,
             "details": details,
+            "champs_personnalises": champs,
             "page": "factures",
         }
     )
-
-def _generer_numero_reglement():
-    annee = timezone.now().year
-    prefixe = f"REG-{annee}-"
-
-    numeros = (
-        Reglement.objects
-        .filter(numero_reglement__startswith=prefixe)
-        .values_list("numero_reglement", flat=True)
-    )
-
-    valeurs = []
-
-    for numero in numeros:
-        try:
-            valeurs.append(int(numero.rsplit("-", 1)[1]))
-        except (ValueError, IndexError):
-            continue
-
-    prochain = max(valeurs, default=0) + 1
-    numero_reglement = f"{prefixe}{prochain:04d}"
-
-    while Reglement.objects.filter(
-        numero_reglement=numero_reglement
-    ).exists():
-        prochain += 1
-        numero_reglement = f"{prefixe}{prochain:04d}"
-
-    return numero_reglement
 
 
 

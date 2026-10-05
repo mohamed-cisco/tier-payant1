@@ -174,6 +174,56 @@
             {% endif %}
 
         {% endfor %}
+        
+        {# CHAMPS PERSONNALISÉS #}
+        {% for champ in champs_disponibles %}
+        <div class="field">
+            <label for="champ_{{ champ.pk }}">
+                {{ champ.libelle }}
+                {% if champ.obligatoire %}<span style="color: red;">*</span>{% endif %}
+            </label>
+
+            {% if champ.type_champ == "TEXT" %}
+                <input type="text" id="champ_{{ champ.pk }}" name="champ_{{ champ.pk }}"
+                       value="{{ champ.valeur_actuelle|default:champ.valeur_defaut|default:'' }}"
+                       {% if champ.obligatoire %}required{% endif %}>
+
+            {% elif champ.type_champ == "TEXT_LONG" %}
+                <textarea id="champ_{{ champ.pk }}" name="champ_{{ champ.pk }}">{{ champ.valeur_actuelle|default:champ.valeur_defaut|default:'' }}</textarea>
+
+            {% elif champ.type_champ == "NUMBER" %}
+                <input type="number" id="champ_{{ champ.pk }}" name="champ_{{ champ.pk }}"
+                       value="{{ champ.valeur_actuelle|default:champ.valeur_defaut|default:'' }}"
+                       {% if champ.obligatoire %}required{% endif %}>
+
+            {% elif champ.type_champ == "DECIMAL" %}
+                <input type="number" step="0.01" id="champ_{{ champ.pk }}" name="champ_{{ champ.pk }}"
+                       value="{{ champ.valeur_actuelle|default:champ.valeur_defaut|default:'' }}"
+                       {% if champ.obligatoire %}required{% endif %}>
+
+            {% elif champ.type_champ == "DATE" %}
+                <input type="date" id="champ_{{ champ.pk }}" name="champ_{{ champ.pk }}"
+                       value="{{ champ.valeur_actuelle|default:'' }}"
+                       {% if champ.obligatoire %}required{% endif %}>
+
+            {% elif champ.type_champ == "BOOLEAN" %}
+                <input type="checkbox" id="champ_{{ champ.pk }}" name="champ_{{ champ.pk }}"
+                       {% if champ.valeur_actuelle == "True" %}checked{% endif %}>
+
+            {% elif champ.type_champ == "CHOICE" %}
+                <select id="champ_{{ champ.pk }}" name="champ_{{ champ.pk }}"
+                        {% if champ.obligatoire %}required{% endif %}>
+                    <option value="">-- Sélectionner --</option>
+                    {% for choix in champ.choix_possibles_list %}
+                        <option value="{{ choix }}"
+                            {% if champ.valeur_actuelle == choix %}selected{% endif %}>
+                            {{ choix }}
+                        </option>
+                    {% endfor %}
+                </select>
+            {% endif %}
+        </div>
+        {% endfor %}
 
         <div class="actions">
             <button type="submit" class="btn btn-primary">💾 Enregistrer</button>

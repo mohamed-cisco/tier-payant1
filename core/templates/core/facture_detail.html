@@ -207,6 +207,12 @@
             <strong>Observation</strong>
             {{ facture.observation|default:"-" }}
         </div>
+                {% for item in champs_personnalises %}
+        <div class="info-item">
+            <strong>{{ item.champ.libelle }}</strong>
+            <div>{{ item.valeur }}</div>
+        </div>
+        {% endfor %}
     </div>
 
 </div>

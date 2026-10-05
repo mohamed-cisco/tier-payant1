@@ -339,7 +339,14 @@
                         {{ adherent.statut }}
                     </span>
                 {% endif %}
-
+            {% for item in champs_personnalises %}
+            <div class="info">
+                <strong>{{ item.champ.libelle }}</strong>
+                <div class="info-value">
+                    {{ item.valeur|default:"-" }}
+                </div>
+            </div>
+            {% endfor %}
             </div>
 
         </div>
@@ -380,6 +387,7 @@
                             <th>Date de début</th>
                             <th>Date de fin</th>
                             <th>Statut</th>
+                            <th>Champs perso</th>
                         </tr>
                     </thead>
 
@@ -430,6 +438,15 @@
                                     </span>
                                 {% endif %}
 
+                            </td>
+                                                        <td>
+                                {% for val in ad.champs_personnalises %}
+                                    {% if val.valeur %}
+                                        <div><strong>{{ val.champ.libelle }} :</strong> {{ val.valeur }}</div>
+                                    {% endif %}
+                                {% empty %}
+                                    -
+                                {% endfor %}
                             </td>
 
                         </tr>
