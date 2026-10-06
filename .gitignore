@@ -46,3 +46,5 @@ tiers_payant_*.backup
 *.xlsx
 ~$*.xlsx
 _imports/
+*.backup*
+nouvelle_fonction.py
