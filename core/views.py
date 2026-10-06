@@ -12567,7 +12567,14 @@ def prise_en_charge_details(request, id_pec):
         }
     )
 def prise_en_charge_valider(request, id_pec):
-    """Valide la PEC et crée les consommations automatiquement."""
+    """
+    Valide la PEC et crée les consommations automatiquement.
+    
+    Utilise le module centralisé core.services.calculs pour TOUS les calculs.
+    """
+    # ============================================================
+    # 1. VÉRIFICATIONS
+    # ============================================================
     if not request.session.get("id_utilisateur"):
         return redirect("connexion")
 
@@ -12587,6 +12594,9 @@ def prise_en_charge_valider(request, id_pec):
         messages.error(request, "Vous n'avez pas l'autorisation.")
         return redirect("prises_en_charge")
 
+    # ============================================================
+    # 2. RÉCUPÉRATION DE LA PEC
+    # ============================================================
     try:
         pec = (
             PriseEnCharge.objects
@@ -12606,188 +12616,91 @@ def prise_en_charge_valider(request, id_pec):
         messages.error(request, "Cette PEC a déjà été traitée.")
         return redirect("prise_en_charge_details", id_pec=pec.id_pec)
 
-    # Récupérer les détails de la demande
-    details = list(
-        DemandeTpDetail.objects
-        .select_related("id_acte", "id_sous_acte")
-        .filter(id_demande=pec.id_demande)
-        .order_by("id_detail")
-    )
+    # ============================================================
+    # 3. CALCUL VIA LE MODULE CENTRALISÉ
+    # ============================================================
+    from core.services.calculs import calculer_pour_demande
 
-    if not details:
+    resultats = calculer_pour_demande(pec.id_demande)
+
+    # Vérifier les erreurs
+    if resultats["erreurs"]:
+        for erreur in resultats["erreurs"]:
+            messages.warning(request, erreur)
+
+    # Si aucun acte → erreur
+    if resultats["nb_actes"] == 0:
         messages.error(request, "Aucun acte à valider.")
         return redirect("prise_en_charge_details", id_pec=pec.id_pec)
 
-    # Calculs pour chaque acte
-    calculs = []
-    montant_accepte_total = Decimal("0.00")
-    montant_rejete_total = Decimal("0.00")
-
-    for detail in details:
-        try:
-            garantie_acte = (
-                GarantieActe.objects
-                .filter(
-                    id_acte=detail.id_acte,
-                    statut="ACTIF",
-                    date_debut__lte=pec.date_pec.date(),
-                    id_garantie__contratgarantie__id_contrat=pec.id_demande.id_contrat,
-                    id_garantie__contratgarantie__statut="ACTIF",
-                )
-                .filter(
-                    Q(date_fin__isnull=True) | Q(date_fin__gte=pec.date_pec.date())
-                )
-                .order_by("-date_debut")
-                .first()
-            )
-
-            if not garantie_acte:
-                calculs.append({
-                    "detail": detail,
-                    "garantie_acte": None,
-                    "montant_demande": detail.montant_total,
-                    "montant_accorde": Decimal("0.00"),
-                    "montant_rejete": detail.montant_total,
-                    "taux": Decimal("0.00"),
-                    "franchise": Decimal("0.00"),
-                    "erreur": "Aucune garantie active trouvée.",
-                })
-                montant_rejete_total += detail.montant_total
-                continue
-
-            taux = garantie_acte.taux_prise_en_charge or Decimal("0.00")
-            franchise = garantie_acte.franchise or Decimal("0.00")
-
-            mode_calcul = getattr(garantie_acte, "mode_calcul", "POURCENTAGE")
-            montant_forfait = getattr(garantie_acte, "montant_forfait", None)
-            plafond_forfait = getattr(garantie_acte, "plafond_forfait", None)
-
-            if mode_calcul == "FORFAIT" and montant_forfait:
-                montant_accorde = min(Decimal(montant_forfait), detail.montant_total)
-                if plafond_forfait:
-                    montant_accorde = min(montant_accorde, Decimal(plafond_forfait))
-            elif mode_calcul == "FRAIS_REELS":
-                montant_accorde = detail.montant_total
-            else:
-                montant_couvert = detail.montant_total * taux / Decimal("100")
-                montant_accorde = max(Decimal("0.00"), montant_couvert - franchise)
-
-            # Appliquer les plafonds
-            montant_avant_plafond = montant_accorde
-            quantite_autorisee = detail.quantite
-
-            (
-                montant_accorde,
-                plafond_details,
-                erreur_plafond,
-                quantite_autorisee,
-            ) = _appliquer_plafonds_demande(
-                demande=pec.id_demande,
-                detail=detail,
-                garantie_acte=garantie_acte,
-                montant_accorde=montant_accorde,
-            )
-
-            montant_rejete = max(Decimal("0.00"), detail.montant_total - montant_accorde)
-            montant_accepte_total += montant_accorde
-            montant_rejete_total += montant_rejete
-
-            calculs.append({
-                "detail": detail,
-                "garantie_acte": garantie_acte,
-                "montant_demande": detail.montant_total,
-                "montant_accorde": montant_accorde,
-                "montant_rejete": montant_rejete,
-                "montant_accorde_avant_plafond": montant_avant_plafond,
-                "taux": taux,
-                "franchise": franchise,
-                "plafond_details": plafond_details,
-                "quantite_autorisee": quantite_autorisee,
-                "erreur": erreur_plafond,
-            })
-
-        except Exception as e:
-            messages.error(request, f"Erreur lors du calcul : {e}")
-            return redirect("prise_en_charge_details", id_pec=pec.id_pec)
-
+    # ============================================================
+    # 4. TRAITEMENT DU POST
+    # ============================================================
     if request.method == "POST":
-        if any(c["erreur"] for c in calculs):
-            messages.error(
-                request,
-                "La PEC ne peut pas être validée car un acte n'a pas de garantie applicable."
-            )
-            return redirect("prise_en_charge_valider", id_pec=pec.id_pec)
-
         try:
-            # Mise à jour de la PEC
-            pec.montant_demande = sum(c["montant_demande"] for c in calculs)
-            pec.montant_accepte = montant_accepte_total
-            pec.montant_rejete = montant_rejete_total
+            # 4.1 — Mise à jour de la PEC
+            pec.montant_demande = resultats["total_demande"]
+            pec.montant_accepte = resultats["total_accepte"]
+            pec.montant_rejete = resultats["total_rejete"]
             pec.statut = "ACCEPTEE"
-            pec.utilisateur_validation = str(request.session.get("id_utilisateur"))
+            pec.utilisateur_validation = str(id_utilisateur)
             pec.save()
 
-            # Créer les détails PEC + Consommations
-            for calcul in calculs:
+            # 4.2 — Créer les détails PEC + Consommations
+            nb_consos = 0
+            for calcul in resultats["calculs"]:
                 detail = calcul["detail"]
 
+                # Créer le détail PEC
                 pec_detail = PriseEnChargeDetail.objects.create(
                     id_pec=pec,
                     id_detail_demande=detail,
                     id_acte=detail.id_acte,
-                    quantite=calcul["quantite_autorisee"],
+                    quantite=detail.quantite,
                     montant_demande=calcul["montant_demande"],
                     montant_accorde=calcul["montant_accorde"],
                     montant_rejete=calcul["montant_rejete"],
                     taux_applique=calcul["taux"],
                     franchise_appliquee=calcul["franchise"],
-                    statut="ACCEPTEE",
-                    motif_rejet=None,
+                    statut="ACCEPTEE" if calcul["montant_accorde"] > 0 else "REJETEE",
+                    motif_rejet=calcul["erreur"],
                 )
 
-                # Trouver l'adhésion active
+                # Trouver l'adhésion active du bénéficiaire
                 personne = pec.id_demande.id_personne_beneficiaire
-                adherent = Adherent.objects.filter(id_personne=personne).first()
-
-                adhesion = None
-                if adherent:
-                    adhesion = Adhesion.objects.filter(
-                        id_adherent=adherent,
-                        id_contrat=pec.id_demande.id_contrat,
-                        statut="ACTIF",
-                    ).first()
+                adhesion = _trouver_adhesion_active(personne, pec.id_demande.id_contrat)
 
                 if not adhesion:
-                    ayant_droit = AyantDroit.objects.filter(id_personne=personne).first()
-                    if ayant_droit:
-                        adhesion = Adhesion.objects.filter(
-                            id_adherent=ayant_droit.id_adherent,
-                            id_contrat=pec.id_demande.id_contrat,
-                            statut="ACTIF",
-                        ).first()
+                    continue  # Pas d'adhésion → pas de consommation
 
+                # Trouver la garantie
                 garantie = None
                 if calcul.get("garantie_acte"):
                     garantie = calcul["garantie_acte"].id_garantie
 
-                if adhesion and garantie:
-                    Consommation.objects.create(
-                        id_detail_pec=pec_detail,
-                        id_personne_beneficiaire=personne,
-                        id_adhesion=adhesion,
-                        id_acte=detail.id_acte,
-                        id_sous_acte=detail.id_sous_acte,
-                        id_garantie=garantie,
-                        id_prestataire=demande.id_prestataire,
-                        date_prestation=timezone.now().date(),
-                        exercice=timezone.now().year,
-                        quantite=calcul["quantite_autorisee"],
-                        montant_base=calcul["montant_demande"],
-                        montant_prise_en_charge=calcul["montant_accorde"],
-                        montant_reste=calcul["montant_rejete"],
-                        statut="VALIDEE",   # ← À valider par l'utilisateur
-                    )
+                if not garantie:
+                    continue  # Pas de garantie → pas de consommation
 
+                # Créer la consommation
+                Consommation.objects.create(
+                    id_detail_pec=pec_detail,
+                    id_personne_beneficiaire=personne,
+                    id_adhesion=adhesion,
+                    id_acte=detail.id_acte,
+                    id_sous_acte=detail.id_sous_acte,
+                    id_garantie=garantie,
+                    id_prestataire=pec.id_demande.id_prestataire,
+                    date_prestation=timezone.now().date(),
+                    exercice=timezone.now().year,
+                    quantite=detail.quantite,
+                    montant_base=calcul["montant_demande"],
+                    montant_prise_en_charge=calcul["montant_accorde"],
+                    montant_reste=calcul["montant_rejete"],
+                    statut="VALIDEE",
+                )
+                nb_consos += 1
+
+            # 4.3 — Audit
             enregistrer_audit(
                 request=request,
                 type_action="VALIDATION_PEC",
@@ -12795,33 +12708,71 @@ def prise_en_charge_valider(request, id_pec):
                 table_cible="prise_en_charge",
                 id_enregistrement=pec.id_pec,
                 ancienne_valeur="Statut : EN_ATTENTE",
-                nouvelle_valeur=f"Statut : ACCEPTEE, {len(calculs)} consommation(s) créée(s)",
-                description=f"Validation de la PEC {pec.numero_pec}",
+                nouvelle_valeur=f"Statut : ACCEPTEE, {nb_consos} consommation(s)",
+                description=f"Validation de la PEC {pec.numero_pec} via moteur centralisé",
             )
 
+            # 4.4 — Message de succès
             messages.success(
                 request,
-                f"PEC {pec.numero_pec} validée. "
-                f"{len(calculs)} consommation(s) créée(s). "
-                f"Validez-les dans /consommations/."
+                f"✅ PEC {pec.numero_pec} validée. "
+                f"{nb_consos} consommation(s) créée(s)."
             )
-            return redirect("consommations")
+
+            return redirect("prise_en_charge_details", id_pec=pec.id_pec)
 
         except Exception as e:
-            messages.error(request, f"Erreur : {e}")
+            messages.error(request, f"Erreur lors de la validation : {e}")
+            return redirect("prise_en_charge_details", id_pec=pec.id_pec)
 
-    # Affichage GET
+    # ============================================================
+    # 5. AFFICHAGE (GET)
+    # ============================================================
     return render(
         request,
         "core/prise_en_charge_valider.html",
         {
             "pec": pec,
-            "details": details,
-            "calculs": calculs,
-            "montant_accepte_total": montant_accepte_total,
-            "montant_rejete_total": montant_rejete_total,
+            "calculs": resultats["calculs"],
+            "montant_accepte_total": resultats["total_accepte"],
+            "montant_rejete_total": resultats["total_rejete"],
+            "erreurs": resultats["erreurs"],
         }
     )
+
+
+def _trouver_adhesion_active(personne, contrat):
+    """
+    Trouve l'adhésion active d'une personne pour un contrat.
+    Cherche d'abord comme adhérent, puis comme ayant droit.
+    """
+    from core.models import Adherent, AyantDroit, Adhesion
+
+    # 1. Chercher comme adhérent
+    adherent = Adherent.objects.filter(id_personne=personne).first()
+    if adherent:
+        adhesion = Adhesion.objects.filter(
+            id_adherent=adherent,
+            id_contrat=contrat,
+            statut="ACTIF",
+        ).first()
+        if adhesion:
+            return adhesion
+
+    # 2. Chercher comme ayant droit
+    ayant_droit = AyantDroit.objects.filter(id_personne=personne).first()
+    if ayant_droit:
+        adhesion = Adhesion.objects.filter(
+            id_adherent=ayant_droit.id_adherent,
+            id_contrat=contrat,
+            statut="ACTIF",
+        ).first()
+        if adhesion:
+            return adhesion
+
+    return None
+
+
 
 
 def prise_en_charge_pdf(request, id_pec):
