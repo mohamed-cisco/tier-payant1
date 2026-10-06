@@ -10886,6 +10886,36 @@ def _generer_reference_reglement(mode_reglement):
         reference = f"{prefixe}{prochain:04d}"
 
     return reference
+def _generer_numero_reglement():
+    """Génère un numéro de règlement unique."""
+    annee = timezone.now().year
+    prefixe = f"REG-{annee}-"
+
+    numeros = (
+        Reglement.objects
+        .filter(numero_reglement__startswith=prefixe)
+        .values_list("numero_reglement", flat=True)
+    )
+
+    valeurs = []
+    for numero in numeros:
+        try:
+            valeurs.append(int(numero.rsplit("-", 1)[1]))
+        except (ValueError, IndexError):
+            continue
+
+    prochain = max(valeurs, default=0) + 1
+    numero_reglement = f"{prefixe}{prochain:04d}"
+
+    while Reglement.objects.filter(
+        numero_reglement=numero_reglement
+    ).exists():
+        prochain += 1
+        numero_reglement = f"{prefixe}{prochain:04d}"
+
+    return numero_reglement
+
+
 
 def reglement_create(request):
     if not request.session.get("id_utilisateur"):
