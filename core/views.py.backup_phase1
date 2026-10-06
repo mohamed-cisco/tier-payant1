@@ -9780,6 +9780,379 @@ def demande_tp_valider(request, id_demande):
             "montant_rejete_total": montant_rejete_total,
         }
     )
+def consommation_create(request, id_detail_pec):
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list(
+            "id_permission__code_permission",
+            flat=True
+        )
+    )
+
+    if "CONSOMMATION_CREATE" not in permissions:
+        messages.error(
+            request,
+            "Vous n'avez pas l'autorisation de créer une consommation."
+        )
+        return redirect("consommations")
+
+    try:
+        detail_pec = (
+            PriseEnChargeDetail.objects
+            .select_related(
+                "id_pec",
+                "id_acte",
+                "id_detail_demande",
+            )
+            .get(id_detail_pec=id_detail_pec)
+        )
+    except PriseEnChargeDetail.DoesNotExist:
+        messages.error(
+            request,
+            "Détail de prise en charge introuvable."
+        )
+        return redirect("demandes_tp")
+
+    if detail_pec.id_pec.statut != "ACCEPTEE":
+        messages.error(
+            request,
+            "La prise en charge doit être acceptée."
+        )
+        return redirect(
+            "demande_tp_details",
+            id_demande=detail_pec.id_pec.id_demande_id
+        )
+
+    consommation_existante = (
+        Consommation.objects
+        .filter(
+            id_detail_pec=detail_pec,
+            statut__in=["A_TRAITER", "VALIDEE"],
+        )
+        .first()
+    )
+
+    if consommation_existante:
+        messages.error(
+            request,
+            f"Une consommation active existe déjà pour ce détail "
+            f"(statut : {consommation_existante.statut})."
+        )
+        return redirect("consommations")
+
+    if request.method == "POST":
+        form = ConsommationForm(request.POST)
+
+        form.fields["id_detail_pec"].choices = [
+            (
+                str(detail_pec.id_detail_pec),
+                f"{detail_pec.id_pec.numero_pec} - "
+                f"{detail_pec.id_acte.code_acte} - "
+                f"{detail_pec.id_acte.libelle}"
+            )
+        ]
+
+        sous_actes = (
+            SousActe.objects
+            .filter(
+                id_acte=detail_pec.id_acte,
+                statut="ACTIF"
+            )
+            .order_by("libelle")
+        )
+
+        form.fields["id_sous_acte"].choices = [
+            (
+                str(sous_acte.id_sous_acte),
+                f"{sous_acte.code_sous_acte} - {sous_acte.libelle}"
+            )
+            for sous_acte in sous_actes
+        ]
+
+        if form.is_valid():
+            
+            try:
+                date_prestation = form.cleaned_data["date_prestation"]
+                quantite = form.cleaned_data["quantite"]
+
+                id_sous_acte = form.cleaned_data["id_sous_acte"]
+
+                tarif = (
+                    TarifSousActe.objects
+                    .filter(
+                        id_sous_acte_id=id_sous_acte,
+                        id_prestataire_id=detail_pec.id_pec.id_demande.id_prestataire_id,
+                        statut="ACTIF",
+                        date_debut__lte=date_prestation,
+                    )
+                    .filter(
+                        Q(date_fin__isnull=True) |
+                        Q(date_fin__gte=date_prestation)
+                    )
+                    .order_by("-date_debut")
+                    .first()
+                )
+
+                if not tarif:
+                    messages.error(
+                        request,
+                        "Aucun tarif actif trouvé pour ce sous-acte, "
+                        "ce prestataire et cette date."
+                    )
+                    return render(
+                        request,
+                        "core/consommation_form.html",
+                        {
+                            "form": form,
+                            "detail_pec": detail_pec,
+                            "titre": "Nouvelle consommation",
+                            "page": "consommations"
+                        }
+                    )
+
+                if (
+                   detail_pec.id_pec.date_expiration
+                   and date_prestation > detail_pec.id_pec.date_expiration
+                ):
+                   messages.error(
+                      request,
+                      "La prise en charge est expirée à la date de la prestation."
+                  )
+                   return render(
+                       request,
+                       "core/consommation_form.html",
+                       {
+                           "form": form,
+                           "detail_pec": detail_pec,
+                           "titre": "Nouvelle consommation",
+                       }
+                  )
+
+                if quantite <= 0:
+                    messages.error(
+                        request,
+                        "La quantité doit être supérieure Ã  zéro."
+                    )
+                    return render(
+                        request,
+                        "core/consommation_form.html",
+                        {
+                            "form": form,
+                            "detail_pec": detail_pec,
+                            "titre": "Nouvelle consommation",
+                        }
+                    )
+
+                if quantite > detail_pec.quantite:
+                    messages.error(
+                        request,
+                        "La quantité ne peut pas dépasser la quantité autorisée dans la PEC."
+                    )
+                    return render(
+                        request,
+                        "core/consommation_form.html",
+                        {
+                            "form": form,
+                            "detail_pec": detail_pec,
+                            "titre": "Nouvelle consommation",
+                        }
+                    )
+
+                                # 1. Récupérer le bénéficiaire
+                personne_beneficiaire = (
+                    detail_pec.id_pec.id_demande.id_personne_beneficiaire
+                )
+
+                # 2. Récupérer l'adhésion active du bénéficiaire
+                adherent = (
+                    Adherent.objects
+                    .filter(id_personne=personne_beneficiaire)
+                    .first()
+                )
+
+                adhesion = None
+
+                if adherent:
+                    adhesion = (
+                        Adhesion.objects
+                        .filter(
+                            id_adherent=adherent,
+                            id_contrat=detail_pec.id_pec.id_demande.id_contrat,
+                            statut="ACTIF",
+                        )
+                        .first()
+                    )
+
+                if not adhesion:
+                    ayant_droit = (
+                        AyantDroit.objects
+                        .filter(id_personne=personne_beneficiaire)
+                        .first()
+                    )
+
+                    if ayant_droit:
+                        adhesion = (
+                            Adhesion.objects
+                            .filter(
+                                id_adherent=ayant_droit.id_adherent,
+                                id_contrat=detail_pec.id_pec.id_demande.id_contrat,
+                                statut="ACTIF",
+                            )
+                            .first()
+                        )
+
+                if not adhesion:
+                    messages.error(
+                        request,
+                        "Aucune adhésion active trouvée pour ce bénéficiaire et ce contrat."
+                    )
+                    return render(
+                        request,
+                        "core/consommation_form.html",
+                        {
+                            "form": form,
+                            "detail_pec": detail_pec,
+                            "titre": "Nouvelle consommation",
+                        }
+                    )
+
+                # 3. Récupérer la garantie liée au contrat et à l'acte
+                contrat = detail_pec.id_pec.id_demande.id_contrat
+
+                contrat_garantie = (
+                    ContratGarantie.objects
+                    .filter(
+                        id_contrat=contrat,
+                        statut="ACTIF",
+                        id_garantie__garantieacte__id_acte=detail_pec.id_acte,
+                        id_garantie__garantieacte__statut="ACTIF",
+                    )
+                    .select_related("id_garantie")
+                    .first()
+                )
+
+                garantie = None
+                garantie_acte = None
+
+                if contrat_garantie:
+                    garantie = contrat_garantie.id_garantie
+
+                    garantie_acte = (
+                        GarantieActe.objects
+                        .filter(
+                            id_garantie=garantie,
+                            id_acte=detail_pec.id_acte,
+                            statut="ACTIF",
+                        )
+                        .first()
+                    )
+
+                if not garantie or not garantie_acte:
+                    messages.error(
+                        request,
+                        "Aucune garantie active correspondant au contrat et à l'acte."
+                    )
+                    return render(
+                        request,
+                        "core/consommation_form.html",
+                        {
+                            "form": form,
+                            "detail_pec": detail_pec,
+                            "titre": "Nouvelle consommation",
+                        }
+                    )
+
+                # 4. Calculer le montant de base
+                montant_base = tarif.montant * quantite
+
+                # 5. Calculer le montant pris en charge avec le taux et la franchise
+                taux = garantie_acte.taux_prise_en_charge or Decimal("0.00")
+                franchise = garantie_acte.franchise or Decimal("0.00")
+
+                montant_prise_en_charge = (
+                    montant_base * (taux / Decimal("100"))
+                ) - franchise
+
+                # Le montant pris en charge ne peut pas être négatif
+                if montant_prise_en_charge < 0:
+                    montant_prise_en_charge = Decimal("0.00")
+
+                # Le montant pris en charge ne peut pas dépasser le montant de base
+                if montant_prise_en_charge > montant_base:
+                    montant_prise_en_charge = montant_base
+
+                # Le montant pris en charge ne peut pas dépasser le montant accordé dans la PEC
+                if montant_prise_en_charge > detail_pec.montant_accorde:
+                    montant_prise_en_charge = detail_pec.montant_accorde
+
+                # 6. Calculer le reste à payer
+                montant_reste = montant_base - montant_prise_en_charge
+
+                if montant_prise_en_charge <= 0:
+                    messages.error(
+                        request,
+                        "Impossible de créer une consommation : le montant pris en charge est nul."
+                    )
+                    return redirect("consommations")
+                
+                # 7. Créer la consommation
+                consommation = Consommation.objects.create(
+                    id_detail_pec=detail_pec,
+                    id_personne_beneficiaire=personne_beneficiaire,
+                    id_adhesion=adhesion,
+                    id_acte=detail_pec.id_acte,
+                    id_sous_acte_id=id_sous_acte,
+                    id_garantie=garantie,
+                    id_prestataire=detail_pec.id_pec.id_demande.id_prestataire,
+                    date_prestation=date_prestation,
+                    exercice=date_prestation.year,
+                    quantite=quantite,
+                    montant_base=montant_base,
+                    montant_prise_en_charge=montant_prise_en_charge,
+                    montant_reste=montant_reste,
+                    statut=form.cleaned_data["statut"],
+                )
+
+                messages.success(
+                    request,
+                    f"Consommation {consommation.id_consommation} créée avec succès."
+                )
+
+                return redirect("consommations")
+
+            except Exception as e:
+               
+               messages.error(
+                request,
+                f"Erreur lors de la création de la consommation : {e}"
+              )
+
+    else:
+        form = ConsommationForm()
+        
+
+    return render(
+        request,
+        "core/consommation_form.html",
+        {
+            "form": form,
+            "detail_pec": detail_pec,
+            "titre": "Nouvelle consommation",
+        }
+    )
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
 def types_prestation(request):
     if not request.session.get("id_utilisateur"):
         return redirect("connexion")

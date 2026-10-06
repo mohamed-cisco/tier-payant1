@@ -477,28 +477,6 @@
                             {% endif %}
 
                         </td>
-
-                        <td>
-
-                            {% if detail.statut == "ACCEPTEE" and "CONSOMMATION_CREATE" in permissions %}
-
-                                <a href="{% url 'consommation_create' detail.id_detail_pec %}"
-                                   class="btn">
-                                    Nouvelle consommation
-                                </a>
-
-                            {% endif %}
-
-                        </td>
-
-                    </tr>
-
-                    {% empty %}
-
-                    <tr>
-                        <td colspan="10" class="empty">
-                            Aucun détail de prise en charge trouvé.
-                        </td>
                     </tr>
 
                     {% endfor %}

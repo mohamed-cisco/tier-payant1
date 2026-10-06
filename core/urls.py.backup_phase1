@@ -1,0 +1,802 @@
+﻿from django.urls import path
+
+from .views import (
+    accueil,
+    aide,
+    connexion,
+    deconnexion,
+    types_prestation,
+    type_prestation_create,
+    type_prestation_modifier,
+    type_prestation_radier,
+    adherents,
+    adherent_detail,
+    adherent_carte_pdf,
+    adherent_create,
+    adherent_modifier,
+    adherent_radier,
+    adherent_import_excel,
+    adherent_export_excel,
+    souscripteurs,
+    souscripteur_create,
+    souscripteur_modifier,
+    souscripteur_radier,
+    contrats,
+    contrat_detail,
+    contrat_create,
+    contrat_modifier, 
+    contrat_radier,
+    contrat_pdf, 
+    garanties,
+    garantie_detail,
+    garantie_create,
+    garantie_modifier,
+    garantie_radier,
+    garantie_actes,
+    garantie_acte_create,
+    contrat_garantie_create,
+    garantie_acte_modifier,
+    garantie_acte_radier,
+    actes,
+    acte_detail,
+    sous_actes,
+    sous_acte_create,
+    sous_acte_modifier,
+    sous_acte_radier,
+    tarifs_sous_actes,
+    tarif_sous_acte_create,
+    tarif_sous_acte_modifier,
+    tarif_sous_acte_radier,
+    ajax_tarif_sous_acte,
+    ajax_prestataires_par_sous_acte,
+    champs_personnalises,
+    champ_personnalise_create,
+    champ_personnalise_modifier,
+    champ_personnalise_supprimer,
+    acte_create,
+    acte_modifier,
+    acte_radier,
+    adhesions,
+    adhesion_create,
+    adhesion_modifier,
+    adhesion_radier,
+    adhesion_export_excel,
+    adhesion_pdf,
+    personne_create,
+    ayant_droits,
+    ayant_droit_create,
+    ayant_droit_modifier,
+    ayant_droit_radier,
+    ayant_droit_export_excel,
+    prestataires,
+    prestataire_create,
+    prestataire_modifier,
+    prestataire_radier,
+    prestataire_import_excel,
+    prestataire_export_excel,
+    conventions,
+    convention_create,
+    convention_modifier,
+    convention_cloturer,
+    demandes_tp,
+    demande_tp_create,
+    demande_tp_details,
+    demande_tp_pdf,
+    demande_tp_detail_create,
+    demande_tp_valider,
+    demande_tp_document_create,
+    prises_en_charge,
+    prise_en_charge_valider,
+    prise_en_charge_details,
+    prise_en_charge_pdf,
+    consommations,
+    consommation_export_excel,
+    tarif_sous_acte_ajax,
+    consommation_valider,
+    consommation_annuler,
+    factures,
+    facture_create,
+    facture_valider,
+    facture_detail,
+    facture_export_excel,
+    facture_export_pdf,
+    facture_pdf,
+    reglements,
+    reglement_create,
+    reglement_detail,
+    reglement_valider,
+    reglement_export_excel,
+    reglement_pdf,
+    recours,
+    recours_create,
+    recours_traiter,
+    recours_detail,
+    recours_document_create,
+    recours_pdf,
+    audit_logs,
+    documents,
+    document_create,
+    document_modifier,
+    document_archiver,
+    document_ouvrir,
+    plafonds,
+    plafond_create,
+    plafond_modifier,
+    plafond_desactiver,
+    utilisateurs,
+    utilisateur_create,
+    utilisateur_modifier,
+    utilisateur_roles,
+    roles,
+    role_create,
+    role_modifier,
+    role_permissions,
+    role_detail,
+    sauvegardes_liste,
+    sauvegarde_creer,
+    sauvegarde_telecharger,
+    sauvegarde_supprimer,
+    sauvegarde_restaurer,
+    
+)
+
+
+urlpatterns = [
+    path("", accueil, name="accueil"),
+    path("aide/", aide, name="aide"),
+    path("connexion/", connexion, name="connexion"),
+    path("deconnexion/", deconnexion, name="deconnexion"),
+path("adherents/", adherents, name="adherents"),
+path("adherents/<int:id_adherent>/detail/", adherent_detail, name="adherent_detail"),
+path(
+    "adherents/nouveau/",
+    adherent_create,
+    name="adherent_create",
+),
+path(
+    "adherents/<int:id_adherent>/modifier/",
+    adherent_modifier,
+    name="adherent_modifier",
+),
+path(
+    "adherents/<int:id_adherent>/radier/",
+    adherent_radier,
+    name="adherent_radier",
+),
+path(
+    "adherents/<int:id_adherent>/carte-pdf/",
+    adherent_carte_pdf,
+    name="adherent_carte_pdf"
+),
+path(
+    "adherents/import-excel/",
+    adherent_import_excel,
+    name="adherent_import_excel",
+),
+path(
+    "adherents/export-excel/",
+    adherent_export_excel,
+    name="adherent_export_excel",
+),
+path(
+    "souscripteurs/",
+    souscripteurs,
+    name="souscripteurs",
+),
+path(
+    "souscripteurs/nouveau/",
+    souscripteur_create,
+    name="souscripteur_create",
+),
+path(
+    "souscripteurs/<int:id_souscripteur>/modifier/",
+    souscripteur_modifier,
+    name="souscripteur_modifier",
+),
+path(
+    "souscripteurs/<int:id_souscripteur>/radier/",
+    souscripteur_radier,
+    name="souscripteur_radier",
+),
+path(
+    "contrats/",
+    contrats,
+    name="contrats",
+),
+path(
+    "contrats/<int:id_contrat>/detail/",
+    contrat_detail,
+    name="contrat_detail",
+),
+path(
+    "contrats/nouveau/",
+    contrat_create,
+    name="contrat_create",
+),
+
+path(
+    "contrats/<int:id_contrat>/modifier/",
+    contrat_modifier,
+    name="contrat_modifier",
+),
+path(
+    "contrats/<int:id_contrat>/radier/",
+    contrat_radier,
+    name="contrat_radier",
+),
+
+path(
+    "contrats/<int:id_contrat>/pdf/",
+    contrat_pdf,
+    name="contrat_pdf"
+),
+
+path(
+    "garanties/",
+    garanties,
+    name="garanties",
+),
+path(
+    "garanties/<int:id_garantie>/detail/",
+    garantie_detail,
+    name="garantie_detail",
+),
+path(
+    "garanties/nouveau/",
+    garantie_create,
+    name="garantie_create",
+),
+
+path(
+    "garanties/<int:id_garantie>/modifier/",
+    garantie_modifier,
+    name="garantie_modifier",
+),
+
+path(
+    "garanties/<int:id_garantie>/radier/",
+    garantie_radier,
+    name="garantie_radier",
+),
+path(
+    "garantie-actes/",
+    garantie_actes,
+    name="garantie_actes",
+),
+path(
+    "garantie-actes/nouveau/",
+    garantie_acte_create,
+    name="garantie_acte_create",
+),
+path(
+    "contrats/<int:id_contrat>/garanties/nouveau/",
+    contrat_garantie_create,
+    name="contrat_garantie_create",
+),
+path(
+    "garantie-actes/<int:id_garantie_acte>/modifier/",
+    garantie_acte_modifier,
+    name="garantie_acte_modifier",
+),
+path(
+    "garantie-actes/<int:id_garantie_acte>/radier/",
+    garantie_acte_radier,
+    name="garantie_acte_radier",
+),
+path(
+    "actes/",
+    actes,
+    name="actes",
+),
+
+path(
+    "actes/nouveau/",
+    acte_create,
+    name="acte_create",
+),
+path(
+    "sous-actes/",
+    sous_actes,
+    name="sous_actes",
+),
+path(
+    "sous-actes/nouveau/",
+    sous_acte_create,
+    name="sous_acte_create",
+),
+path(
+    "sous-actes/<int:id_sous_acte>/modifier/",
+    sous_acte_modifier,
+    name="sous_acte_modifier",
+),
+path(
+    "sous-actes/<int:id_sous_acte>/radier/",
+    sous_acte_radier,
+    name="sous_acte_radier",
+),
+path(
+    "tarifs-sous-actes/",
+    tarifs_sous_actes,
+    name="tarifs_sous_actes",
+),
+path(
+    "tarifs-sous-actes/nouveau/",
+    tarif_sous_acte_create,
+    name="tarif_sous_acte_create",
+),
+path(
+    "tarifs-sous-actes/<int:id_tarif_sous_acte>/modifier/",
+    tarif_sous_acte_modifier,
+    name="tarif_sous_acte_modifier",
+),
+path(
+    "tarifs-sous-actes/<int:id_tarif_sous_acte>/radier/",
+    tarif_sous_acte_radier,
+    name="tarif_sous_acte_radier",
+),
+
+path(
+    "types-prestation/",
+    types_prestation,
+    name="types_prestation"
+),
+path(
+    "types-prestation/nouveau/",
+    type_prestation_create,
+    name="type_prestation_create"
+),
+path(
+    "types-prestation/<int:id_type_prestation>/modifier/",
+    type_prestation_modifier,
+    name="type_prestation_modifier"
+),
+path(
+    "types-prestation/<int:id_type_prestation>/radier/",
+    type_prestation_radier,
+    name="type_prestation_radier"
+),
+
+path(
+    "actes/<int:id_acte>/detail/",
+    acte_detail,
+    name="acte_detail",
+),
+
+path(
+    "actes/<int:id_acte>/modifier/",
+    acte_modifier,
+    name="acte_modifier",
+),
+path(
+    "actes/<int:id_acte>/radier/",
+    acte_radier,
+    name="acte_radier",
+),
+path(
+    "adhesions/",
+    adhesions,
+    name="adhesions",
+),
+path(
+    "adhesions/nouveau/",
+    adhesion_create,
+    name="adhesion_create",
+),
+path(
+    "adhesions/<int:id_adhesion>/modifier/",
+    adhesion_modifier,
+    name="adhesion_modifier",
+),
+path(
+    "adhesions/<int:id_adhesion>/radier/",
+    adhesion_radier,
+    name="adhesion_radier",
+),
+path(
+    "adhesions/<int:id_adhesion>/pdf/",
+    adhesion_pdf,
+    name="adhesion_pdf"
+),
+path(
+    "adhesions/export-excel/",
+    adhesion_export_excel,
+    name="adhesion_export_excel"
+),
+path(
+    "personnes/nouveau/",
+    personne_create,
+    name="personne_create",
+),
+path(
+    "ayant-droits/",
+    ayant_droits,
+    name="ayant_droits",
+),
+path(
+    "ayant-droits/nouveau/",
+    ayant_droit_create,
+    name="ayant_droit_create",
+),
+path(
+    "ayant-droits/<int:id_ayant_droit>/modifier/",
+    ayant_droit_modifier,
+    name="ayant_droit_modifier",
+),
+path(
+    "ayant-droits/<int:id_ayant_droit>/radier/",
+    ayant_droit_radier,
+    name="ayant_droit_radier",
+),
+path(
+    "ayant-droits/export-excel/",
+    ayant_droit_export_excel,
+    name="ayant_droit_export_excel",
+),
+path(
+    "prestataires/",
+    prestataires,
+    name="prestataires",
+),
+path(
+    "prestataires/nouveau/",
+    prestataire_create,
+    name="prestataire_create",
+),
+path(
+    "prestataires/<int:id_prestataire>/modifier/",
+    prestataire_modifier,
+    name="prestataire_modifier",
+),
+path(
+    "prestataires/<int:id_prestataire>/radier/",
+    prestataire_radier,
+    name="prestataire_radier",
+),
+path(
+    "prestataires/import-excel/",
+    prestataire_import_excel,
+    name="prestataire_import_excel",
+),
+path(
+    "prestataires/export-excel/",
+    prestataire_export_excel,
+    name="prestataire_export_excel"
+),
+path(
+    "conventions/",
+    conventions,
+    name="conventions",
+),
+path(
+    "conventions/nouvelle/",
+    convention_create,
+    name="convention_create",
+),
+path(
+    "conventions/<int:id_convention>/modifier/",
+    convention_modifier,
+    name="convention_modifier",
+),
+path(
+    "conventions/<int:id_convention>/cloturer/",
+    convention_cloturer,
+    name="convention_cloturer",
+),
+path(
+    "demandes-tp/",
+    demandes_tp,
+    name="demandes_tp",
+),
+path(
+    "demandes-tp/nouveau/",
+    demande_tp_create,
+    name="demande_tp_create",
+),
+path(
+    "demandes-tp/<int:id_demande>/details/",
+    demande_tp_details,
+    name="demande_tp_details",
+),
+path(
+    "demandes-tp/<int:id_demande>/pdf/",
+    demande_tp_pdf,
+    name="demande_tp_pdf"
+),
+path(
+    "demandes-tp/<int:id_demande>/details/nouveau/",
+    demande_tp_detail_create,
+    name="demande_tp_detail_create",
+),
+path(
+    "demandes-tp/<int:id_demande>/valider/",
+    demande_tp_valider,
+    name="demande_tp_valider",
+),
+path(
+    "demandes-tp/<int:id_demande>/documents/nouveau/",
+    demande_tp_document_create,
+    name="demande_tp_document_create",
+),
+path(
+    "demandes-tp/<int:id_demande>/pdf/",
+    demande_tp_pdf,
+    name="demande_tp_pdf"
+),
+path(
+    "prises-en-charge/",
+    prises_en_charge,
+    name="prises_en_charge",
+),
+path(
+    "prises-en-charge/<int:id_pec>/details/",
+    prise_en_charge_details,
+    name="prise_en_charge_details",
+),
+path(
+    "prises-en-charge/<int:id_pec>/pdf/",
+    prise_en_charge_pdf,
+    name="prise_en_charge_pdf"
+),
+path(
+    "prises-en-charge/<int:id_pec>/valider/",
+    prise_en_charge_valider,
+    name="prise_en_charge_valider"
+),
+
+path(
+    "consommations/",
+    consommations,
+    name="consommations",
+),
+path(
+    "consommations/export-excel/",
+    consommation_export_excel,
+    name="consommation_export_excel"
+),
+path(
+    "consommations/<int:id_detail_pec>/tarif/",
+    tarif_sous_acte_ajax,
+    name="tarif_sous_acte_ajax",
+),
+path(
+    "consommations/<int:id_consommation>/valider/",
+    consommation_valider,
+    name="consommation_valider",
+),
+path(
+    "consommations/<int:id_consommation>/annuler/",
+    consommation_annuler,
+    name="consommation_annuler",
+),
+path(
+    "factures/",
+    factures,
+    name="factures",
+),
+path(
+    "factures/nouveau/",
+    facture_create,
+    name="facture_create",
+),
+path(
+    "factures/<int:id_facture>/valider/",
+    facture_valider,
+    name="facture_valider",
+),
+path(
+    "factures/<int:id_facture>/",
+    facture_detail,
+    name="facture_detail",
+),
+path(
+    "factures/<int:id_facture>/pdf/",
+    facture_pdf,
+    name="facture_pdf"
+),
+path(
+    "factures/export-pdf/",
+    facture_export_pdf,
+    name="facture_export_pdf",
+),
+path(
+    "factures/export-excel/",
+    facture_export_excel,
+    name="facture_export_excel"
+),
+path(
+    "reglements/",
+    reglements,
+    name="reglements",
+),
+path(
+    "reglements/export-excel/",
+    reglement_export_excel,
+    name="reglement_export_excel"
+),
+path(
+    "reglements/nouveau/",
+    reglement_create,
+    name="reglement_create",
+),
+path(
+    "reglements/<int:id_reglement>/",
+    reglement_detail,
+    name="reglement_detail",
+),
+path(
+    "reglements/<int:id_reglement>/pdf/",
+    reglement_pdf,
+    name="reglement_pdf"
+),
+path(
+    "reglements/<int:id_reglement>/valider/",
+    reglement_valider,
+    name="reglement_valider",
+),
+path("recours/", recours, name="recours"),
+path("recours/nouveau/", recours_create, name="recours_create"),
+path(
+    "recours/<int:id_recours>/traiter/",
+    recours_traiter,
+    name="recours_traiter",
+),
+path(
+    "recours/<int:id_recours>/",
+    recours_detail,
+    name="recours_detail",
+),
+path(
+    "recours/<int:id_recours>/pdf/",
+    recours_pdf,
+    name="recours_pdf"
+),
+path(
+    "recours/<int:id_recours>/documents/nouveau/",
+    recours_document_create,
+    name="recours_document_create",
+),
+path(
+    "audit/",
+    audit_logs,
+    name="audit_logs",
+),
+path(
+    "champs-personnalises/",
+    champs_personnalises,
+    name="champs_personnalises",
+),
+path(
+    "sauvegardes/",
+    sauvegardes_liste,
+    name="sauvegardes_liste",
+),
+path(
+    "sauvegardes/creer/",
+    sauvegarde_creer,
+    name="sauvegarde_creer",
+),
+path(
+    "sauvegardes/<str:nom_fichier>/telecharger/",
+    sauvegarde_telecharger,
+    name="sauvegarde_telecharger",
+),
+path(
+    "sauvegardes/<str:nom_fichier>/supprimer/",
+    sauvegarde_supprimer,
+    name="sauvegarde_supprimer",
+),
+path(
+    "sauvegardes/<str:nom_fichier>/restaurer/",
+    sauvegarde_restaurer,
+    name="sauvegarde_restaurer",
+),
+path(
+    "champs-personnalises/nouveau/",
+    champ_personnalise_create,
+    name="champ_personnalise_create",
+),
+path(
+    "champs-personnalises/<int:id_champ>/modifier/",
+    champ_personnalise_modifier,
+    name="champ_personnalise_modifier",
+),
+path(
+    "champs-personnalises/<int:id_champ>/supprimer/",
+    champ_personnalise_supprimer,
+    name="champ_personnalise_supprimer",
+),
+path(
+    "documents/",
+    documents,
+    name="documents",
+),
+path(
+    "documents/nouveau/",
+    document_create,
+    name="document_create",
+),
+path(
+    "documents/<int:id_document>/modifier/",
+    document_modifier,
+    name="document_modifier",
+),
+path(
+    "documents/<int:id_document>/archiver/",
+    document_archiver,
+    name="document_archiver",
+),
+path(
+    "documents/<int:id_document>/ouvrir/",
+    document_ouvrir,
+    name="document_ouvrir",
+),
+path(
+    "plafonds/",
+    plafonds,
+    name="plafonds",
+),
+path(
+    "plafonds/nouveau/",
+    plafond_create,
+    name="plafond_create",
+),
+path(
+    "plafonds/<int:id_plafond>/modifier/",
+    plafond_modifier,
+    name="plafond_modifier",
+),
+path(
+    "plafonds/<int:id_plafond>/desactiver/",
+    plafond_desactiver,
+    name="plafond_desactiver",
+),
+    path("utilisateurs/", utilisateurs, name="utilisateurs"),
+    path(
+        "utilisateurs/nouveau/",
+        utilisateur_create,
+        name="utilisateur_create",
+    ),
+    path(
+        "utilisateurs/<int:id_utilisateur>/modifier/",
+        utilisateur_modifier,
+        name="utilisateur_modifier",
+    ),
+    path(
+    "utilisateurs/<int:id_utilisateur>/roles/",
+    utilisateur_roles,
+    name="utilisateur_roles",
+),
+
+    path("roles/", roles, name="roles"),
+    path("roles/nouveau/", role_create, name="role_create"),
+    path(
+        "roles/<int:id_role>/modifier/",
+        role_modifier,
+        name="role_modifier",
+    ),
+    path(
+        "roles/<int:id_role>/permissions/",
+        role_permissions,
+        name="role_permissions",
+    ),
+path(
+    "roles/<int:id_role>/detail/",
+    role_detail,
+    name="role_detail",
+),
+
+    path(
+        "ajax/tarif/",
+        ajax_tarif_sous_acte,
+        name="ajax_tarif_sous_acte"
+    ),
+    path(
+        "ajax/prestataires/",
+        ajax_prestataires_par_sous_acte,
+        name="ajax_prestataires_par_sous_acte"
+    ),
+]
+
+
+
+

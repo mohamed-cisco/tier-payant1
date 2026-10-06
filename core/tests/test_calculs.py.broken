@@ -1,0 +1,366 @@
+# core/tests/test_calculs.py
+"""
+Tests unitaires pour le moteur de calcul.
+
+Ces tests vérifient que les calculs de remboursement
+sont corrects pour les 2 contrats :
+- SAGPS-TALA (90% des frais)
+- CNL (forfaits)
+"""
+
+from decimal import Decimal
+from datetime import date, timedelta
+
+from django.test import TestCase
+from django.utils import timezone
+
+from core.models import (
+    Personne, Adherent, Adhesion,
+    Souscripteur, Contrat, ContratGarantie,
+    Garantie, Acte, TypePrestation,
+    GarantieActe, Prestataire,
+    DemandeTp, DemandeTpDetail,
+)
+from core.services.calculs import calculer_pour_un_acte, calculer_pour_demande
+from core.services.plafonds import (
+    calculer_deja_consomme,
+    appliquer_plafond_acte,
+)
+from core.services.bareme import get_regle, lister_codes_actes
+
+
+class CalculsTest(TestCase):
+    """Tests du moteur de calcul."""
+
+        def setUp(self):
+        """Créer les données de test."""
+        from django.utils import timezone
+
+        maintenant = timezone.now()
+
+        # 1. Personne (bénéficiaire)
+        self.personne = Personne.objects.create(
+            numero_personne="PERS-0001",
+            nom="BENALI", prenom="Ahmed",
+            date_naissance=date(1980, 1, 1),
+            statut="ACTIF",
+            date_creation=maintenant,   # ✅ AJOUTÉ
+        )
+
+        # 2. Type de prestation
+        self.type_prestation = TypePrestation.objects.create(
+            code_type="TYPE-ANALYSES",
+            libelle="Analyses médicales",
+            statut="ACTIF",
+        )
+
+        # 3. Acte
+        self.acte_analyses = Acte.objects.create(
+            id_type_prestation=self.type_prestation,
+            code_acte="ANALYSES",
+            libelle="Analyses médicales",
+            statut="ACTIF",
+        )
+
+        # 4. Prestataire
+        self.prestataire = Prestataire.objects.create(
+            code_prestataire="PREST-001",
+            raison_sociale="Laboratoire El Amel",
+            type_prestataire="LABORATOIRE",
+            statut="ACTIF",
+            date_creation=maintenant,   # ✅ AJOUTÉ
+        )
+
+        # 5. Souscripteur
+        self.souscripteur = Souscripteur.objects.create(
+            code_souscripteur="SOUS-001",
+            raison_sociale="SAGPS",
+            type_souscripteur="ENTREPRISE",
+            statut="ACTIF",
+            date_creation=maintenant,   # ✅ AJOUTÉ
+        )
+
+        # 6. Contrat
+        self.contrat = Contrat.objects.create(
+            id_souscripteur=self.souscripteur,
+            numero_contrat="CTR-2026-0001",
+            date_debut=date(2026, 1, 1),
+            type_contrat="SAGPS",
+            statut="ACTIF",
+            date_creation=maintenant,   # ✅ AJOUTÉ
+        )
+
+        # 7. Garantie
+        self.garantie = Garantie.objects.create(
+            code_garantie="GAR-ANALYSES",
+            libelle="Analyses 90%",
+            statut="ACTIF",
+        )
+
+        # 8. Lien contrat ↔ garantie
+        ContratGarantie.objects.create(
+            id_contrat=self.contrat,
+            id_garantie=self.garantie,
+            date_debut=date(2026, 1, 1),
+            statut="ACTIF",
+        )
+
+        # 9. GarantieActe (90%)
+        self.garantie_acte = GarantieActe.objects.create(
+            id_garantie=self.garantie,
+            id_acte=self.acte_analyses,
+            taux_prise_en_charge=Decimal("90.00"),
+            franchise=Decimal("0.00"),
+            mode_calcul="POURCENTAGE",
+            date_debut=date(2026, 1, 1),
+            statut="ACTIF",
+        )
+
+    # =====================================================
+    # TEST 1 : Calcul pourcentage simple
+    # =====================================================
+    def test_1_pourcentage_90(self):
+        """10 000 × 90% = 9 000 DA"""
+        detail = self._creer_detail(montant_unitaire=Decimal("10000.00"), quantite=1)
+        demande = self._creer_demande()
+
+        calcul = calculer_pour_un_acte(detail, demande)
+
+        self.assertEqual(calcul["montant_accorde"], Decimal("9000.00"))
+        self.assertEqual(calcul["montant_rejete"], Decimal("1000.00"))
+        self.assertEqual(calcul["taux"], Decimal("90.00"))
+        self.assertIsNone(calcul["erreur"])
+
+    # =====================================================
+    # TEST 2 : Aucune garantie → tout rejeté
+    # =====================================================
+    def test_2_aucune_garantie(self):
+        """Sans garantie, montant accordé = 0"""
+        # Supprimer la garantie
+        self.garantie_acte.delete()
+
+        detail = self._creer_detail(montant_unitaire=Decimal("10000.00"), quantite=1)
+        demande = self._creer_demande()
+
+        calcul = calculer_pour_un_acte(detail, demande)
+
+        self.assertEqual(calcul["montant_accorde"], Decimal("0.00"))
+        self.assertEqual(calcul["montant_rejete"], Decimal("10000.00"))
+        self.assertIsNotNone(calcul["erreur"])
+
+    # =====================================================
+    # TEST 3 : Mode FORFAIT
+    # =====================================================
+    def test_3_mode_forfait(self):
+        """Forfait fixe de 5 000 DA"""
+        self.garantie_acte.mode_calcul = "FORFAIT"
+        self.garantie_acte.montant_forfait = Decimal("5000.00")
+        self.garantie_acte.save()
+
+        detail = self._creer_detail(montant_unitaire=Decimal("10000.00"), quantite=1)
+        demande = self._creer_demande()
+
+        calcul = calculer_pour_un_acte(detail, demande)
+
+        self.assertEqual(calcul["montant_accorde"], Decimal("5000.00"))
+        self.assertEqual(calcul["montant_rejete"], Decimal("5000.00"))
+
+    # =====================================================
+    # TEST 4 : Mode FRAIS_REELS
+    # =====================================================
+    def test_4_mode_frais_reels(self):
+        """Frais réels : 100% du montant"""
+        self.garantie_acte.mode_calcul = "FRAIS_REELS"
+        self.garantie_acte.save()
+
+        detail = self._creer_detail(montant_unitaire=Decimal("10000.00"), quantite=1)
+        demande = self._creer_demande()
+
+        calcul = calculer_pour_un_acte(detail, demande)
+
+        self.assertEqual(calcul["montant_accorde"], Decimal("10000.00"))
+        self.assertEqual(calcul["montant_rejete"], Decimal("0.00"))
+
+    # =====================================================
+    # TEST 5 : Franchise déduite AVANT taux
+    # =====================================================
+    def test_5_franchise(self):
+        """(10 000 - 2 000) × 90% = 7 200 DA"""
+        self.garantie_acte.franchise = Decimal("2000.00")
+        self.garantie_acte.save()
+
+        detail = self._creer_detail(montant_unitaire=Decimal("10000.00"), quantite=1)
+        demande = self._creer_demande()
+
+        calcul = calculer_pour_un_acte(detail, demande)
+
+        self.assertEqual(calcul["montant_accorde"], Decimal("7200.00"))
+        self.assertEqual(calcul["montant_rejete"], Decimal("2800.00"))
+
+    # =====================================================
+    # TEST 6 : Quantité > 1
+    # =====================================================
+    def test_6_quantite(self):
+        """5 × 2 000 DA = 10 000 DA → 9 000 accordé"""
+        detail = self._creer_detail(montant_unitaire=Decimal("2000.00"), quantite=5)
+        demande = self._creer_demande()
+
+        calcul = calculer_pour_un_acte(detail, demande)
+
+        self.assertEqual(calcul["montant_demande"], Decimal("10000.00"))
+        self.assertEqual(calcul["montant_accorde"], Decimal("9000.00"))
+
+    # =====================================================
+    # TEST 7 : Forfait > montant demandé
+    # =====================================================
+    def test_7_forfait_superieur(self):
+        """Forfait 15 000 mais montant demandé 10 000 → 10 000"""
+        self.garantie_acte.mode_calcul = "FORFAIT"
+        self.garantie_acte.montant_forfait = Decimal("15000.00")
+        self.garantie_acte.save()
+
+        detail = self._creer_detail(montant_unitaire=Decimal("10000.00"), quantite=1)
+        demande = self._creer_demande()
+
+        calcul = calculer_pour_un_acte(detail, demande)
+
+        # Le montant accordé ne peut pas dépasser le demandé
+        self.assertEqual(calcul["montant_accorde"], Decimal("10000.00"))
+
+    # =====================================================
+    # TEST 8 : Calcul pour plusieurs actes
+    # =====================================================
+    def test_8_plusieurs_actes(self):
+        """3 actes dans une demande → 3 calculs"""
+        detail1 = self._creer_detail(montant_unitaire=Decimal("10000.00"), quantite=1)
+        detail2 = self._creer_detail(montant_unitaire=Decimal("5000.00"), quantite=1)
+        detail3 = self._creer_detail(montant_unitaire=Decimal("3000.00"), quantite=1)
+
+        demande = self._creer_demande(
+            details=[detail1, detail2, detail3]
+        )
+
+        resultats = calculer_pour_demande(demande)
+
+        self.assertEqual(resultats["nb_actes"], 3)
+        self.assertEqual(len(resultats["calculs"]), 3)
+
+        # Totaux : (10 000 + 5 000 + 3 000) = 18 000
+        self.assertEqual(resultats["total_demande"], Decimal("18000.00"))
+        # Accordé : 9 000 + 4 500 + 2 700 = 16 200
+        self.assertEqual(resultats["total_accepte"], Decimal("16200.00"))
+        # Rejeté : 1 000 + 500 + 300 = 1 800
+        self.assertEqual(resultats["total_rejete"], Decimal("1800.00"))
+
+    # =====================================================
+    # TEST 9 : Barème SAGPS existe
+    # =====================================================
+    def test_9_bareme_sagps(self):
+        """Le barème SAGPS est accessible"""
+        regle = get_regle("SAGPS", "ANALYSES")
+        self.assertIsNotNone(regle)
+        self.assertEqual(regle["taux"], Decimal("90.00"))
+        self.assertEqual(regle["plafond_annuel"], Decimal("40000.00"))
+
+    # =====================================================
+    # TEST 10 : Barème CNL existe
+    # =====================================================
+    def test_10_bareme_cnl(self):
+        """Le barème CNL est accessible"""
+        regle = get_regle("CNL", "CONSULTATION_GENERALISTE")
+        self.assertIsNotNone(regle)
+        self.assertEqual(regle["mode"], "FORFAIT")
+        self.assertEqual(regle["montant_forfait"], Decimal("1500.00"))
+
+    # =====================================================
+    # TEST 11 : Liste des codes d'actes
+    # =====================================================
+    def test_11_lister_codes(self):
+        """La liste des codes contient les actes SAGPS"""
+        codes = lister_codes_actes("SAGPS")
+        self.assertIn("ANALYSES", codes)
+        self.assertIn("RADIOGRAPHIE", codes)
+        self.assertIn("CONSULTATION_GENERALISTE", codes)
+
+    # =====================================================
+    # TEST 12 : Taux nul → rejeté
+    # =====================================================
+    def test_12_taux_nul(self):
+        """Taux 0% → tout rejeté"""
+        self.garantie_acte.taux_prise_en_charge = Decimal("0.00")
+        self.garantie_acte.save()
+
+        detail = self._creer_detail(montant_unitaire=Decimal("10000.00"), quantite=1)
+        demande = self._creer_demande()
+
+        calcul = calculer_pour_un_acte(detail, demande)
+
+        self.assertEqual(calcul["montant_accorde"], Decimal("0.00"))
+        self.assertEqual(calcul["montant_rejete"], Decimal("10000.00"))
+
+    # =====================================================
+    # TEST 13 : Taux 100%
+    # =====================================================
+    def test_13_taux_100(self):
+        """Taux 100% → tout accordé"""
+        self.garantie_acte.taux_prise_en_charge = Decimal("100.00")
+        self.garantie_acte.save()
+
+        detail = self._creer_detail(montant_unitaire=Decimal("10000.00"), quantite=1)
+        demande = self._creer_demande()
+
+        calcul = calculer_pour_un_acte(detail, demande)
+
+        self.assertEqual(calcul["montant_accorde"], Decimal("10000.00"))
+        self.assertEqual(calcul["montant_rejete"], Decimal("0.00"))
+
+    # =====================================================
+    # TEST 14 : Franchise > montant
+    # =====================================================
+    def test_14_franchise_superieure(self):
+        """Franchise 15 000 > montant 10 000 → 0 accordé"""
+        self.garantie_acte.franchise = Decimal("15000.00")
+        self.garantie_acte.save()
+
+        detail = self._creer_detail(montant_unitaire=Decimal("10000.00"), quantite=1)
+        demande = self._creer_demande()
+
+        calcul = calculer_pour_un_acte(detail, demande)
+
+        self.assertEqual(calcul["montant_accorde"], Decimal("0.00"))
+        self.assertEqual(calcul["montant_rejete"], Decimal("10000.00"))
+
+    # =====================================================
+    # TEST 15 : Montant décimal
+    # =====================================================
+    def test_15_montant_decimal(self):
+        """Montant 123,45 DA × 90% = 111,105 DA"""
+        detail = self._creer_detail(montant_unitaire=Decimal("123.45"), quantite=1)
+        demande = self._creer_demande()
+
+        calcul = calculer_pour_un_acte(detail, demande)
+
+        # 123.45 × 0.90 = 111.105
+        attendu = Decimal("111.105")
+        self.assertEqual(calcul["montant_accorde"], attendu)
+
+    # =====================================================
+    # FONCTIONS UTILITAIRES
+    # =====================================================
+
+    def _creer_detail(self, montant_unitaire, quantite):
+        """Crée un DemandeTpDetail de test."""
+        from django.utils import timezone
+        return DemandeTpDetail.objects.create(
+            id_demande=self._creer_demande_simple(),
+            id_acte=self.acte_analyses,
+            id_prestataire=self.prestataire,
+            quantite=Decimal(str(quantite)),
+            montant_unitaire=montant_unitaire,
+            montant_total=montant_unitaire * Decimal(str(quantite)),
+        )
+        
+
+    def _creer_demande(self, details=None):
+        """Crée une demande complète."""
+        return self._creer_demande_simple()

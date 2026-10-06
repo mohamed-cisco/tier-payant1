@@ -460,60 +460,20 @@
                         </td>
 
                         <td>
-
                             {% if demande.statut == "ACCEPTEE" %}
-
-                                {% for pec_detail in pec_details %}
-
-                                    {% if pec_detail.id_detail_demande.id_detail == detail.id_detail %}
-
-                                        {% if "CONSOMMATION_CREATE" in permissions %}
-
-                                            {% if pec_detail.id_detail_pec not in consommations_existantes %}
-
-                                                <a
-                                                    class="btn"
-                                                    href="{% url 'consommation_create' pec_detail.id_detail_pec %}"
-                                                >
-                                                    Créer une consommation
-                                                </a>
-
-                                            {% else %}
-
-                                                <span style="color:#64748b; font-size:12px;">
-                                                    Consommation déjà créée
-                                                </span>
-
-                                            {% endif %}
-
-                                        {% endif %}
-
-                                    {% endif %}
-
-                                {% endfor %}
-
                             {% endif %}
-
                         </td>
-
                     </tr>
-
                     {% empty %}
-
                     <tr>
                         <td colspan="7" class="empty">
                             Aucun acte ajouté à cette demande.
                         </td>
                     </tr>
-
                     {% endfor %}
-
                 </tbody>
-
             </table>
-
         </div>
-
 
         <div class="total">
             Total des actes : {{ montant_total }} DA
