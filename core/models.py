@@ -510,6 +510,11 @@ class PriseEnCharge(models.Model):
     montant_demande = models.DecimalField(max_digits=15, decimal_places=2)
     montant_accepte = models.DecimalField(max_digits=15, decimal_places=2)
     montant_rejete = models.DecimalField(max_digits=15, decimal_places=2)
+        # Statuts possibles :
+    # EN_ATTENTE  → PEC créée, en attente de validation
+    # ACCEPTEE    → PEC validée, consommations créées
+    # REJETEE     → PEC rejetée
+    # EXPIREE     → PEC expirée
     statut = models.CharField(max_length=30)
     date_expiration = models.DateField(blank=True, null=True)
     utilisateur_validation = models.CharField(max_length=100, blank=True, null=True)

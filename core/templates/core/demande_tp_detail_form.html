@@ -180,7 +180,15 @@
     <form method="post">
 
         {% csrf_token %}
-
+        <div class="field">
+            <label>Prestataire :</label>
+            <input
+                type="text"
+                value="{{ demande.id_prestataire.code_prestataire }} - {{ demande.id_prestataire.raison_sociale }}"
+                readonly
+            >
+            <div class="help">Hérité de la demande</div>
+        </div>
         {% for field in form %}
             <div class="field">
                 {{ field.label_tag }}
@@ -207,41 +215,13 @@
 document.addEventListener("DOMContentLoaded", function () {
 
     const idDemande = "{{ demande.id_demande }}";
-
     const champActe = document.getElementById("id_id_acte");
     const champSousActe = document.getElementById("id_id_sous_acte");
-    const champPrestataire = document.getElementById("id_id_prestataire");
     const champMontantUnitaire = document.getElementById("id_montant_unitaire");
 
-    // Fonction pour charger le tarif
-    function chargerTarif() {
-        const idPrestataire = champPrestataire ? champPrestataire.value : "";
-        const idSousActe = champSousActe ? champSousActe.value : "";
+    const idPrestataire = "{{ demande.id_prestataire.id_prestataire }}";
 
-        if (!idSousActe || !idPrestataire) {
-            console.log("Tarif : sous-acte ou prestataire manquant");
-            return;
-        }
-
-        console.log("Chargement tarif pour sous-acte=" + idSousActe + " prestataire=" + idPrestataire);
-
-        fetch("/ajax/tarif/?id_sous_acte=" + idSousActe + "&id_prestataire=" + idPrestataire)
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                console.log("Réponse tarif :", data);
-                if (data.tarif && champMontantUnitaire) {
-                    champMontantUnitaire.value = data.tarif;
-                    console.log("Tarif chargé :", data.tarif);
-                } else {
-                    console.log("Aucun tarif trouvé");
-                }
-            })
-            .catch(function (e) {
-                console.error("Erreur chargement tarif :", e);
-            });
-    }
-
-    // 1. Changement ACTE (rechargement)
+    // ⚠️ 1. SI L'ACTE CHANGE → recharger la page pour charger les sous-actes
     if (champActe) {
         champActe.addEventListener("change", function () {
             const idActe = this.value;
@@ -251,7 +231,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // 2. Changement SOUS-ACTE (rechargement)
+    // ⚠️ 2. SI LE SOUS-ACTE CHANGE → recharger la page pour charger le tarif
     if (champSousActe) {
         champSousActe.addEventListener("change", function () {
             const idActe = champActe ? champActe.value : "";
@@ -262,24 +242,23 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // 3. Changement PRESTATAIRE -> charge le tarif
-    if (champPrestataire) {
-        champPrestataire.addEventListener("change", chargerTarif);
+    // 3. Charger le tarif au démarrage (si sous-acte déjà sélectionné)
+    function chargerTarif() {
+        const idSousActe = champSousActe ? champSousActe.value : "";
+        if (!idSousActe || !idPrestataire) return;
+
+        fetch("/ajax/tarif/?id_sous_acte=" + idSousActe + "&id_prestataire=" + idPrestataire)
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.tarif && champMontantUnitaire) {
+                    champMontantUnitaire.value = data.tarif;
+                }
+            });
     }
 
-    // 4. CHARGEMENT INITIAL -> si prestataire déjà sélectionné, charger tout de suite
-    if (champPrestataire && champPrestataire.value) {
+    if (champSousActe && champSousActe.value) {
         chargerTarif();
     }
-
-    // 5. Si l'acte est pré-sélectionné mais absent de l'URL, recharger
-    if (champActe && champActe.value) {
-        const params = new URLSearchParams(window.location.search);
-        if (!params.has("id_acte")) {
-            window.location.href = "/demandes-tp/" + idDemande + "/details/nouveau/?id_acte=" + champActe.value;
-        }
-    }
-
 });
 </script>
 {% endblock %}

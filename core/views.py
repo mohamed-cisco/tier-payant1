@@ -8260,6 +8260,24 @@ def demande_tp_create(request):
                     date_decision=None,
                     utilisateur_creation=str(request.session.get("id_utilisateur")),
                 )
+                                # 🔄 Créer la PEC automatiquement
+                numero_pec = _generer_numero_pec()
+                pec = PriseEnCharge.objects.create(
+                    numero_pec=numero_pec,
+                    id_demande=demande,
+                    date_pec=timezone.now(),
+                    montant_demande=Decimal("0.00"),
+                    montant_accepte=Decimal("0.00"),
+                    montant_rejete=Decimal("0.00"),
+                    statut="EN_ATTENTE",   # ← En attente de validation
+                    date_expiration=timezone.now().date() + timedelta(days=30),
+                    utilisateur_validation=None,
+                )
+
+                # Passer la demande à ACCEPTEE (la PEC prend le relais)
+                demande.statut = "ACCEPTEE"
+                demande.date_decision = timezone.now()
+                demande.save()
 
                 enregistrer_audit(
                     request=request,
@@ -8271,8 +8289,13 @@ def demande_tp_create(request):
                     description=f"Création de la demande {demande.numero_demande}",
                 )
 
-                messages.success(request, "Demande créée avec succès.")
-                return redirect("demandes_tp")
+                messages.success(
+                    request,
+                    f"Demande {demande.numero_demande} créée. "
+                    f"PEC {numero_pec} générée automatiquement. "
+                    f"Validez la PEC pour créer les consommations."
+                )
+                return redirect("prise_en_charge_details", id_pec=pec.id_pec)
 
             except Exception as e:
                 messages.error(request, f"Erreur : {e}")
@@ -8325,10 +8348,7 @@ def demande_tp_detail_create(request, id_demande):
     )
 
     if "DEMANDE_CREATE" not in permissions:
-        messages.error(
-            request,
-            "Vous n'avez pas l'autorisation d'ajouter un détail à une demande."
-        )
+        messages.error(request, "Vous n'avez pas l'autorisation d'ajouter un détail à une demande.")
         return redirect("demandes_tp")
 
     try:
@@ -8337,12 +8357,9 @@ def demande_tp_detail_create(request, id_demande):
         messages.error(request, "Demande de tiers payant introuvable.")
         return redirect("demandes_tp")
 
-    # Récupérer l'acte parent de la demande (via le 1er détail s'il existe)
-    # Sinon, on charge tous les actes actifs
+    # Récupérer tous les actes actifs
     actes = Acte.objects.filter(statut="ACTIF").order_by("libelle")
 
-    def _remplir_choices(form):
-        """Remplit les choices des champs du formulaire."""
     def _remplir_choices(form):
         """Remplit les choices des champs du formulaire."""
         form.fields["id_acte"].choices = [
@@ -8370,51 +8387,6 @@ def demande_tp_detail_create(request, id_demande):
         else:
             form.fields["id_sous_acte"].choices = []
 
-        # Prestataires : si un sous-acte est sélectionné, ne charger que ceux avec tarif
-        id_sous_acte_selectionne = None
-        if request.method == "POST":
-            id_sous_acte_selectionne = request.POST.get("id_sous_acte")
-        else:
-            id_sous_acte_selectionne = request.GET.get("id_sous_acte")
-            # Auto-sélection du premier sous-acte si aucun dans l'URL
-            if not id_sous_acte_selectionne and id_acte_selectionne:
-                premier = (
-                    SousActe.objects
-                    .filter(id_acte_id=id_acte_selectionne, statut="ACTIF")
-                    .order_by("libelle")
-                    .first()
-                )
-                if premier:
-                    id_sous_acte_selectionne = str(premier.id_sous_acte)
-        if id_sous_acte_selectionne:
-            date_aujourdhui = timezone.now().date()
-            tarifs = (
-                TarifSousActe.objects
-                .filter(
-                    id_sous_acte_id=id_sous_acte_selectionne,
-                    statut="ACTIF",
-                    date_debut__lte=date_aujourdhui,
-                )
-                .filter(
-                    Q(date_fin__isnull=True) | Q(date_fin__gte=date_aujourdhui)
-                )
-                .select_related("id_prestataire")
-            )
-            vus = set()
-            prestataires_choices = []
-            for t in tarifs:
-                if t.id_prestataire_id in vus:
-                    continue
-                vus.add(t.id_prestataire_id)
-                p = t.id_prestataire
-                prestataires_choices.append(
-                    (str(p.id_prestataire), f"{p.code_prestataire} - {p.raison_sociale}")
-                )
-            prestataires_choices.sort(key=lambda x: x[1])
-            form.fields["id_prestataire"].choices = prestataires_choices
-        else:
-            form.fields["id_prestataire"].choices = []
-
     if request.method == "POST":
         form = DemandeTpDetailForm(request.POST)
         _remplir_choices(form)
@@ -8429,10 +8401,162 @@ def demande_tp_detail_create(request, id_demande):
                     id_sous_acte=form.cleaned_data["id_sous_acte"],
                     statut="ACTIF"
                 )
-                prestataire = Prestataire.objects.get(
-                    id_prestataire=form.cleaned_data["id_prestataire"],
+                # Le prestataire est hérité de la demande
+                prestataire = demande.id_prestataire
+
+                # Vérifier que l'acte est couvert par une garantie active du contrat
+                acte_couvert = (
+                    GarantieActe.objects
+                    .filter(
+                        id_acte=acte,
+                        statut="ACTIF",
+                        id_garantie__contratgarantie__id_contrat=demande.id_contrat,
+                        id_garantie__contratgarantie__statut="ACTIF",
+                    )
+                    .exists()
+                )
+
+                if not acte_couvert:
+                    messages.error(
+                        request,
+                        "Cet acte n'est pas couvert par une garantie active "
+                        "du contrat de cette demande."
+                    )
+                    return render(
+                        request,
+                        "core/demande_tp_detail_form.html",
+                        {
+                            "form": form,
+                            "demande": demande,
+                            "titre": "Ajouter un acte à la demande",
+                            "page": "demandes_tp",
+                        }
+                    )
+
+                # Récupérer le tarif applicable
+                date_aujourdhui = timezone.now().date()
+                tarif = (
+                    TarifSousActe.objects
+                    .filter(
+                        id_sous_acte=sous_acte,
+                        id_prestataire=prestataire,
+                        statut="ACTIF",
+                        date_debut__lte=date_aujourdhui,
+                    )
+                    .filter(
+                        Q(date_fin__isnull=True) | Q(date_fin__gte=date_aujourdhui)
+                    )
+                    .order_by("-date_debut")
+                    .first()
+                )
+
+                if not tarif:
+                    messages.error(
+                        request,
+                        "Aucun tarif actif pour ce sous-acte chez ce prestataire."
+                    )
+                    return render(
+                        request,
+                        "core/demande_tp_detail_form.html",
+                        {
+                            "form": form,
+                            "demande": demande,
+                            "titre": "Ajouter un acte à la demande",
+                        }
+                    )
+
+                quantite = form.cleaned_data["quantite"]
+                montant_unitaire = tarif.montant
+                montant_total = quantite * montant_unitaire
+
+                # Créer le détail
+                DemandeTpDetail.objects.create(
+                    id_demande=demande,
+                    id_acte=acte,
+                    id_sous_acte=sous_acte,
+                    quantite=quantite,
+                    montant_unitaire=montant_unitaire,
+                    montant_total=montant_total,
+                    observation=form.cleaned_data["observation"] or None,
+                )
+
+                # Recalculer le montant total de la demande
+                total_details = (
+                    DemandeTpDetail.objects
+                    .filter(id_demande=demande)
+                    .aggregate(total=Sum("montant_total"))["total"]
+                    or Decimal("0.00")
+                )
+                demande.montant_demande = total_details
+                demande.save(update_fields=["montant_demande"])
+
+                messages.success(request, "Acte ajouté à la demande avec succès.")
+                return redirect("demande_tp_details", id_demande=demande.id_demande)
+
+            except Exception as e:
+                messages.error(request, f"Erreur lors de l'ajout de l'acte : {e}")
+    else:
+        form = DemandeTpDetailForm(initial={
+            "id_acte": request.GET.get("id_acte", ""),
+            "id_sous_acte": request.GET.get("id_sous_acte", ""),
+        })
+        _remplir_choices(form)
+
+    # ⬅️ LE RETURN FINAL — OBLIGATOIRE
+    return render(
+        request,
+        "core/demande_tp_detail_form.html",
+        {
+            "form": form,
+            "demande": demande,
+            "titre": "Ajouter un acte à la demande",
+            "page": "demandes_tp",
+        }
+    )
+
+def _remplir_choices(form):
+        """Remplit les choices des champs du formulaire."""
+        form.fields["id_acte"].choices = [
+            (str(a.id_acte), f"{a.code_acte} - {a.libelle}")
+            for a in actes
+        ]
+
+        # Si un acte est déjà sélectionné, charger ses sous-actes
+        id_acte_selectionne = None
+        if request.method == "POST":
+            id_acte_selectionne = request.POST.get("id_acte")
+        else:
+            id_acte_selectionne = request.GET.get("id_acte")
+
+        if id_acte_selectionne:
+            sous_actes = (
+                SousActe.objects
+                .filter(id_acte_id=id_acte_selectionne, statut="ACTIF")
+                .order_by("libelle")
+            )
+            form.fields["id_sous_acte"].choices = [
+                (str(s.id_sous_acte), f"{s.code_sous_acte} - {s.libelle}")
+                for s in sous_actes
+            ]
+        else:
+            form.fields["id_sous_acte"].choices = []
+
+        if request.method == "POST":
+            form = DemandeTpDetailForm(request.POST)
+        _remplir_choices(form)
+
+        if form.is_valid():
+            try:
+                acte = Acte.objects.get(
+                    id_acte=form.cleaned_data["id_acte"],
                     statut="ACTIF"
                 )
+                sous_acte = SousActe.objects.get(
+                    id_sous_acte=form.cleaned_data["id_sous_acte"],
+                    statut="ACTIF"
+                )
+                # ✅ Le prestataire est hérité de la demande
+                prestataire = demande.id_prestataire
 
                 # Vérifier que l'acte est couvert par une garantie active du contrat
                 acte_couvert = (
@@ -8463,7 +8587,7 @@ def demande_tp_detail_create(request, id_demande):
                         }
                     )
 
-                # Récupérer le tarif applicable
+                                # Récupérer le tarif applicable
                 date_aujourdhui = timezone.now().date()
                 tarif = (
                     TarifSousActe.objects
@@ -8535,14 +8659,14 @@ def demande_tp_detail_create(request, id_demande):
                     f"Erreur lors de l'ajout de l'acte : {e}"
                 )
 
-    else:
-        form = DemandeTpDetailForm(initial={
+            else:
+             form = DemandeTpDetailForm(initial={
                "id_acte": request.GET.get("id_acte", ""),
                "id_sous_acte": request.GET.get("id_sous_acte", ""),
 })
         _remplir_choices(form)
 
-    return render(
+        return render(
         request,
         "core/demande_tp_detail_form.html",
         {
@@ -10016,30 +10140,6 @@ def consommation_create(request, id_detail_pec):
     else:
         form = ConsommationForm()
         
-        form.fields["id_detail_pec"].choices = [
-            (
-                str(detail_pec.id_detail_pec),
-                f"{detail_pec.id_pec.numero_pec} - "
-                f"{detail_pec.id_acte.code_acte} - "
-                f"{detail_pec.id_acte.libelle}"
-            )
-        ]
-        sous_actes = (
-            SousActe.objects
-            .filter(
-                id_acte=detail_pec.id_acte,
-                statut="ACTIF"
-            )
-            .order_by("libelle")
-        )
-
-        form.fields["id_sous_acte"].choices = [
-            (
-                str(sous_acte.id_sous_acte),
-                f"{sous_acte.code_sous_acte} - {sous_acte.libelle}"
-            )
-            for sous_acte in sous_actes
-        ]
 
     return render(
         request,
@@ -12837,6 +12937,262 @@ def prise_en_charge_details(request, id_pec):
             "details": details,
             "permissions": permissions,
             "page": "prises_en_charge",
+        }
+    )
+def prise_en_charge_valider(request, id_pec):
+    """Valide la PEC et crée les consommations automatiquement."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "DEMANDE_VALIDATE" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("prises_en_charge")
+
+    try:
+        pec = (
+            PriseEnCharge.objects
+            .select_related(
+                "id_demande",
+                "id_demande__id_personne_beneficiaire",
+                "id_demande__id_contrat",
+                "id_demande__id_prestataire",
+            )
+            .get(id_pec=id_pec)
+        )
+    except PriseEnCharge.DoesNotExist:
+        messages.error(request, "PEC introuvable.")
+        return redirect("prises_en_charge")
+
+    if pec.statut != "EN_ATTENTE":
+        messages.error(request, "Cette PEC a déjà été traitée.")
+        return redirect("prise_en_charge_details", id_pec=pec.id_pec)
+
+    # Récupérer les détails de la demande
+    details = list(
+        DemandeTpDetail.objects
+        .select_related("id_acte", "id_sous_acte")
+        .filter(id_demande=pec.id_demande)
+        .order_by("id_detail")
+    )
+
+    if not details:
+        messages.error(request, "Aucun acte à valider.")
+        return redirect("prise_en_charge_details", id_pec=pec.id_pec)
+
+    # Calculs pour chaque acte
+    calculs = []
+    montant_accepte_total = Decimal("0.00")
+    montant_rejete_total = Decimal("0.00")
+
+    for detail in details:
+        try:
+            garantie_acte = (
+                GarantieActe.objects
+                .filter(
+                    id_acte=detail.id_acte,
+                    statut="ACTIF",
+                    date_debut__lte=pec.date_pec.date(),
+                    id_garantie__contratgarantie__id_contrat=pec.id_demande.id_contrat,
+                    id_garantie__contratgarantie__statut="ACTIF",
+                )
+                .filter(
+                    Q(date_fin__isnull=True) | Q(date_fin__gte=pec.date_pec.date())
+                )
+                .order_by("-date_debut")
+                .first()
+            )
+
+            if not garantie_acte:
+                calculs.append({
+                    "detail": detail,
+                    "garantie_acte": None,
+                    "montant_demande": detail.montant_total,
+                    "montant_accorde": Decimal("0.00"),
+                    "montant_rejete": detail.montant_total,
+                    "taux": Decimal("0.00"),
+                    "franchise": Decimal("0.00"),
+                    "erreur": "Aucune garantie active trouvée.",
+                })
+                montant_rejete_total += detail.montant_total
+                continue
+
+            taux = garantie_acte.taux_prise_en_charge or Decimal("0.00")
+            franchise = garantie_acte.franchise or Decimal("0.00")
+
+            mode_calcul = getattr(garantie_acte, "mode_calcul", "POURCENTAGE")
+            montant_forfait = getattr(garantie_acte, "montant_forfait", None)
+            plafond_forfait = getattr(garantie_acte, "plafond_forfait", None)
+
+            if mode_calcul == "FORFAIT" and montant_forfait:
+                montant_accorde = min(Decimal(montant_forfait), detail.montant_total)
+                if plafond_forfait:
+                    montant_accorde = min(montant_accorde, Decimal(plafond_forfait))
+            elif mode_calcul == "FRAIS_REELS":
+                montant_accorde = detail.montant_total
+            else:
+                montant_couvert = detail.montant_total * taux / Decimal("100")
+                montant_accorde = max(Decimal("0.00"), montant_couvert - franchise)
+
+            # Appliquer les plafonds
+            montant_avant_plafond = montant_accorde
+            quantite_autorisee = detail.quantite
+
+            (
+                montant_accorde,
+                plafond_details,
+                erreur_plafond,
+                quantite_autorisee,
+            ) = _appliquer_plafonds_demande(
+                demande=pec.id_demande,
+                detail=detail,
+                garantie_acte=garantie_acte,
+                montant_accorde=montant_accorde,
+            )
+
+            montant_rejete = max(Decimal("0.00"), detail.montant_total - montant_accorde)
+            montant_accepte_total += montant_accorde
+            montant_rejete_total += montant_rejete
+
+            calculs.append({
+                "detail": detail,
+                "garantie_acte": garantie_acte,
+                "montant_demande": detail.montant_total,
+                "montant_accorde": montant_accorde,
+                "montant_rejete": montant_rejete,
+                "montant_accorde_avant_plafond": montant_avant_plafond,
+                "taux": taux,
+                "franchise": franchise,
+                "plafond_details": plafond_details,
+                "quantite_autorisee": quantite_autorisee,
+                "erreur": erreur_plafond,
+            })
+
+        except Exception as e:
+            messages.error(request, f"Erreur lors du calcul : {e}")
+            return redirect("prise_en_charge_details", id_pec=pec.id_pec)
+
+    if request.method == "POST":
+        if any(c["erreur"] for c in calculs):
+            messages.error(
+                request,
+                "La PEC ne peut pas être validée car un acte n'a pas de garantie applicable."
+            )
+            return redirect("prise_en_charge_valider", id_pec=pec.id_pec)
+
+        try:
+            # Mise à jour de la PEC
+            pec.montant_demande = sum(c["montant_demande"] for c in calculs)
+            pec.montant_accepte = montant_accepte_total
+            pec.montant_rejete = montant_rejete_total
+            pec.statut = "ACCEPTEE"
+            pec.utilisateur_validation = str(request.session.get("id_utilisateur"))
+            pec.save()
+
+            # Créer les détails PEC + Consommations
+            for calcul in calculs:
+                detail = calcul["detail"]
+
+                pec_detail = PriseEnChargeDetail.objects.create(
+                    id_pec=pec,
+                    id_detail_demande=detail,
+                    id_acte=detail.id_acte,
+                    quantite=calcul["quantite_autorisee"],
+                    montant_demande=calcul["montant_demande"],
+                    montant_accorde=calcul["montant_accorde"],
+                    montant_rejete=calcul["montant_rejete"],
+                    taux_applique=calcul["taux"],
+                    franchise_appliquee=calcul["franchise"],
+                    statut="ACCEPTEE",
+                    motif_rejet=None,
+                )
+
+                # Trouver l'adhésion active
+                personne = pec.id_demande.id_personne_beneficiaire
+                adherent = Adherent.objects.filter(id_personne=personne).first()
+
+                adhesion = None
+                if adherent:
+                    adhesion = Adhesion.objects.filter(
+                        id_adherent=adherent,
+                        id_contrat=pec.id_demande.id_contrat,
+                        statut="ACTIF",
+                    ).first()
+
+                if not adhesion:
+                    ayant_droit = AyantDroit.objects.filter(id_personne=personne).first()
+                    if ayant_droit:
+                        adhesion = Adhesion.objects.filter(
+                            id_adherent=ayant_droit.id_adherent,
+                            id_contrat=pec.id_demande.id_contrat,
+                            statut="ACTIF",
+                        ).first()
+
+                garantie = None
+                if calcul.get("garantie_acte"):
+                    garantie = calcul["garantie_acte"].id_garantie
+
+                if adhesion and garantie:
+                    Consommation.objects.create(
+                        id_detail_pec=pec_detail,
+                        id_personne_beneficiaire=personne,
+                        id_adhesion=adhesion,
+                        id_acte=detail.id_acte,
+                        id_sous_acte=detail.id_sous_acte,
+                        id_garantie=garantie,
+                        id_prestataire=demande.id_prestataire,
+                        date_prestation=timezone.now().date(),
+                        exercice=timezone.now().year,
+                        quantite=calcul["quantite_autorisee"],
+                        montant_base=calcul["montant_demande"],
+                        montant_prise_en_charge=calcul["montant_accorde"],
+                        montant_reste=calcul["montant_rejete"],
+                        statut="VALIDEE",   # ← À valider par l'utilisateur
+                    )
+
+            enregistrer_audit(
+                request=request,
+                type_action="VALIDATION_PEC",
+                module="PEC",
+                table_cible="prise_en_charge",
+                id_enregistrement=pec.id_pec,
+                ancienne_valeur="Statut : EN_ATTENTE",
+                nouvelle_valeur=f"Statut : ACCEPTEE, {len(calculs)} consommation(s) créée(s)",
+                description=f"Validation de la PEC {pec.numero_pec}",
+            )
+
+            messages.success(
+                request,
+                f"PEC {pec.numero_pec} validée. "
+                f"{len(calculs)} consommation(s) créée(s). "
+                f"Validez-les dans /consommations/."
+            )
+            return redirect("consommations")
+
+        except Exception as e:
+            messages.error(request, f"Erreur : {e}")
+
+    # Affichage GET
+    return render(
+        request,
+        "core/prise_en_charge_valider.html",
+        {
+            "pec": pec,
+            "details": details,
+            "calculs": calculs,
+            "montant_accepte_total": montant_accepte_total,
+            "montant_rejete_total": montant_rejete_total,
         }
     )
 

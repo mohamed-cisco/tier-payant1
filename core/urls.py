@@ -86,9 +86,9 @@ from .views import (
     demande_tp_valider,
     demande_tp_document_create,
     prises_en_charge,
+    prise_en_charge_valider,
     prise_en_charge_details,
     prise_en_charge_pdf,
-    consommation_create,
     consommations,
     consommation_export_excel,
     tarif_sous_acte_ajax,
@@ -538,10 +538,11 @@ path(
     name="prise_en_charge_pdf"
 ),
 path(
-    "consommations/nouveau/<int:id_detail_pec>/",
-    consommation_create,
-    name="consommation_create",
+    "prises-en-charge/<int:id_pec>/valider/",
+    prise_en_charge_valider,
+    name="prise_en_charge_valider"
 ),
+
 path(
     "consommations/",
     consommations,

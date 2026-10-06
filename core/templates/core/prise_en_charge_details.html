@@ -257,6 +257,14 @@
         </div>
 
     </div>
+{% if pec.statut == "EN_ATTENTE" %}
+    <a href="{% url 'prise_en_charge_valider' pec.id_pec %}" 
+       style="background: #15803d; color: white; padding: 10px 18px; 
+              border-radius: 8px; text-decoration: none; 
+              font-weight: bold; margin-right: 10px;">
+        ✓ Valider la PEC
+    </a>
+{% endif %}
 
 <a href="{% url 'prise_en_charge_pdf' pec.id_pec %}" 
    style="background: #10b981; color: white; padding: 10px 18px; 

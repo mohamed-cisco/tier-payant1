@@ -739,19 +739,7 @@ class DemandeTpForm(forms.Form):
         choices=[]
     )
 
-    numero_demande = forms.CharField(
-    label="Numéro de demande",
-    max_length=50,
-    required=False,
-    widget=forms.HiddenInput()
-)
-
-    montant_demande = forms.DecimalField(
-        label="Montant demandé",
-        max_digits=15,
-        decimal_places=2,
-        min_value=0
-    )
+ 
 
     statut = forms.ChoiceField(
         label="Statut",
@@ -778,13 +766,7 @@ class DemandeTpDetailForm(forms.Form):
     )
 
     id_sous_acte = forms.ChoiceField(
-        label="Sous-acte (analyse / prestation détaillée)",
-        choices=[],
-        required=True
-    )
-
-    id_prestataire = forms.ChoiceField(
-        label="Prestataire (laboratoire / clinique)",
+        label="Sous-acte",
         choices=[],
         required=True
     )
@@ -802,6 +784,7 @@ class DemandeTpDetailForm(forms.Form):
         max_digits=15,
         decimal_places=2,
         min_value=0,
+        required=False,
         widget=forms.NumberInput(attrs={"readonly": "readonly"})
     )
 
@@ -812,16 +795,6 @@ class DemandeTpDetailForm(forms.Form):
         widget=forms.Textarea(attrs={"rows": 4})
     )
 class ConsommationForm(forms.Form):
-
-    id_detail_pec = forms.ChoiceField(
-        label="Détail de prise en charge",
-        choices=[]
-    )
-
-    id_sous_acte = forms.ChoiceField(
-        label="Sous-acte",
-        choices=[]
-    )
 
     date_prestation = forms.DateField(
         label="Date de prestation",

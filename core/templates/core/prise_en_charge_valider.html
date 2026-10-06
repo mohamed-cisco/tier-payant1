@@ -1,0 +1,159 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Valider la PEC{% endblock %}
+{% block header_title %}Validation de la PEC{% endblock %}
+{% block header_sub %}Contrôle et création des consommations{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 25px;
+        border-radius: 14px;
+        box-shadow: 0 3px 14px rgba(15,23,42,.07);
+        margin-bottom: 20px;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .card h2 { color: #123b65; margin-top: 0; }
+
+    .warning {
+        background: #fff7ed;
+        color: #9a3412;
+        padding: 15px 18px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #fed7aa;
+    }
+
+    .calculation {
+        padding: 18px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        margin-bottom: 15px;
+    }
+
+    .calculation-title {
+        color: #123b65;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .accepted { color: #15803d; font-weight: 700; }
+    .error-message {
+        background: #fef2f2;
+        color: #b91c1c;
+        padding: 12px 15px;
+        border-radius: 8px;
+        border: 1px solid #fecaca;
+    }
+
+    .totals {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .total-box {
+        padding: 15px;
+        background: #f8fafc;
+        border-radius: 10px;
+    }
+
+    .total-value {
+        font-size: 20px;
+        font-weight: 700;
+        color: #123b65;
+    }
+
+    .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 12px 22px;
+        background: #15803d;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .btn-secondary { background: #64748b; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <h2>PEC {{ pec.numero_pec }}</h2>
+    <p><strong>Demande :</strong> {{ pec.id_demande.numero_demande }}</p>
+    <p><strong>Bénéficiaire :</strong> {{ pec.id_demande.id_personne_beneficiaire.nom }} {{ pec.id_demande.id_personne_beneficiaire.prenom }}</p>
+    <p><strong>Prestataire :</strong> {{ pec.id_demande.id_prestataire.raison_sociale }}</p>
+</div>
+
+<div class="card">
+    <h2>Contrôle avant validation</h2>
+
+    <div class="warning">
+        ⚠️ En validant, le système créera automatiquement les <strong>consommations</strong>
+        pour chaque acte. Vous pourrez ensuite les valider dans la section Consommations.
+    </div>
+
+    {% for calcul in calculs %}
+    <div class="calculation">
+        <div class="calculation-title">
+            {{ calcul.detail.id_acte.code_acte }} - {{ calcul.detail.id_acte.libelle }}
+        </div>
+
+        <p><strong>Montant demandé :</strong> {{ calcul.montant_demande }} DA</p>
+        <p><strong>Taux appliqué :</strong> {{ calcul.taux }} %</p>
+        <p><strong>Franchise :</strong> {{ calcul.franchise }} DA</p>
+
+        {% if calcul.erreur %}
+            <div class="error-message">{{ calcul.erreur }}</div>
+        {% else %}
+            <p class="accepted">Montant accordé : {{ calcul.montant_accorde }} DA</p>
+            <p><strong>Montant rejeté :</strong> {{ calcul.montant_rejete }} DA</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="totals">
+        <div class="total-box">
+            <strong>Total accepté</strong>
+            <div class="total-value">{{ montant_accepte_total }} DA</div>
+        </div>
+        <div class="total-box">
+            <strong>Total rejeté</strong>
+            <div class="total-value">{{ montant_rejete_total }} DA</div>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="actions">
+            <button type="submit" class="btn" 
+                    onclick="return confirm('Valider la PEC et créer les consommations ?');">
+                ✓ Valider et créer les consommations
+            </button>
+            <a href="{% url 'prise_en_charge_details' pec.id_pec %}" class="btn btn-secondary">
+                Annuler
+            </a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
