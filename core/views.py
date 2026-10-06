@@ -9435,6 +9435,9 @@ def demande_tp_valider(request, id_demande):
     if not request.session.get("id_utilisateur"):
         return redirect("connexion")
 
+    print(f"🔍 [DEBUG] Validation demandée pour id_demande={id_demande}")
+    print(f"🔍 [DEBUG] Méthode: {request.method}")
+
     id_utilisateur = request.session["id_utilisateur"]
 
     permissions = set(
@@ -9444,17 +9447,11 @@ def demande_tp_valider(request, id_demande):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
 
     if "DEMANDE_VALIDATE" not in permissions:
-        messages.error(
-            request,
-            "Vous n'avez pas l'autorisation de valider une demande."
-        )
+        messages.error(request, "Vous n'avez pas l'autorisation de valider une demande.")
         return redirect("demandes_tp")
 
     try:
@@ -9468,21 +9465,12 @@ def demande_tp_valider(request, id_demande):
             .get(id_demande=id_demande)
         )
     except DemandeTp.DoesNotExist:
-        messages.error(
-            request,
-            "Demande de tiers payant introuvable."
-        )
+        messages.error(request, "Demande de tiers payant introuvable.")
         return redirect("demandes_tp")
 
     if demande.statut != "EN_ATTENTE":
-        messages.error(
-            request,
-            "Cette demande n'est plus en attente de validation."
-        )
-        return redirect(
-            "demande_tp_details",
-            id_demande=demande.id_demande
-        )
+        messages.error(request, "Cette demande n'est plus en attente de validation.")
+        return redirect("demande_tp_details", id_demande=demande.id_demande)
 
     details = list(
         DemandeTpDetail.objects
@@ -9492,21 +9480,14 @@ def demande_tp_valider(request, id_demande):
     )
 
     if not details:
-        messages.error(
-            request,
-            "Impossible de valider une demande sans acte."
-        )
-        return redirect(
-            "demande_tp_details",
-            id_demande=demande.id_demande
-        )
+        messages.error(request, "Impossible de valider une demande sans acte.")
+        return redirect("demande_tp_details", id_demande=demande.id_demande)
 
     calculs = []
     montant_accepte_total = Decimal("0.00")
     montant_rejete_total = Decimal("0.00")
 
     for detail in details:
-
         try:
             garantie_acte = (
                 GarantieActe.objects
@@ -9525,6 +9506,7 @@ def demande_tp_valider(request, id_demande):
                 .first()
             )
 
+            # ⚠️ Cas : pas de garantie trouvée
             if not garantie_acte:
                 calculs.append({
                     "detail": detail,
@@ -9536,120 +9518,76 @@ def demande_tp_valider(request, id_demande):
                     "franchise": Decimal("0.00"),
                     "erreur": "Aucune garantie active trouvée.",
                 })
-
                 montant_rejete_total += detail.montant_total
                 continue
 
-                taux = (
-                garantie_acte.taux_prise_en_charge
-                or Decimal("0.00")
-            )
-
-            franchise = (
-                garantie_acte.franchise
-                or Decimal("0.00")
-            )
+            # ✅ Cas : garantie trouvée → on calcule
+            taux = garantie_acte.taux_prise_en_charge or Decimal("0.00")
+            franchise = garantie_acte.franchise or Decimal("0.00")
 
             mode_calcul = getattr(garantie_acte, "mode_calcul", "POURCENTAGE")
             montant_forfait = getattr(garantie_acte, "montant_forfait", None)
             plafond_forfait = getattr(garantie_acte, "plafond_forfait", None)
 
-            # 🔍 Calcul selon le mode
+            # Calcul selon le mode
             if mode_calcul == "FORFAIT" and montant_forfait:
-                # Mode forfait : montant fixe
                 montant_accorde = min(
                     Decimal(montant_forfait),
                     detail.montant_total,
                 )
-
-                # Appliquer un plafond si défini
                 if plafond_forfait:
-                    montant_accorde = min(
-                        montant_accorde,
-                        Decimal(plafond_forfait),
-                    )
+                    montant_accorde = min(montant_accorde, Decimal(plafond_forfait))
 
             elif mode_calcul == "FRAIS_REELS":
-                # Mode frais réels : remboursement intégral
                 montant_accorde = detail.montant_total
 
             else:
-                # Mode pourcentage (par défaut) : calcul classique
-                montant_couvert = (
-                    detail.montant_total * taux / Decimal("100")
-                )
-
-                montant_accorde = max(
-                    Decimal("0.00"),
-                    montant_couvert - franchise
-                )
-
-            # -------------------------------------------------
-            # APPLICATION DU PLAFOND
-            # -------------------------------------------------
-
-            montant_accorde_avant_plafond = montant_accorde
-
-            (
-                montant_accorde,
-                plafond_details,
-                erreur_plafond,
-                quantite_autorisee,
-            ) = _appliquer_plafonds_demande(
-                demande=demande,
-                detail=detail,
-                garantie_acte=garantie_acte,
-                montant_accorde=montant_accorde,
-            )
+                # Mode pourcentage (par défaut)
+                montant_couvert = detail.montant_total * taux / Decimal("100")
+                montant_accorde = max(Decimal("0.00"), montant_couvert - franchise)
 
             montant_rejete = max(
                 Decimal("0.00"),
                 detail.montant_total - montant_accorde
-           
             )
+
             montant_accepte_total += montant_accorde
             montant_rejete_total += montant_rejete
 
             calculs.append({
-    "detail": detail,
-    "garantie_acte": garantie_acte,
-    "montant_demande": detail.montant_total,
-    "montant_accorde": montant_accorde,
-    "montant_rejete": montant_rejete,
-    "montant_accorde_avant_plafond": (
-        montant_accorde_avant_plafond
-    ),
-    "taux": taux,
-    "franchise": franchise,
-    "plafond_details": plafond_details,
-    "quantite_autorisee": quantite_autorisee,
-    "erreur": erreur_plafond,
-})
+                "detail": detail,
+                "garantie_acte": garantie_acte,
+                "montant_demande": detail.montant_total,
+                "montant_accorde": montant_accorde,
+                "montant_rejete": montant_rejete,
+                "taux": taux,
+                "franchise": franchise,
+                "erreur": None,
+            })
+
         except Exception as e:
-            messages.error(
-                request,
-                f"Erreur lors du calcul : {e}"
-            )
-            return redirect(
-                "demande_tp_details",
-                id_demande=demande.id_demande
-            )
+            messages.error(request, f"Erreur lors du calcul : {e}")
+            return redirect("demande_tp_details", id_demande=demande.id_demande)
+
+    print(f"🔍 [DEBUG] Nb calculs: {len(calculs)}")
+    for c in calculs:
+        print(f"   - {c['detail'].id_acte.code_acte}: demandé={c['montant_demande']}, accordé={c['montant_accorde']}, erreur={c['erreur']}")
 
     if request.method == "POST":
+        print("🔍 [DEBUG] Traitement du POST")
 
+        # Vérifier les erreurs
         if any(c["erreur"] for c in calculs):
             messages.error(
                 request,
                 "La demande ne peut pas être validée car un acte "
                 "n'a pas de garantie applicable."
             )
-            return redirect(
-                "demande_tp_valider",
-                id_demande=demande.id_demande
-            )
+            return redirect("demande_tp_valider", id_demande=demande.id_demande)
 
         try:
             numero_pec = _generer_numero_pec()
+            print(f"🔍 [DEBUG] Création PEC {numero_pec}")
 
             pec = PriseEnCharge.objects.create(
                 numero_pec=numero_pec,
@@ -9660,20 +9598,16 @@ def demande_tp_valider(request, id_demande):
                 montant_rejete=montant_rejete_total,
                 statut="ACCEPTEE",
                 date_expiration=timezone.now().date() + timedelta(days=30),
-                utilisateur_validation=str(
-                    request.session.get("id_utilisateur")
-                ),
+                utilisateur_validation=str(request.session.get("id_utilisateur")),
             )
 
             for calcul in calculs:
-
                 detail = calcul["detail"]
-
                 PriseEnChargeDetail.objects.create(
                     id_pec=pec,
                     id_detail_demande=detail,
                     id_acte=detail.id_acte,
-                    quantite=calcul["quantite_autorisee"],
+                    quantite=detail.quantite,
                     montant_demande=calcul["montant_demande"],
                     montant_accorde=calcul["montant_accorde"],
                     montant_rejete=calcul["montant_rejete"],
@@ -9686,6 +9620,7 @@ def demande_tp_valider(request, id_demande):
             demande.statut = "ACCEPTEE"
             demande.date_decision = timezone.now()
             demande.save()
+
             enregistrer_audit(
                 request=request,
                 type_action="VALIDATION",
@@ -9693,15 +9628,8 @@ def demande_tp_valider(request, id_demande):
                 table_cible="demande_tp",
                 id_enregistrement=demande.id_demande,
                 ancienne_valeur="Statut : EN_ATTENTE",
-                nouvelle_valeur=(
-                    f"Statut : ACCEPTEE, "
-                    f"PEC : {pec.numero_pec}"
-                ),
-                description=(
-                    f"Validation de la demande "
-                    f"{demande.id_demande} "
-                    f"et création de la PEC {pec.numero_pec}"
-                ),
+                nouvelle_valeur=f"Statut : ACCEPTEE, PEC : {pec.numero_pec}",
+                description=f"Validation de la demande {demande.id_demande} et création de la PEC {pec.numero_pec}",
             )
 
             messages.success(
@@ -9709,16 +9637,13 @@ def demande_tp_valider(request, id_demande):
                 f"Demande validée. PEC {pec.numero_pec} créée avec succès."
             )
 
-            return redirect(
-                "demande_tp_details",
-                id_demande=demande.id_demande
-            )
+            print(f"🔍 [DEBUG] ✅ PEC créée avec succès : {numero_pec}")
+
+            return redirect("demande_tp_details", id_demande=demande.id_demande)
 
         except Exception as e:
-            messages.error(
-                request,
-                f"Erreur lors de la création de la prise en charge : {e}"
-            )
+            print(f"🔍 [DEBUG] ❌ ERREUR création PEC : {e}")
+            messages.error(request, f"Erreur lors de la création de la prise en charge : {e}")
 
     return render(
         request,
@@ -9729,7 +9654,6 @@ def demande_tp_valider(request, id_demande):
             "calculs": calculs,
             "montant_accepte_total": montant_accepte_total,
             "montant_rejete_total": montant_rejete_total,
-            "page": "demandes_tp"
         }
     )
 def consommation_create(request, id_detail_pec):
@@ -11325,28 +11249,19 @@ def reglement_create(request):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
 
     if "REGLEMENT_CREATE" not in permissions:
-        messages.error(
-            request,
-            "Vous n'avez pas l'autorisation de créer un règlement."
-        )
+        messages.error(request, "Vous n'avez pas l'autorisation de créer un règlement.")
         return redirect("reglements")
 
     factures = (
         Facture.objects
-        .filter(
-            Q(statut="VALIDEE") | Q(statut="PARTIELLEMENT_PAYEE")
-        )
+        .filter(Q(statut="VALIDEE") | Q(statut="PARTIELLEMENT_PAYEE"))
         .select_related("id_prestataire")
         .order_by("-id_facture")
     )
-
 
     # Calculer le reste à payer pour chaque facture
     for f in factures:
@@ -11360,6 +11275,10 @@ def reglement_create(request):
 
     if request.method == "POST":
         form = ReglementForm(request.POST)
+        print("=" * 50)
+        print("🔍 [DEBUG] POST reçu")
+        print("🔍 [DEBUG] Données POST :", dict(request.POST))
+        print("🔍 [DEBUG] Form data :", form.data)
 
         form.fields["id_facture"].choices = [
             (
@@ -11371,26 +11290,22 @@ def reglement_create(request):
         ]
 
         if form.is_valid():
+            print("🔍 [DEBUG] Formulaire VALIDE")
+            print("🔍 [DEBUG] cleaned_data :", form.cleaned_data)
             try:
                 facture = Facture.objects.get(
-                    id_facture=form.cleaned_data["id_facture"],
+                    id_facture=form.cleaned_data["id_facture"]
                 )
 
                 if facture.statut not in ["VALIDEE", "PARTIELLEMENT_PAYEE"]:
-                    messages.error(
-                        request,
-                        "Cette facture ne peut plus être réglée."
-                    )
+                    messages.error(request, "Cette facture ne peut plus être réglée.")
                     return redirect("reglements")
 
                 montant = form.cleaned_data["montant"]
 
                 montant_deja_regle = (
                     Reglement.objects
-                    .filter(
-                        id_facture=facture,
-                        statut="VALIDEE"
-                    )
+                    .filter(id_facture=facture, statut="VALIDEE")
                     .aggregate(total=Sum("montant"))["total"]
                     or 0
                 )
@@ -11398,10 +11313,7 @@ def reglement_create(request):
                 reste_a_payer = facture.montant_valide - montant_deja_regle
 
                 if reste_a_payer <= 0:
-                    messages.error(
-                        request,
-                        "Cette facture est déjà entièrement réglée."
-                    )
+                    messages.error(request, "Cette facture est déjà entièrement réglée.")
                     return render(
                         request,
                         "core/reglement_form.html",
@@ -11409,7 +11321,6 @@ def reglement_create(request):
                             "form": form,
                             "titre": "Nouveau règlement",
                             "factures": factures,
-                            "page": "reglements"
                         }
                     )
 
@@ -11442,19 +11353,12 @@ def reglement_create(request):
                     observation=form.cleaned_data["observation"] or None,
                 )
 
-                messages.success(
-                    request,
-                    "Règlement créé avec succès."
-                )
-
+                messages.success(request, "Règlement créé avec succès.")
                 return redirect("reglements")
 
             except Exception as e:
-                messages.error(
-                    request,
-                    f"Erreur lors de la création du règlement : {e}"
-                )
-
+                messages.error(request, f"Erreur lors de la création du règlement : {e}")
+                print("🔍 [DEBUG] ERREUR :", e)
     else:
         form = ReglementForm()
 
