@@ -9556,11 +9556,16 @@ def _generer_numero_pec():
     return numero_pec
   
 def demande_tp_valider(request, id_demande):
+    """
+    Valide une demande TP et crée la PEC automatiquement.
+    
+    Utilise le module centralisé core.services.calculs pour TOUS les calculs.
+    """
+    # ============================================================
+    # 1. VÉRIFICATIONS
+    # ============================================================
     if not request.session.get("id_utilisateur"):
         return redirect("connexion")
-
-    print(f"🔍 [DEBUG] Validation demandée pour id_demande={id_demande}")
-    print(f"🔍 [DEBUG] Méthode: {request.method}")
 
     id_utilisateur = request.session["id_utilisateur"]
 
@@ -9578,6 +9583,9 @@ def demande_tp_valider(request, id_demande):
         messages.error(request, "Vous n'avez pas l'autorisation de valider une demande.")
         return redirect("demandes_tp")
 
+    # ============================================================
+    # 2. RÉCUPÉRATION DE LA DEMANDE
+    # ============================================================
     try:
         demande = (
             DemandeTp.objects
@@ -9596,112 +9604,29 @@ def demande_tp_valider(request, id_demande):
         messages.error(request, "Cette demande n'est plus en attente de validation.")
         return redirect("demande_tp_details", id_demande=demande.id_demande)
 
-    details = list(
-        DemandeTpDetail.objects
-        .select_related("id_acte")
-        .filter(id_demande=demande)
-        .order_by("id_detail")
-    )
+    # ============================================================
+    # 3. CALCUL VIA LE MODULE CENTRALISÉ
+    # ============================================================
+    from core.services.calculs import calculer_pour_demande
 
-    if not details:
+    resultats = calculer_pour_demande(demande)
+
+    # Vérifier que la demande a des actes
+    if resultats["nb_actes"] == 0:
         messages.error(request, "Impossible de valider une demande sans acte.")
         return redirect("demande_tp_details", id_demande=demande.id_demande)
 
-    calculs = []
-    montant_accepte_total = Decimal("0.00")
-    montant_rejete_total = Decimal("0.00")
+    # Afficher les erreurs éventuelles
+    if resultats["erreurs"]:
+        for erreur in resultats["erreurs"]:
+            messages.warning(request, erreur)
 
-    for detail in details:
-        try:
-            garantie_acte = (
-                GarantieActe.objects
-                .filter(
-                    id_acte=detail.id_acte,
-                    statut="ACTIF",
-                    date_debut__lte=demande.date_demande.date(),
-                    id_garantie__contratgarantie__id_contrat=demande.id_contrat,
-                    id_garantie__contratgarantie__statut="ACTIF",
-                )
-                .filter(
-                    Q(date_fin__isnull=True)
-                    | Q(date_fin__gte=demande.date_demande.date())
-                )
-                .order_by("-date_debut")
-                .first()
-            )
-
-            # ⚠️ Cas : pas de garantie trouvée
-            if not garantie_acte:
-                calculs.append({
-                    "detail": detail,
-                    "garantie_acte": None,
-                    "montant_demande": detail.montant_total,
-                    "montant_accorde": Decimal("0.00"),
-                    "montant_rejete": detail.montant_total,
-                    "taux": Decimal("0.00"),
-                    "franchise": Decimal("0.00"),
-                    "erreur": "Aucune garantie active trouvée.",
-                })
-                montant_rejete_total += detail.montant_total
-                continue
-
-            # ✅ Cas : garantie trouvée → on calcule
-            taux = garantie_acte.taux_prise_en_charge or Decimal("0.00")
-            franchise = garantie_acte.franchise or Decimal("0.00")
-
-            mode_calcul = getattr(garantie_acte, "mode_calcul", "POURCENTAGE")
-            montant_forfait = getattr(garantie_acte, "montant_forfait", None)
-            plafond_forfait = getattr(garantie_acte, "plafond_forfait", None)
-
-            # Calcul selon le mode
-            if mode_calcul == "FORFAIT" and montant_forfait:
-                montant_accorde = min(
-                    Decimal(montant_forfait),
-                    detail.montant_total,
-                )
-                if plafond_forfait:
-                    montant_accorde = min(montant_accorde, Decimal(plafond_forfait))
-
-            elif mode_calcul == "FRAIS_REELS":
-                montant_accorde = detail.montant_total
-
-            else:
-                # Mode pourcentage (par défaut)
-                montant_couvert = detail.montant_total * taux / Decimal("100")
-                montant_accorde = max(Decimal("0.00"), montant_couvert - franchise)
-
-            montant_rejete = max(
-                Decimal("0.00"),
-                detail.montant_total - montant_accorde
-            )
-
-            montant_accepte_total += montant_accorde
-            montant_rejete_total += montant_rejete
-
-            calculs.append({
-                "detail": detail,
-                "garantie_acte": garantie_acte,
-                "montant_demande": detail.montant_total,
-                "montant_accorde": montant_accorde,
-                "montant_rejete": montant_rejete,
-                "taux": taux,
-                "franchise": franchise,
-                "erreur": None,
-            })
-
-        except Exception as e:
-            messages.error(request, f"Erreur lors du calcul : {e}")
-            return redirect("demande_tp_details", id_demande=demande.id_demande)
-
-    print(f"🔍 [DEBUG] Nb calculs: {len(calculs)}")
-    for c in calculs:
-        print(f"   - {c['detail'].id_acte.code_acte}: demandé={c['montant_demande']}, accordé={c['montant_accorde']}, erreur={c['erreur']}")
-
+    # ============================================================
+    # 4. TRAITEMENT DU POST
+    # ============================================================
     if request.method == "POST":
-        print("🔍 [DEBUG] Traitement du POST")
-
-        # Vérifier les erreurs
-        if any(c["erreur"] for c in calculs):
+        # Bloquer si un acte a une erreur critique
+        if resultats["erreurs"]:
             messages.error(
                 request,
                 "La demande ne peut pas être validée car un acte "
@@ -9710,41 +9635,28 @@ def demande_tp_valider(request, id_demande):
             return redirect("demande_tp_valider", id_demande=demande.id_demande)
 
         try:
+            # 4.1 — Générer le numéro de PEC
             numero_pec = _generer_numero_pec()
-            print(f"🔍 [DEBUG] Création PEC {numero_pec}")
 
+            # 4.2 — Créer la PEC
             pec = PriseEnCharge.objects.create(
                 numero_pec=numero_pec,
                 id_demande=demande,
                 date_pec=timezone.now(),
-                montant_demande=demande.montant_demande,
-                montant_accepte=montant_accepte_total,
-                montant_rejete=montant_rejete_total,
-                statut="ACCEPTEE",
+                montant_demande=resultats["total_demande"],
+                montant_accepte=resultats["total_accepte"],
+                montant_rejete=resultats["total_rejete"],
+                statut="EN_ATTENTE",
                 date_expiration=timezone.now().date() + timedelta(days=30),
-                utilisateur_validation=str(request.session.get("id_utilisateur")),
+                utilisateur_validation=str(id_utilisateur),
             )
 
-            for calcul in calculs:
-                detail = calcul["detail"]
-                PriseEnChargeDetail.objects.create(
-                    id_pec=pec,
-                    id_detail_demande=detail,
-                    id_acte=detail.id_acte,
-                    quantite=detail.quantite,
-                    montant_demande=calcul["montant_demande"],
-                    montant_accorde=calcul["montant_accorde"],
-                    montant_rejete=calcul["montant_rejete"],
-                    taux_applique=calcul["taux"],
-                    franchise_appliquee=calcul["franchise"],
-                    statut="ACCEPTEE",
-                    motif_rejet=None,
-                )
-
+            # 4.3 — Mettre à jour le statut de la demande
             demande.statut = "ACCEPTEE"
             demande.date_decision = timezone.now()
             demande.save()
 
+            # 4.4 — Audit
             enregistrer_audit(
                 request=request,
                 type_action="VALIDATION",
@@ -9753,33 +9665,45 @@ def demande_tp_valider(request, id_demande):
                 id_enregistrement=demande.id_demande,
                 ancienne_valeur="Statut : EN_ATTENTE",
                 nouvelle_valeur=f"Statut : ACCEPTEE, PEC : {pec.numero_pec}",
-                description=f"Validation de la demande {demande.id_demande} et création de la PEC {pec.numero_pec}",
+                description=(
+                    f"Validation de la demande {demande.numero_demande} "
+                    f"et création de la PEC {pec.numero_pec}"
+                ),
             )
 
+            # 4.5 — Message de succès
             messages.success(
                 request,
-                f"Demande validée. PEC {pec.numero_pec} créée avec succès."
+                f"✅ Demande {demande.numero_demande} validée. "
+                f"PEC {pec.numero_pec} créée avec succès."
             )
 
-            print(f"🔍 [DEBUG] ✅ PEC créée avec succès : {numero_pec}")
-
-            return redirect("demande_tp_details", id_demande=demande.id_demande)
+            # 4.6 — Rediriger vers la PEC
+            return redirect("prise_en_charge_details", id_pec=pec.id_pec)
 
         except Exception as e:
-            print(f"🔍 [DEBUG] ❌ ERREUR création PEC : {e}")
-            messages.error(request, f"Erreur lors de la création de la prise en charge : {e}")
+            messages.error(
+                request,
+                f"Erreur lors de la création de la prise en charge : {e}"
+            )
+            return redirect("demande_tp_details", id_demande=demande.id_demande)
 
+    # ============================================================
+    # 5. AFFICHAGE (GET)
+    # ============================================================
     return render(
         request,
         "core/demande_tp_valider.html",
         {
             "demande": demande,
-            "details": details,
-            "calculs": calculs,
-            "montant_accepte_total": montant_accepte_total,
-            "montant_rejete_total": montant_rejete_total,
+            "calculs": resultats["calculs"],
+            "montant_accepte_total": resultats["total_accepte"],
+            "montant_rejete_total": resultats["total_rejete"],
+            "erreurs": resultats["erreurs"],
         }
     )
+
+
 def types_prestation(request):
     if not request.session.get("id_utilisateur"):
         return redirect("connexion")
