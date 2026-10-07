@@ -10,10 +10,13 @@ Fonctions :
 - demande_tp_create : créer
 """
 
+from datetime import timedelta 
+from decimal import Decimal
+
+from django import forms                   
 from django.contrib import messages
-from django.db import transaction
-from django.db.models import Q, Sum
-from django.shortcuts import get_object_or_404, redirect, render
+from django.db.models import Q
+from django.shortcuts import redirect, render
 from django.utils import timezone
 
 from core.forms import (
@@ -22,20 +25,27 @@ from core.forms import (
    
 )
 from core.models import (
-    Acte,
     Adherent,
-    AyantDroit,
     Adhesion,
+    Acte,
+    AyantDroit,
     Consommation,
+    Contrat,
+    ContratGarantie,
     DemandeTp,
     DemandeTpDetail,
     DemandeTpDocument,
     Document,
+    Facture,
     Garantie,
     GarantieActe,
+    Personne,
+    Plafond,
+    Prestataire,
+    Convention,
     PriseEnCharge,
     PriseEnChargeDetail,
-    Prestataire,
+    Reglement,
     RolePermission,
     SousActe,
     TarifSousActe,

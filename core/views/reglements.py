@@ -12,10 +12,13 @@ Fonctions :
 - _generer_numero_reglement : helper
 - _generer_reference_reglement : helper
 """
+from datetime import datetime, timedelta
+from decimal import Decimal
 
 import openpyxl
 from openpyxl.styles import Font
 from django.contrib import messages
+from django.db.models import Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
