@@ -2,75 +2,60 @@
 """
 Package des vues de la plateforme Tiers Payant.
 
-Stratégie de migration progressive :
-1. On importe TOUT depuis views_old.py (compatibilité)
-2. On migre progressivement chaque module
-3. Une fois TOUT migré, on supprime l'import de views_old
+Tous les modules sont maintenant migrés.
+
+Import dans l'ordre pour éviter les dépendances circulaires.
 """
 
 # ============================================================
-# IMPORT DE L'ANCIEN FICHIER (pour compatibilité)
+# MODULES DE BASE (pas de dépendances)
 # ============================================================
-from core.views_old import *
+from .decorators import *
+from .dashboard import *
+from .champs import *
+from .backup import *
+from .ajax import *
 
 
 # ============================================================
-# NOUVEAUX MODULES (à décommenter au fur et à mesure)
+# MODULES MÉTIER
 # ============================================================
 
-# Module auth (déjà migré, mais en conflit avec views_old)
-# from .auth import *   ← On le décommentera à la fin
+# Authentification
+from .auth import *
 
-# Module backup
-# from .backup import *
+# Adhérents + Ayants droit + Adhésions
+from .adherents import *
+from .ayants_droit import *
+from .adhesions import *
 
-# Module champs
-# from .champs import *
+# Souscripteurs + Contrats + Garanties
+from .souscripteurs import *
+from .contrats import *
+from .garanties import *
+from .garantie_actes import *
+from .plafonds import *
 
-# Module dashboard
-# from .dashboard import *
+# Actes + Prestataires
+from .actes import *
+from .prestataires import *
 
-# Module ajax
-# from .ajax import *
+# Workflow TP (le cœur)
+from .demandes_tp import *
+from .pec import *
+from .consommations import *
+from .factures import *
+from .reglements import *
 
-# Module souscripteurs
-# from .souscripteurs import *
+# Recours + Documents
+from .recours import *
+from .documents import *
 
-# Module adherents
-# from .adherents import *
+# Administration
+from .admin import *
 
-# Module contrats
-# from .contrats import *
 
-# Module actes
-# from .actes import *
-
-# Module prestataires
-# from .prestataires import *
-
-# Module admin
-# from .admin import *
-
-# Module recours
-# from .recours import *
-
-# Module documents
-# from .documents import *
-
-# Module demandes_tp
-# from .demandes_tp import *
-
-# Module pec
-# from .pec import *
-
-# Module consommations
-# from .consommations import *
-
-# Module factures
-# from .factures import *
-
-# Module reglements
-# from .reglements import *
-
-# Module pdf
-# from .pdf import *
+# ============================================================
+# VÉRIFICATION : TOUS LES MODULES DOIVENT ÊTRE IMPORTÉS
+# ============================================================
+print("✅ Tous les modules de core.views importés")
