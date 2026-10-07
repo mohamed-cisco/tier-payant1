@@ -15,7 +15,7 @@ from decimal import Decimal
 
 from django import forms                   
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.shortcuts import redirect, render
 from django.utils import timezone
 

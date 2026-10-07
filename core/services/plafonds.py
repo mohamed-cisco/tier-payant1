@@ -86,14 +86,14 @@ def calculer_deja_consomme_global(beneficiaire, annee=None):
 
 def appliquer_plafond_acte(montant_propose, beneficiaire, code_acte, annee=None):
     """
-    Applique le plafond annuel par acte.
-
+    Applique le plafond annuel par acte en lisant la table Plafond.
+    
     Args:
         montant_propose (Decimal): Montant calculé avant plafond
         beneficiaire: instance Personne
-        code_acte (str): Code de l'acte
+        code_acte (str): Code de l'acte (ex: "ACT-2026-0013")
         annee (int, optional): Année de référence
-
+    
     Returns:
         dict: {
             "montant_final": Decimal,
@@ -102,27 +102,64 @@ def appliquer_plafond_acte(montant_propose, beneficiaire, code_acte, annee=None)
             "details": {...}
         }
     """
-    from core.services.bareme import get_regle
-
+    from core.models import Acte, GarantieActe, Plafond
+    
     if annee is None:
         annee = date.today().year
-
-    # Récupérer la règle pour cet acte
-    regle = get_regle("SAGPS", code_acte)  # ou selon le type de contrat
-
-    if not regle or not regle.get("plafond_annuel"):
-        # Pas de plafond → montant inchangé
+    
+    # 1. Trouver l'acte par son code
+    try:
+        acte = Acte.objects.get(code_acte=code_acte)
+    except Acte.DoesNotExist:
+        # Acte introuvable → pas de plafond
         return {
             "montant_final": montant_propose,
             "plafond_applique": False,
             "plafond_depasse": False,
             "details": None,
         }
-
-    plafond = Decimal(str(regle["plafond_annuel"]))
+    
+    # 2. Trouver les GarantieActe actives pour cet acte
+    garantie_actes = GarantieActe.objects.filter(
+        id_acte=acte,
+        statut="ACTIF",
+    )
+    
+    if not garantie_actes.exists():
+        return {
+            "montant_final": montant_propose,
+            "plafond_applique": False,
+            "plafond_depasse": False,
+            "details": None,
+        }
+    
+    # 3. Chercher un plafond actif dans la table Plafond
+    plafond_obj = Plafond.objects.filter(
+        id_garantie_acte__in=garantie_actes,
+        statut="ACTIF",
+        periode="ANNEE",
+    ).filter(
+        # Vérifier les dates
+        date_debut__lte=date(annee, 12, 31),
+    ).filter(
+        # date_fin NULL ou >= début d'année
+        models_Q_date_fin(annee)
+    ).order_by("-montant_max").first()
+    
+    if not plafond_obj or not plafond_obj.montant_max:
+        # Aucun plafond trouvé
+        return {
+            "montant_final": montant_propose,
+            "plafond_applique": False,
+            "plafond_depasse": False,
+            "details": None,
+        }
+    
+    # 4. Calculer le plafond
+    plafond = plafond_obj.montant_max
     deja_consomme = calculer_deja_consomme(beneficiaire, code_acte, annee)
     reste_plafond = plafond - deja_consomme
-
+    
     # Si le plafond est déjà dépassé
     if reste_plafond <= 0:
         return {
@@ -136,7 +173,7 @@ def appliquer_plafond_acte(montant_propose, beneficiaire, code_acte, annee=None)
                 "message": f"Plafond annuel atteint ({plafond} DA)",
             },
         }
-
+    
     # Si le montant proposé dépasse le reste du plafond
     if montant_propose > reste_plafond:
         return {
@@ -152,7 +189,7 @@ def appliquer_plafond_acte(montant_propose, beneficiaire, code_acte, annee=None)
                 "message": f"Plafond partiellement atteint (reste {reste_plafond} DA)",
             },
         }
-
+    
     # Sinon, pas de réduction
     return {
         "montant_final": montant_propose,
@@ -165,6 +202,12 @@ def appliquer_plafond_acte(montant_propose, beneficiaire, code_acte, annee=None)
             "message": None,
         },
     }
+
+
+def models_Q_date_fin(annee):
+    """Helper pour filtrer date_fin NULL ou >= fin d'année."""
+    from django.db.models import Q
+    return Q(date_fin__isnull=True) | Q(date_fin__gte=date(annee, 1, 1))
 
 
 def appliquer_plafond_global(montant_propose, beneficiaire, plafond_global=None, annee=None):
