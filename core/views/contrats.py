@@ -426,3 +426,210 @@ def contrat_create(request):
             "champs_disponibles": champs,
         }
     )
+
+
+
+def contrat_modifier(request, id_contrat):
+    """Modifier un contrat existant."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "CONTRAT_UPDATE" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("contrats")
+
+    try:
+        contrat = Contrat.objects.get(id_contrat=id_contrat)
+    except Contrat.DoesNotExist:
+        messages.error(request, "Contrat introuvable.")
+        return redirect("contrats")
+
+    souscripteurs = (
+        Souscripteur.objects
+        .filter(statut="ACTIF")
+        .order_by("raison_sociale")
+    )
+
+    if request.method == "POST":
+        form = ContratForm(request.POST)
+
+        form.fields["id_souscripteur"].choices = [
+            (str(s.id_souscripteur), f"{s.code_souscripteur} - {s.raison_sociale}")
+            for s in souscripteurs
+        ]
+
+        if form.is_valid():
+            try:
+                souscripteur = Souscripteur.objects.get(
+                    id_souscripteur=form.cleaned_data["id_souscripteur"],
+                    statut="ACTIF"
+                )
+
+                contrat.id_souscripteur = souscripteur
+                contrat.date_debut = form.cleaned_data["date_debut"]
+                contrat.date_fin = form.cleaned_data["date_fin"]
+                contrat.type_contrat = form.cleaned_data["type_contrat"]
+                contrat.statut = form.cleaned_data["statut"]
+                contrat.objet = form.cleaned_data["objet"] or None
+                contrat.date_signature = form.cleaned_data["date_signature"]
+                contrat.date_modification = timezone.now()
+                contrat.save()
+
+                sauvegarder_valeurs_champs(
+                    request, "CONTRAT", contrat.id_contrat
+                )
+
+                messages.success(request, "Contrat modifié avec succès.")
+                return redirect("contrats")
+
+            except Exception as e:
+                messages.error(request, f"Erreur : {e}")
+    else:
+        form = ContratForm(initial={
+            "numero_contrat": contrat.numero_contrat,
+            "id_souscripteur": str(contrat.id_souscripteur_id),
+            "date_debut": contrat.date_debut,
+            "date_fin": contrat.date_fin,
+            "type_contrat": contrat.type_contrat,
+            "statut": contrat.statut,
+            "objet": contrat.objet,
+            "date_signature": contrat.date_signature,
+        })
+        form.fields["id_souscripteur"].choices = [
+            (str(s.id_souscripteur), f"{s.code_souscripteur} - {s.raison_sociale}")
+            for s in souscripteurs
+        ]
+
+    from core.views.champs import get_valeur_champ
+    champs = get_champs_pour_entite("CONTRAT")
+    for c in champs:
+        c.valeur_actuelle = get_valeur_champ(c, contrat.id_contrat)
+        c.choix_possibles_list = [
+            x.strip() for x in (c.choix_possibles or "").split("\n") if x.strip()
+        ]
+
+    return render(
+        request,
+        "core/contrat_form.html",
+        {
+            "form": form,
+            "titre": "Modifier le contrat",
+            "page": "contrats",
+            "champs_disponibles": champs,
+        }
+    )
+
+
+def contrat_modifier(request, id_contrat):
+    """Modifier un contrat existant."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "CONTRAT_UPDATE" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("contrats")
+
+    try:
+        contrat = Contrat.objects.get(id_contrat=id_contrat)
+    except Contrat.DoesNotExist:
+        messages.error(request, "Contrat introuvable.")
+        return redirect("contrats")
+
+    souscripteurs = (
+        Souscripteur.objects
+        .filter(statut="ACTIF")
+        .order_by("raison_sociale")
+    )
+
+    if request.method == "POST":
+        form = ContratForm(request.POST)
+
+        form.fields["id_souscripteur"].choices = [
+            (str(s.id_souscripteur), f"{s.code_souscripteur} - {s.raison_sociale}")
+            for s in souscripteurs
+        ]
+
+        if form.is_valid():
+            try:
+                souscripteur = Souscripteur.objects.get(
+                    id_souscripteur=form.cleaned_data["id_souscripteur"],
+                    statut="ACTIF"
+                )
+
+                contrat.id_souscripteur = souscripteur
+                contrat.date_debut = form.cleaned_data["date_debut"]
+                contrat.date_fin = form.cleaned_data["date_fin"]
+                contrat.type_contrat = form.cleaned_data["type_contrat"]
+                contrat.statut = form.cleaned_data["statut"]
+                contrat.objet = form.cleaned_data["objet"] or None
+                contrat.date_signature = form.cleaned_data["date_signature"]
+                contrat.date_modification = timezone.now()
+                contrat.save()
+
+                sauvegarder_valeurs_champs(
+                    request, "CONTRAT", contrat.id_contrat
+                )
+
+                messages.success(request, "Contrat modifié avec succès.")
+                return redirect("contrats")
+
+            except Exception as e:
+                messages.error(request, f"Erreur : {e}")
+    else:
+        form = ContratForm(initial={
+            "numero_contrat": contrat.numero_contrat,
+            "id_souscripteur": str(contrat.id_souscripteur_id),
+            "date_debut": contrat.date_debut,
+            "date_fin": contrat.date_fin,
+            "type_contrat": contrat.type_contrat,
+            "statut": contrat.statut,
+            "objet": contrat.objet,
+            "date_signature": contrat.date_signature,
+        })
+        form.fields["id_souscripteur"].choices = [
+            (str(s.id_souscripteur), f"{s.code_souscripteur} - {s.raison_sociale}")
+            for s in souscripteurs
+        ]
+
+    from core.views.champs import get_valeur_champ
+    champs = get_champs_pour_entite("CONTRAT")
+    for c in champs:
+        c.valeur_actuelle = get_valeur_champ(c, contrat.id_contrat)
+        c.choix_possibles_list = [
+            x.strip() for x in (c.choix_possibles or "").split("\n") if x.strip()
+        ]
+
+    return render(
+        request,
+        "core/contrat_form.html",
+        {
+            "form": form,
+            "titre": "Modifier le contrat",
+            "page": "contrats",
+            "champs_disponibles": champs,
+        }
+    )
