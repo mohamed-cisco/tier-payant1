@@ -11,12 +11,17 @@ Fonctions :
 """
 
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
-from core.forms import PrestataireForm
+from core.forms import (
+    ConventionForm,
+    PrestataireForm,
+)
 from core.models import (
+    Convention,
     Prestataire,
     RolePermission,
 )
@@ -367,3 +372,341 @@ def prestataire_radier(request, id_prestataire):
         messages.success(request, "Prestataire désactivé avec succès.")
 
     return redirect("prestataires")
+
+def conventions(request):
+    """Liste des conventions."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "CONVENTION_VIEW" not in permissions:
+        messages.error(
+            request,
+            "Vous n'avez pas l'autorisation de consulter les conventions."
+        )
+        return redirect("accueil")
+
+    recherche = request.GET.get("recherche", "").strip()
+    statut = request.GET.get("statut", "").strip()
+
+    conventions_liste = (
+        Convention.objects
+        .select_related("id_prestataire")
+        .all()
+        .order_by("-date_debut", "numero_convention")
+    )
+
+    if recherche:
+        conventions_liste = conventions_liste.filter(
+            Q(numero_convention__icontains=recherche)
+            | Q(id_prestataire__code_prestataire__icontains=recherche)
+            | Q(id_prestataire__raison_sociale__icontains=recherche)
+            | Q(description__icontains=recherche)
+        )
+
+    if statut:
+        conventions_liste = conventions_liste.filter(statut=statut)
+
+    statuts = (
+        Convention.objects
+        .exclude(statut__isnull=True)
+        .exclude(statut="")
+        .values_list("statut", flat=True)
+        .distinct()
+        .order_by("statut")
+    )
+
+    return render(
+        request,
+        "core/conventions.html",
+        {
+            "conventions": conventions_liste,
+            "permissions": permissions,
+            "recherche": recherche,
+            "statut": statut,
+            "statuts": statuts,
+            "page": "conventions",
+        }
+    )
+
+
+def _generer_numero_convention():
+    """Génère un numéro unique de convention."""
+    annee = timezone.now().year
+    prefixe = f"CONV-{annee}-"
+
+    numeros = (
+        Convention.objects
+        .filter(numero_convention__startswith=prefixe)
+        .values_list("numero_convention", flat=True)
+    )
+
+    valeurs = []
+    for numero in numeros:
+        try:
+            valeurs.append(int(numero.rsplit("-", 1)[1]))
+        except (ValueError, IndexError):
+            continue
+
+    prochain = max(valeurs, default=0) + 1
+    numero_convention = f"{prefixe}{prochain:04d}"
+
+    while Convention.objects.filter(numero_convention=numero_convention).exists():
+        prochain += 1
+        numero_convention = f"{prefixe}{prochain:04d}"
+
+    return numero_convention
+
+
+def convention_create(request):
+    """Créer une nouvelle convention."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "CONVENTION_CREATE" not in permissions:
+        messages.error(
+            request,
+            "Vous n'avez pas l'autorisation de créer une convention."
+        )
+        return redirect("conventions")
+
+    if request.method == "POST":
+        form = ConventionForm(request.POST)
+
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    convention = Convention.objects.create(
+                        id_prestataire=form.cleaned_data["id_prestataire"],
+                        numero_convention=_generer_numero_convention(),
+                        date_debut=form.cleaned_data["date_debut"],
+                        date_fin=form.cleaned_data["date_fin"],
+                        statut=form.cleaned_data["statut"],
+                        description=form.cleaned_data["description"] or None,
+                    )
+
+                    enregistrer_audit(
+                        request=request,
+                        type_action="CREATION",
+                        module="CONVENTION",
+                        table_cible="convention",
+                        id_enregistrement=convention.id_convention,
+                        nouvelle_valeur=(
+                            f"Numéro : {convention.numero_convention}, "
+                            f"Prestataire : {convention.id_prestataire.raison_sociale}, "
+                            f"Statut : {convention.statut}"
+                        ),
+                        description=f"Création de la convention {convention.numero_convention}",
+                    )
+
+                messages.success(request, "Convention créée avec succès.")
+                return redirect("conventions")
+
+            except Exception as e:
+                messages.error(
+                    request,
+                    f"Erreur lors de la création de la convention : {e}"
+                )
+    else:
+        form = ConventionForm()
+
+    return render(
+        request,
+        "core/convention_form.html",
+        {
+            "form": form,
+            "titre": "Nouvelle convention",
+            "page": "conventions",
+        }
+    )
+
+
+def convention_modifier(request, id_convention):
+    """Modifier une convention existante."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "CONVENTION_UPDATE" not in permissions:
+        messages.error(
+            request,
+            "Vous n'avez pas l'autorisation de modifier une convention."
+        )
+        return redirect("conventions")
+
+    try:
+        convention = (
+            Convention.objects
+            .select_related("id_prestataire")
+            .get(id_convention=id_convention)
+        )
+    except Convention.DoesNotExist:
+        messages.error(request, "Convention introuvable.")
+        return redirect("conventions")
+
+    if request.method == "POST":
+        form = ConventionForm(request.POST)
+
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    ancienne_valeur = (
+                        f"Numéro : {convention.numero_convention}, "
+                        f"Prestataire : {convention.id_prestataire.raison_sociale}, "
+                        f"Date début : {convention.date_debut}, "
+                        f"Date fin : {convention.date_fin}, "
+                        f"Statut : {convention.statut}"
+                    )
+
+                    convention.id_prestataire = form.cleaned_data["id_prestataire"]
+                    convention.date_debut = form.cleaned_data["date_debut"]
+                    convention.date_fin = form.cleaned_data["date_fin"]
+                    convention.statut = form.cleaned_data["statut"]
+                    convention.description = form.cleaned_data["description"] or None
+                    convention.save()
+
+                    nouvelle_valeur = (
+                        f"Numéro : {convention.numero_convention}, "
+                        f"Prestataire : {convention.id_prestataire.raison_sociale}, "
+                        f"Date début : {convention.date_debut}, "
+                        f"Date fin : {convention.date_fin}, "
+                        f"Statut : {convention.statut}"
+                    )
+
+                    enregistrer_audit(
+                        request=request,
+                        type_action="MODIFICATION",
+                        module="CONVENTION",
+                        table_cible="convention",
+                        id_enregistrement=convention.id_convention,
+                        ancienne_valeur=ancienne_valeur,
+                        nouvelle_valeur=nouvelle_valeur,
+                        description=f"Modification de la convention {convention.numero_convention}",
+                    )
+
+                messages.success(request, "Convention modifiée avec succès.")
+                return redirect("conventions")
+
+            except Exception as e:
+                messages.error(request, f"Erreur lors de la modification : {e}")
+    else:
+        form = ConventionForm(initial={
+            "id_prestataire": convention.id_prestataire,
+            "numero_convention": convention.numero_convention,
+            "date_debut": convention.date_debut,
+            "date_fin": convention.date_fin,
+            "statut": convention.statut,
+            "description": convention.description,
+        })
+
+    return render(
+        request,
+        "core/convention_form.html",
+        {
+            "form": form,
+            "titre": "Modifier la convention",
+        }
+    )
+
+
+def convention_cloturer(request, id_convention):
+    """Clôturer une convention."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "CONVENTION_DELETE" not in permissions:
+        messages.error(
+            request,
+            "Vous n'avez pas l'autorisation de clôturer une convention."
+        )
+        return redirect("conventions")
+
+    try:
+        convention = Convention.objects.get(id_convention=id_convention)
+    except Convention.DoesNotExist:
+        messages.error(request, "Convention introuvable.")
+        return redirect("conventions")
+
+    if request.method == "POST":
+        try:
+            ancienne_valeur = f"Statut : {convention.statut}"
+
+            convention.statut = "CLOTUREE"
+            convention.date_fin = timezone.now().date()
+            convention.save()
+
+            enregistrer_audit(
+                request=request,
+                type_action="CLOTURE",
+                module="CONVENTION",
+                table_cible="convention",
+                id_enregistrement=convention.id_convention,
+                ancienne_valeur=ancienne_valeur,
+                nouvelle_valeur=(
+                    f"Statut : {convention.statut}, "
+                    f"Date fin : {convention.date_fin}"
+                ),
+                description=f"Clôture de la convention {convention.numero_convention}",
+            )
+
+            messages.success(request, "Convention clôturée avec succès.")
+
+        except Exception as e:
+            messages.error(request, f"Erreur lors de la clôture : {e}")
+
+        return redirect("conventions")
+
+    return render(
+        request,
+        "core/convention_cloturer.html",
+        {
+            "convention": convention,
+            "page": "conventions",
+        }
+    )
