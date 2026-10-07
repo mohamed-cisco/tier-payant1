@@ -348,3 +348,199 @@ def adherent_create(request):
             "champs_disponibles": champs,
         }
     )
+
+
+def adherent_modifier(request, id_adherent):
+    """Modifier un adhérent existant."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "ADHERENT_UPDATE" not in permissions:
+        messages.error(
+            request,
+            "Vous n'avez pas l'autorisation de modifier un adhérent."
+        )
+        return redirect("adherents")
+
+    try:
+        adherent = (
+            Adherent.objects
+            .select_related("id_personne")
+            .get(id_adherent=id_adherent)
+        )
+    except Adherent.DoesNotExist:
+        messages.error(request, "Adhérent introuvable.")
+        return redirect("adherents")
+
+    personne = adherent.id_personne
+
+    if request.method == "POST":
+        form = AdherentForm(request.POST)
+
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+
+                    doublon = (
+                        Adherent.objects
+                        .filter(
+                            statut="ACTIF",
+                            id_personne__nom__iexact=form.cleaned_data["nom"].strip(),
+                            id_personne__prenom__iexact=form.cleaned_data["prenom"].strip(),
+                            id_personne__date_naissance=form.cleaned_data["date_naissance"],
+                        )
+                        .exclude(id_adherent=adherent.id_adherent)
+                        .first()
+                    )
+
+                    if doublon:
+                        messages.error(
+                            request,
+                            f"Un autre adhérent existe déjà avec ces informations "
+                            f"({doublon.numero_adherent})."
+                        )
+                    else:
+                        personne.nom = form.cleaned_data["nom"].strip()
+                        personne.prenom = form.cleaned_data["prenom"].strip()
+                        personne.date_naissance = form.cleaned_data["date_naissance"]
+                        personne.sexe = form.cleaned_data["sexe"] or None
+                        personne.adresse = form.cleaned_data["adresse"] or None
+                        personne.telephone = form.cleaned_data["telephone"] or None
+                        personne.email = form.cleaned_data["email"] or None
+                        personne.statut = form.cleaned_data["statut"]
+                        personne.date_modification = timezone.now()
+                        personne.save()
+
+                        adherent.statut = form.cleaned_data["statut"]
+                        adherent.date_adhesion = form.cleaned_data["date_adhesion"]
+                        adherent.save()
+
+                        # Mettre à jour les champs personnalisés
+                        sauvegarder_valeurs_champs(
+                            request, "ADHERENT", adherent.id_adherent
+                        )
+
+                        messages.success(
+                            request,
+                            "Adhérent modifié avec succès."
+                        )
+                        return redirect("adherents")
+
+            except Exception as e:
+                messages.error(
+                    request,
+                    f"Erreur lors de la modification : {e}"
+                )
+    else:
+        form = AdherentForm(
+            initial={
+                "numero_adherent": adherent.numero_adherent,
+                "numero_personne": personne.numero_personne,
+                "nom": personne.nom,
+                "prenom": personne.prenom,
+                "date_naissance": personne.date_naissance,
+                "sexe": personne.sexe,
+                "adresse": personne.adresse,
+                "telephone": personne.telephone,
+                "email": personne.email,
+                "date_adhesion": adherent.date_adhesion,
+                "statut": adherent.statut,
+            }
+        )
+
+    # Charger les champs personnalisés avec valeurs actuelles
+    champs = get_champs_pour_entite("ADHERENT")
+    for c in champs:
+        c.valeur_actuelle = get_valeur_champ(c, adherent.id_adherent)
+        c.choix_possibles_list = [
+            x.strip() for x in (c.choix_possibles or "").split("\n") if x.strip()
+        ]
+
+    return render(
+        request,
+        "core/adherent_form.html",
+        {
+            "form": form,
+            "titre": "Modifier l'adhérent",
+            "page": "adherents",
+            "champs_disponibles": champs,
+        }
+    )
+
+
+def adherent_radier(request, id_adherent):
+    """Radier un adhérent."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "ADHERENT_DELETE" not in permissions:
+        messages.error(
+            request,
+            "Vous n'avez pas l'autorisation de radier un adhérent."
+        )
+        return redirect("adherents")
+
+    try:
+        adherent = Adherent.objects.get(id_adherent=id_adherent)
+    except Adherent.DoesNotExist:
+        messages.error(request, "Adhérent introuvable.")
+        return redirect("adherents")
+
+    if request.method == "POST":
+        try:
+            adherent.statut = "RADIE"
+            adherent.date_radiation = timezone.now().date()
+            adherent.save()
+
+            enregistrer_audit(
+                request=request,
+                type_action="RADIATION",
+                module="ADHERENTS",
+                table_cible="adherent",
+                id_enregistrement=adherent.id_adherent,
+                ancienne_valeur="Statut : ACTIF",
+                nouvelle_valeur="Statut : RADIE",
+                description=f"Radiation de l'adhérent {adherent.numero_adherent}",
+            )
+
+            messages.success(request, "Adhérent radié avec succès.")
+
+        except Exception as e:
+            messages.error(
+                request,
+                f"Erreur lors de la radiation : {e}"
+            )
+
+        return redirect("adherents")
+
+    return render(
+        request,
+        "core/adherent_radier.html",
+        {
+            "adherent": adherent,
+        }
+    )
