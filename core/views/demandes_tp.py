@@ -503,24 +503,8 @@ def demande_tp_create(request):
                     date_decision=None,
                     utilisateur_creation=str(request.session.get("id_utilisateur")),
                 )
-                                # 🔄 Créer la PEC automatiquement
-                numero_pec = _generer_numero_pec()
-                pec = PriseEnCharge.objects.create(
-                    numero_pec=numero_pec,
-                    id_demande=demande,
-                    date_pec=timezone.now(),
-                    montant_demande=Decimal("0.00"),
-                    montant_accepte=Decimal("0.00"),
-                    montant_rejete=Decimal("0.00"),
-                    statut="EN_ATTENTE",   # ← En attente de validation
-                    date_expiration=timezone.now().date() + timedelta(days=30),
-                    utilisateur_validation=None,
-                )
-
-                # Passer la demande à ACCEPTEE (la PEC prend le relais)
-                demande.statut = "ACCEPTEE"
-                demande.date_decision = timezone.now()
-                demande.save()
+                                               # La demande reste en EN_ATTENTE
+                # La PEC sera créée lors de la validation de la demande
 
                 enregistrer_audit(
                     request=request,
@@ -534,11 +518,10 @@ def demande_tp_create(request):
 
                 messages.success(
                     request,
-                    f"Demande {demande.numero_demande} créée. "
-                    f"PEC {numero_pec} générée automatiquement. "
-                    f"Validez la PEC pour créer les consommations."
+                    f"Demande {demande.numero_demande} créée avec succès. "
+                    f"Vous pouvez maintenant ajouter des actes puis valider la demande."
                 )
-                return redirect("prise_en_charge_details", id_pec=pec.id_pec)
+                return redirect("demande_tp_details", id_demande=demande.id_demande)
 
             except Exception as e:
                 messages.error(request, f"Erreur : {e}")
