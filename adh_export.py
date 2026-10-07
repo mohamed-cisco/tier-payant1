@@ -1,4 +1,4 @@
-def adhesion_export_excel(request):
+def adherent_export_excel(request):
 
     if not request.session.get("id_utilisateur"):
         return redirect("connexion")
@@ -18,106 +18,148 @@ def adhesion_export_excel(request):
         )
     )
 
-    if "ADHESION_VIEW" not in permissions:
+    if "ADHERENT_VIEW" not in permissions:
         messages.error(
             request,
-            "Vous n'avez pas l'autorisation d'exporter les adhésions."
+            "Vous n'avez pas l'autorisation d'exporter les adhérents."
         )
-        return redirect("adhesions")
+        return redirect("adherents")
 
     import openpyxl
+
     from openpyxl.styles import Font
     from django.http import HttpResponse
 
-    adhesions_list = (
-        Adhesion.objects
-        .select_related(
-            "id_adherent",
-            "id_adherent__id_personne",
-            "id_contrat",
-            "id_contrat__id_souscripteur",
-        )
-        .all()
-        .order_by("numero_adhesion")
+
+    adherents_list = (
+        Adherent.objects
+        .select_related("id_personne")
+        .order_by("numero_adherent")
     )
 
+
     workbook = openpyxl.Workbook()
+
     feuille = workbook.active
-    feuille.title = "Adhesions"
+
+    feuille.title = "Adherents"
+
 
     entetes = [
-        "Numéro adhésion",
+
         "Numéro adhérent",
+
+        "Numéro personne",
+
         "Nom",
+
         "Prénom",
-        "Numéro contrat",
-        "Souscripteur",
-        "Date début",
-        "Date fin",
+
+        "Date de naissance",
+
+        "Sexe",
+
+        "Adresse",
+
+        "Téléphone",
+
+        "Email",
+
+        "Date adhésion",
+
         "Statut",
-        "Date création",
+
     ]
+
 
     feuille.append(entetes)
 
+
     for cellule in feuille[1]:
+
         cellule.font = Font(bold=True)
 
-    for adhesion in adhesions_list:
 
-        personne = adhesion.id_adherent.id_personne
-        contrat = adhesion.id_contrat
-        souscripteur = contrat.id_souscripteur
+    for adherent in adherents_list:
+
+        personne = adherent.id_personne
 
         feuille.append([
-            adhesion.numero_adhesion,
-            adhesion.id_adherent.numero_adherent,
+
+            adherent.numero_adherent,
+
+            personne.numero_personne,
+
             personne.nom,
+
             personne.prenom,
-            contrat.numero_contrat,
-            souscripteur.raison_sociale,
-            adhesion.date_debut,
-            adhesion.date_fin,
-            adhesion.statut,
-            adhesion.date_creation,
+
+            personne.date_naissance,
+
+            personne.sexe,
+
+            personne.adresse,
+
+            personne.telephone,
+
+            personne.email,
+
+            adherent.date_adhesion,
+
+            adherent.statut,
+
         ])
+
 
     for colonne in feuille.columns:
 
         longueur_max = 0
+
         lettre_colonne = colonne[0].column_letter
+
 
         for cellule in colonne:
 
             try:
-                longueur = (
-                    len(str(cellule.value))
-                    if cellule.value
-                    else 0
+
+                longueur = len(
+                    str(cellule.value)
                 )
 
                 if longueur > longueur_max:
+
                     longueur_max = longueur
 
             except Exception:
+
                 pass
+
 
         feuille.column_dimensions[
             lettre_colonne
-        ].width = min(longueur_max + 2, 50)
+        ].width = longueur_max + 2
+
 
     response = HttpResponse(
+
         content_type=(
-            "application/vnd.openxmlformats-"
-            "officedocument.spreadsheetml.sheet"
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
         )
+
     )
+
 
     response[
         "Content-Disposition"
-    ] = 'attachment; filename="adhesions.xlsx"'
+    ] = (
+
+        'attachment; filename="adherents.xlsx"'
+
+    )
+
 
     workbook.save(response)
 
-    return response
 
+    return response
