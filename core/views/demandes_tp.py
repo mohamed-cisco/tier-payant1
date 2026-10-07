@@ -586,8 +586,29 @@ def demande_tp_detail_create(request, id_demande):
         messages.error(request, "Demande de tiers payant introuvable.")
         return redirect("demandes_tp")
 
-    # Récupérer tous les actes actifs
-    actes = Acte.objects.filter(statut="ACTIF").order_by("libelle")
+        # Mapping : type de prestataire → types d'actes autorisés
+    TYPES_ACTES_PAR_PRESTATAIRE = {
+        "PHARMACIE": ["PHARMACIE"],
+        "MEDECIN": ["CONSULTATION", "URGENCE"],
+        "CLINIQUE": ["HOSPITALISATION", "CONSULTATION", "URGENCE"],
+        "LABORATOIRE": ["ANALYSE"],
+        "CENTRE_RADIOLOGIE": ["IMAGERIE"],
+        "DENTAIRE": ["DENTAIRE"],
+        "OPTIQUE": ["OPTIQUE"],
+        "AUTRE": ["CONSULTATION", "URGENCE", "ANALYSE"],
+    }
+
+    # Filtrer les actes selon le type du prestataire de la demande
+    type_prestataire = demande.id_prestataire.type_prestataire
+    types_autorises = TYPES_ACTES_PAR_PRESTATAIRE.get(type_prestataire, [])
+
+    if types_autorises:
+        actes = Acte.objects.filter(
+            statut="ACTIF",
+            id_type_prestation__code_type__in=types_autorises,
+        ).order_by("libelle")
+    else:
+        actes = Acte.objects.filter(statut="ACTIF").order_by("libelle")
 
     def _remplir_choices(form):
         """Remplit les choices des champs du formulaire."""
@@ -630,8 +651,41 @@ def demande_tp_detail_create(request, id_demande):
                     id_sous_acte=form.cleaned_data["id_sous_acte"],
                     statut="ACTIF"
                 )
-                # Le prestataire est hérité de la demande
+                              # Le prestataire est hérité de la demande
                 prestataire = demande.id_prestataire
+
+                # ✅ VÉRIFIER QUE L'ACTE EST COMPATIBLE AVEC LE PRESTATAIRE
+                TYPES_ACTES_PAR_PRESTATAIRE = {
+                    "PHARMACIE": ["PHARMACIE"],
+                    "MEDECIN": ["CONSULTATION", "URGENCE"],
+                    "CLINIQUE": ["HOSPITALISATION", "CONSULTATION", "URGENCE"],
+                    "LABORATOIRE": ["ANALYSE"],
+                    "CENTRE_RADIOLOGIE": ["IMAGERIE"],
+                    "DENTAIRE": ["DENTAIRE"],
+                    "OPTIQUE": ["OPTIQUE"],
+                    "AUTRE": ["CONSULTATION", "URGENCE", "ANALYSE"],
+                }
+
+                type_prest = prestataire.type_prestataire
+                types_autorises_verif = TYPES_ACTES_PAR_PRESTATAIRE.get(type_prest, [])
+                code_type_acte = acte.id_type_prestation.code_type
+
+                if types_autorises_verif and code_type_acte not in types_autorises_verif:
+                    messages.error(
+                        request,
+                        f"Cet acte n'est pas compatible avec un prestataire "
+                        f"de type {prestataire.get_type_prestataire_display() or type_prest}."
+                    )
+                    return render(
+                        request,
+                        "core/demande_tp_detail_form.html",
+                        {
+                            "form": form,
+                            "demande": demande,
+                            "titre": "Ajouter un acte à la demande",
+                            "page": "demandes_tp",
+                        }
+                    )
 
                 # Vérifier que l'acte est couvert par une garantie active du contrat
                 acte_couvert = (

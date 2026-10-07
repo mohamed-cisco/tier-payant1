@@ -1,14 +1,13 @@
-﻿{% load static %}
+{% extends "core/base.html" %}
+{% load static %}
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block title %}Détail de la garantie - Tiers Payant{% endblock %}
+{% block header_title %}Détail de la garantie{% endblock %}
+{% block header_sub %}Informations de la garantie{% endblock %}
 
-    <title>Détail garantie - Tiers Payant</title>
+{% block extra_css %}
+<style>
 
-    <style>
         * {
             box-sizing: border-box;
         }
@@ -231,10 +230,12 @@
                 padding: 20px;
             }
         }
-    </style>
-</head>
+    
+</style>
+{% endblock %}
 
-<body>
+{% block content %}
+
 
 <div class="header">
 
@@ -453,5 +454,5 @@
     © 2026 — Plateforme Tiers Payant
 </div>
 
-</body>
-</html>
+
+{% endblock %}

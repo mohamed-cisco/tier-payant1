@@ -1,14 +1,13 @@
-﻿{% load static %}
+{% extends "core/base.html" %}
+{% load static %}
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block title %}Détail adhérent - Tiers Payant{% endblock %}
+{% block header_title %}Détail adhérent{% endblock %}
+{% block header_sub %}Informations de l'adhérent{% endblock %}
 
-    <title>Détail adhérent - Tiers Payant</title>
+{% block extra_css %}
+<style>
 
-    <style>
         * {
             box-sizing: border-box;
         }
@@ -236,10 +235,12 @@
                 flex-direction: column;
             }
         }
-    </style>
-</head>
+    
+</style>
+{% endblock %}
 
-<body>
+{% block content %}
+
 
 <div class="header">
 
@@ -475,5 +476,5 @@
     © 2026 — Plateforme Tiers Payant
 </div>
 
-</body>
-</html>
+
+{% endblock %}

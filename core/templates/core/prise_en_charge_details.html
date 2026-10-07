@@ -1,14 +1,13 @@
+{% extends "core/base.html" %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block title %}Détail de la prise en charge - Tiers Payant{% endblock %}
+{% block header_title %}Détail de la prise en charge{% endblock %}
+{% block header_sub %}Informations et actes pris en charge{% endblock %}
 
-    <title>Détail de la prise en charge</title>
+{% block extra_css %}
+<style>
 
-    <style>
         * {
             box-sizing: border-box;
         }
@@ -240,10 +239,12 @@
                 padding: 18px;
             }
         }
-    </style>
-</head>
+    
+</style>
+{% endblock %}
 
-<body>
+{% block content %}
+
 
 <div class="header">
 
@@ -496,5 +497,5 @@
     © 2026 — Plateforme Tiers Payant SAGPS
 </div>
 
-</body>
-</html>
+
+{% endblock %}

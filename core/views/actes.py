@@ -20,8 +20,23 @@ from core.forms import (
 )    
 from core.models import (
     Acte,
+    Prestataire,
     RolePermission,
     SousActe,
+    TypePrestation,
+)
+from core.forms import (
+    ActeForm,
+    SousActeForm,
+    TarifSousActeForm,
+    TypePrestationForm,
+)
+
+from core.models import (
+    Acte,
+    RolePermission,
+    SousActe,
+    TarifSousActe,
     TypePrestation,
 )
 

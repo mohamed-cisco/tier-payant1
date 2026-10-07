@@ -28,6 +28,7 @@ from core.forms import (
 from core.models import (
     Adherent,
     Adhesion,
+    AyantDroit,
     Contrat,
     Personne,
     RolePermission,

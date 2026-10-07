@@ -1,12 +1,13 @@
-﻿<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends "core/base.html" %}
+{% load static %}
 
-    <title>D tail de l'acte</title>
+{% block title %}Détail de l'acte - Tiers Payant{% endblock %}
+{% block header_title %}Détail de l'acte{% endblock %}
+{% block header_sub %}Informations de l'acte{% endblock %}
 
-    <style>
+{% block extra_css %}
+<style>
+
         body {
             margin: 0;
             font-family: Arial, sans-serif;
@@ -155,10 +156,12 @@
                 flex-direction: column;
             }
         }
-    </style>
-</head>
+    
+</style>
+{% endblock %}
 
-<body>
+{% block content %}
+
 
 <div class="container">
 
@@ -352,5 +355,5 @@
 
 </div>
 
-</body>
-</html>
+
+{% endblock %}

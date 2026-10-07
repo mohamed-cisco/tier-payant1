@@ -19,7 +19,10 @@ import openpyxl
 from openpyxl.styles import Font
 from django.http import HttpResponse
 
-from core.forms import AdherentForm
+from core.forms import (
+    AdherentForm,
+    ImportAdherentForm,
+)
 from core.models import (
     Adherent,
     AyantDroit,
