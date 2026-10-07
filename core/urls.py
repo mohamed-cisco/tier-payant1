@@ -139,6 +139,8 @@ from .views import (
     sauvegarde_restaurer,
     rapports,
     rapport_mensuel,
+    rapport_mensuel_pdf,
+    rapport_mensuel_excel,
     
 )
 
@@ -799,6 +801,8 @@ path(
     ),
 path("rapports/", rapports, name="rapports"),
 path("rapports/mensuel/", rapport_mensuel, name="rapport_mensuel"),
+path("rapports/mensuel/pdf/", rapport_mensuel_pdf, name="rapport_mensuel_pdf"),
+path("rapports/mensuel/excel/", rapport_mensuel_excel, name="rapport_mensuel_excel"),
 ]
 
 

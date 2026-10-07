@@ -183,6 +183,14 @@
 
     <button type="submit" class="btn btn-primary">🔍 Afficher</button>
     <a href="{% url 'rapports' %}" class="btn btn-secondary" style="background: #64748b; color: white;">← Retour</a>
+    <a href="{% url 'rapport_mensuel_pdf' %}?mois={{ mois }}&annee={{ annee }}" 
+       class="btn btn-success" target="_blank">
+        📄 Export PDF
+    </a>
+    <a href="{% url 'rapport_mensuel_excel' %}?mois={{ mois }}&annee={{ annee }}" 
+       class="btn btn-success">
+        📊 Export Excel
+    </a>
 </form>
 
 <!-- KPIs -->

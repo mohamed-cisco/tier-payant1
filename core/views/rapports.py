@@ -273,3 +273,403 @@ def rapport_mensuel(request):
             "graphique_demandes": graphique_demandes,
         }
     )
+
+
+def rapport_mensuel_pdf(request):
+    """Export PDF du rapport mensuel."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "FACTURE_VIEW" not in permissions and "DEMANDE_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("accueil")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    # Bornes du mois
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    # Stats (mêmes calculs que rapport_mensuel)
+    demandes = DemandeTp.objects.filter(
+        date_demande__date__gte=date_debut,
+        date_demande__date__lte=date_fin,
+    )
+    pec = PriseEnCharge.objects.filter(
+        date_pec__date__gte=date_debut,
+        date_pec__date__lte=date_fin,
+    )
+    consommations = Consommation.objects.filter(
+        date_prestation__gte=date_debut,
+        date_prestation__lte=date_fin,
+    )
+    factures = Facture.objects.filter(
+        date_facture__gte=date_debut,
+        date_facture__lte=date_fin,
+    )
+    reglements = Reglement.objects.filter(
+        date_reglement__gte=date_debut,
+        date_reglement__lte=date_fin,
+    )
+
+    nb_demandes = demandes.count()
+    nb_pec = pec.count()
+    nb_consommations = consommations.count()
+    nb_factures = factures.count()
+    nb_reglements = reglements.count()
+
+    montant_demandes = demandes.aggregate(total=Sum("montant_demande"))["total"] or Decimal("0.00")
+    montant_pec_accepte = pec.aggregate(total=Sum("montant_accepte"))["total"] or Decimal("0.00")
+    montant_pec_rejete = pec.aggregate(total=Sum("montant_rejete"))["total"] or Decimal("0.00")
+    montant_consommations = consommations.aggregate(
+        total=Sum("montant_prise_en_charge")
+    )["total"] or Decimal("0.00")
+    montant_factures_valide = factures.aggregate(
+        total=Sum("montant_valide")
+    )["total"] or Decimal("0.00")
+    montant_reglements = reglements.aggregate(
+        total=Sum("montant")
+    )["total"] or Decimal("0.00")
+
+    demandes_acceptees = demandes.filter(statut="ACCEPTEE").count()
+    taux_acceptation = round((demandes_acceptees / nb_demandes) * 100, 1) if nb_demandes > 0 else 0
+
+    top_prestataires = (
+        Facture.objects
+        .filter(date_facture__gte=date_debut, date_facture__lte=date_fin)
+        .values("id_prestataire__raison_sociale")
+        .annotate(total=Sum("montant_valide"), nb_factures=Count("id_facture"))
+        .order_by("-total")[:10]
+    )
+
+    top_actes = (
+        Consommation.objects
+        .filter(date_prestation__gte=date_debut, date_prestation__lte=date_fin)
+        .values("id_acte__code_acte", "id_acte__libelle")
+        .annotate(total=Sum("montant_prise_en_charge"), nb=Count("id_consommation"))
+        .order_by("-nb")[:10]
+    )
+
+    # Noms des mois
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    # Génération PDF
+    from django.http import HttpResponse
+    from django.conf import settings
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="rapport_{mois:02d}_{annee}.pdf"'
+    )
+
+    document = SimpleDocTemplate(
+        response,
+        pagesize=A4,
+        rightMargin=2*cm,
+        leftMargin=2*cm,
+        topMargin=2*cm,
+        bottomMargin=2*cm,
+    )
+
+    elements = []
+    styles = getSampleStyleSheet()
+
+    # Titre
+    style_titre = ParagraphStyle(
+        "Titre", parent=styles["Title"], fontSize=18,
+        textColor=colors.HexColor("#123b65"), alignment=1,
+    )
+    elements.append(Paragraph(
+        f"RAPPORT MENSUEL — {noms_mois[mois-1]} {annee}", style_titre
+    ))
+    elements.append(Spacer(1, 0.5*cm))
+
+    # Période
+    style_normal = ParagraphStyle("Normal", parent=styles["Normal"], fontSize=11)
+    elements.append(Paragraph(
+        f"Période : du {date_debut.strftime('%d/%m/%Y')} au {date_fin.strftime('%d/%m/%Y')}",
+        style_normal
+    ))
+    elements.append(Spacer(1, 0.8*cm))
+
+    # KPIs
+    elements.append(Paragraph("<b>STATISTIQUES GÉNÉRALES</b>", styles["Heading2"]))
+    kpi_data = [
+        ["Indicateur", "Valeur"],
+        ["Demandes TP", str(nb_demandes)],
+        ["PEC", str(nb_pec)],
+        ["Consommations", str(nb_consommations)],
+        ["Factures", str(nb_factures)],
+        ["Règlements", str(nb_reglements)],
+        ["Taux d'acceptation", f"{taux_acceptation}%"],
+    ]
+    kpi_table = Table(kpi_data, colWidths=[8*cm, 8*cm])
+    kpi_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123b65")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+    ]))
+    elements.append(kpi_table)
+    elements.append(Spacer(1, 0.8*cm))
+
+    # Situation financière
+    elements.append(Paragraph("<b>SITUATION FINANCIÈRE</b>", styles["Heading2"]))
+    fin_data = [
+        ["Indicateur", "Montant"],
+        ["Montant total demandé", f"{montant_demandes:,.2f} DA"],
+        ["Montant accordé (PEC)", f"{montant_pec_accepte:,.2f} DA"],
+        ["Montant rejeté (PEC)", f"{montant_pec_rejete:,.2f} DA"],
+        ["Montant consommations", f"{montant_consommations:,.2f} DA"],
+        ["Montant facturé validé", f"{montant_factures_valide:,.2f} DA"],
+        ["Montant réglé", f"{montant_reglements:,.2f} DA"],
+    ]
+    fin_table = Table(fin_data, colWidths=[8*cm, 8*cm])
+    fin_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123b65")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+    ]))
+    elements.append(fin_table)
+    elements.append(Spacer(1, 0.8*cm))
+
+    # Top prestataires
+    if top_prestataires:
+        elements.append(Paragraph("<b>TOP 10 PRESTATAIRES</b>", styles["Heading2"]))
+        prest_data = [["#", "Prestataire", "Nb factures", "Montant validé"]]
+        for i, p in enumerate(top_prestataires, 1):
+            prest_data.append([
+                str(i),
+                p["id_prestataire__raison_sociale"][:40],
+                str(p["nb_factures"]),
+                f"{p['total']:,.2f} DA",
+            ])
+        prest_table = Table(prest_data, colWidths=[1*cm, 8*cm, 3*cm, 4*cm])
+        prest_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123b65")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("ALIGN", (0, 0), (0, -1), "CENTER"),
+            ("ALIGN", (2, 0), (-1, -1), "RIGHT"),
+        ]))
+        elements.append(prest_table)
+
+    document.build(elements)
+    return response
+
+
+def rapport_mensuel_excel(request):
+    """Export Excel du rapport mensuel."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "FACTURE_VIEW" not in permissions and "DEMANDE_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("accueil")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    # Stats
+    demandes = DemandeTp.objects.filter(
+        date_demande__date__gte=date_debut,
+        date_demande__date__lte=date_fin,
+    )
+    pec = PriseEnCharge.objects.filter(
+        date_pec__date__gte=date_debut,
+        date_pec__date__lte=date_fin,
+    )
+    consommations = Consommation.objects.filter(
+        date_prestation__gte=date_debut,
+        date_prestation__lte=date_fin,
+    )
+    factures = Facture.objects.filter(
+        date_facture__gte=date_debut,
+        date_facture__lte=date_fin,
+    )
+    reglements = Reglement.objects.filter(
+        date_reglement__gte=date_debut,
+        date_reglement__lte=date_fin,
+    )
+
+    nb_demandes = demandes.count()
+    nb_pec = pec.count()
+    nb_consommations = consommations.count()
+    nb_factures = factures.count()
+    nb_reglements = reglements.count()
+
+    montant_demandes = demandes.aggregate(total=Sum("montant_demande"))["total"] or Decimal("0.00")
+    montant_pec_accepte = pec.aggregate(total=Sum("montant_accepte"))["total"] or Decimal("0.00")
+    montant_pec_rejete = pec.aggregate(total=Sum("montant_rejete"))["total"] or Decimal("0.00")
+    montant_consommations = consommations.aggregate(
+        total=Sum("montant_prise_en_charge")
+    )["total"] or Decimal("0.00")
+    montant_factures_valide = factures.aggregate(
+        total=Sum("montant_valide")
+    )["total"] or Decimal("0.00")
+    montant_reglements = reglements.aggregate(
+        total=Sum("montant")
+    )["total"] or Decimal("0.00")
+
+    demandes_acceptees = demandes.filter(statut="ACCEPTEE").count()
+    taux_acceptation = round((demandes_acceptees / nb_demandes) * 100, 1) if nb_demandes > 0 else 0
+
+    top_prestataires = (
+        Facture.objects
+        .filter(date_facture__gte=date_debut, date_facture__lte=date_fin)
+        .values("id_prestataire__raison_sociale")
+        .annotate(total=Sum("montant_valide"), nb_factures=Count("id_facture"))
+        .order_by("-total")[:10]
+    )
+
+    # Génération Excel
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from django.http import HttpResponse
+
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    workbook = openpyxl.Workbook()
+    feuille = workbook.active
+    feuille.title = "Rapport mensuel"
+
+    # Styles
+    font_titre = Font(bold=True, size=16, color="123B65")
+    font_entete = Font(bold=True, color="FFFFFF", size=11)
+    font_total = Font(bold=True, size=11, color="123B65")
+    fill_entete = PatternFill(start_color="123B65", end_color="123B65", fill_type="solid")
+    fill_total = PatternFill(start_color="EAF2FB", end_color="EAF2FB", fill_type="solid")
+
+    # Titre
+    feuille["A1"] = f"RAPPORT MENSUEL — {noms_mois[mois-1]} {annee}"
+    feuille["A1"].font = font_titre
+    feuille.merge_cells("A1:B1")
+
+    feuille["A2"] = f"Du {date_debut.strftime('%d/%m/%Y')} au {date_fin.strftime('%d/%m/%Y')}"
+    feuille.merge_cells("A2:B2")
+
+    # KPIs
+    feuille["A4"] = "STATISTIQUES GÉNÉRALES"
+    feuille["A4"].font = font_entete
+    feuille["A4"].fill = fill_entete
+    feuille["B4"].fill = fill_entete
+    feuille.merge_cells("A4:B4")
+
+    kpis = [
+        ("Demandes TP", nb_demandes),
+        ("PEC", nb_pec),
+        ("Consommations", nb_consommations),
+        ("Factures", nb_factures),
+        ("Règlements", nb_reglements),
+        ("Taux d'acceptation", f"{taux_acceptation}%"),
+    ]
+
+    ligne = 5
+    for label, valeur in kpis:
+        feuille.cell(row=ligne, column=1, value=label)
+        feuille.cell(row=ligne, column=2, value=valeur)
+        ligne += 1
+
+    # Situation financière
+    ligne += 1
+    feuille.cell(row=ligne, column=1, value="SITUATION FINANCIÈRE")
+    feuille.cell(row=ligne, column=1).font = font_entete
+    feuille.cell(row=ligne, column=1).fill = fill_entete
+    feuille.cell(row=ligne, column=2).fill = fill_entete
+    ligne += 1
+
+    finances = [
+        ("Montant demandé", montant_demandes),
+        ("Montant accordé (PEC)", montant_pec_accepte),
+        ("Montant rejeté (PEC)", montant_pec_rejete),
+        ("Montant consommations", montant_consommations),
+        ("Montant facturé validé", montant_factures_valide),
+        ("Montant réglé", montant_reglements),
+    ]
+
+    for label, montant in finances:
+        feuille.cell(row=ligne, column=1, value=label)
+        feuille.cell(row=ligne, column=2, value=float(montant))
+        feuille.cell(row=ligne, column=2).number_format = '#,##0.00" DA"'
+        ligne += 1
+
+    # Top prestataires
+    ligne += 1
+    feuille.cell(row=ligne, column=1, value="TOP 10 PRESTATAIRES")
+    feuille.cell(row=ligne, column=1).font = font_entete
+    feuille.cell(row=ligne, column=1).fill = fill_entete
+    for col in range(2, 5):
+        feuille.cell(row=ligne, column=col).fill = fill_entete
+    ligne += 1
+
+    # En-têtes
+    headers = ["#", "Prestataire", "Nb factures", "Montant validé"]
+    for col, h in enumerate(headers, 1):
+        feuille.cell(row=ligne, column=col, value=h)
+        feuille.cell(row=ligne, column=col).font = font_total
+    ligne += 1
+
+    for i, p in enumerate(top_prestataires, 1):
+        feuille.cell(row=ligne, column=1, value=i)
+        feuille.cell(row=ligne, column=2, value=p["id_prestataire__raison_sociale"])
+        feuille.cell(row=ligne, column=3, value=p["nb_factures"])
+        feuille.cell(row=ligne, column=4, value=float(p["total"]))
+        feuille.cell(row=ligne, column=4).number_format = '#,##0.00" DA"'
+        ligne += 1
+
+    # Ajuster largeurs
+    feuille.column_dimensions["A"].width = 30
+    feuille.column_dimensions["B"].width = 30
+    feuille.column_dimensions["C"].width = 15
+    feuille.column_dimensions["D"].width = 20
+
+    # Réponse
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = (
+        f'attachment; filename="rapport_{mois:02d}_{annee}.xlsx"'
+    )
+    workbook.save(response)
+    return response
