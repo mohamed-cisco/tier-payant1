@@ -12,8 +12,12 @@ Fonctions :
 from django.contrib import messages
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
-from core.forms import TypePrestationForm
+from core.forms import (
+    SousActeForm,
+    TypePrestationForm
+)    
 from core.models import (
     Acte,
     RolePermission,
@@ -503,3 +507,208 @@ def acte_radier(request, id_acte):
         )
 
     return redirect("actes")
+
+
+def sous_actes(request):
+    """Liste des sous-actes."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "ACTE_VIEW" not in permissions:
+        messages.error(
+            request,
+            "Vous n'avez pas l'autorisation de consulter les sous-actes."
+        )
+        return redirect("accueil")
+
+    recherche = request.GET.get("recherche", "").strip()
+    statut = request.GET.get("statut", "").strip()
+    id_acte = request.GET.get("id_acte", "").strip()
+
+    sous_actes_liste = (
+        SousActe.objects
+        .select_related("id_acte")
+        .all()
+        .order_by("-id_sous_acte")
+    )
+
+    if recherche:
+        sous_actes_liste = sous_actes_liste.filter(
+            Q(code_sous_acte__icontains=recherche)
+            | Q(libelle__icontains=recherche)
+            | Q(description__icontains=recherche)
+        )
+
+    if statut:
+        sous_actes_liste = sous_actes_liste.filter(statut=statut)
+
+    if id_acte:
+        sous_actes_liste = sous_actes_liste.filter(id_acte_id=id_acte)
+
+    actes_liste = (
+        Acte.objects
+        .filter(statut="ACTIF")
+        .order_by("libelle")
+    )
+
+    return render(
+        request,
+        "core/sous_actes.html",
+        {
+            "sous_actes": sous_actes_liste,
+            "actes": actes_liste,
+            "recherche": recherche,
+            "statut": statut,
+            "id_acte": id_acte,
+            "permissions": permissions,
+            "page": "sous_actes",
+        }
+    )
+
+
+def _generer_code_acte():
+    """Génère un code unique d'acte."""
+    annee = timezone.now().year
+    prefixe = f"ACT-{annee}-"
+
+    codes = (
+        Acte.objects
+        .filter(code_acte__startswith=prefixe)
+        .values_list("code_acte", flat=True)
+    )
+
+    valeurs = []
+    for code in codes:
+        try:
+            valeurs.append(int(code.rsplit("-", 1)[1]))
+        except (ValueError, IndexError):
+            continue
+
+    prochain = max(valeurs, default=0) + 1
+    code_acte = f"{prefixe}{prochain:04d}"
+
+    while Acte.objects.filter(code_acte=code_acte).exists():
+        prochain += 1
+        code_acte = f"{prefixe}{prochain:04d}"
+
+    return code_acte
+
+
+def _generer_code_sous_acte():
+    """Génère un code unique de sous-acte."""
+    annee = timezone.now().year
+    prefixe = f"SA-{annee}-"
+
+    codes = (
+        SousActe.objects
+        .filter(code_sous_acte__startswith=prefixe)
+        .values_list("code_sous_acte", flat=True)
+    )
+
+    valeurs = []
+    for code in codes:
+        try:
+            valeurs.append(int(code.rsplit("-", 1)[1]))
+        except (ValueError, IndexError):
+            continue
+
+    prochain = max(valeurs, default=0) + 1
+    code_sous_acte = f"{prefixe}{prochain:04d}"
+
+    while SousActe.objects.filter(code_sous_acte=code_sous_acte).exists():
+        prochain += 1
+        code_sous_acte = f"{prefixe}{prochain:04d}"
+
+    return code_sous_acte
+
+
+def sous_acte_create(request):
+    """Créer un nouveau sous-acte."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "ACTE_CREATE" not in permissions:
+        messages.error(
+            request,
+            "Vous n'avez pas l'autorisation de créer un sous-acte."
+        )
+        return redirect("sous_actes")
+
+    actes_liste = (
+        Acte.objects
+        .filter(statut="ACTIF")
+        .order_by("libelle")
+    )
+
+    if request.method == "POST":
+        form = SousActeForm(request.POST)
+
+        form.fields["id_acte"].choices = [
+            (acte.id_acte, f"{acte.code_acte} - {acte.libelle}")
+            for acte in actes_liste
+        ]
+
+        if form.is_valid():
+            id_acte = form.cleaned_data["id_acte"]
+            code_sous_acte = _generer_code_sous_acte()
+
+            sous_acte = SousActe.objects.create(
+                id_acte_id=id_acte,
+                code_sous_acte=code_sous_acte,
+                libelle=form.cleaned_data["libelle"],
+                description=form.cleaned_data["description"],
+                unite=form.cleaned_data["unite"],
+                statut="ACTIF",
+            )
+
+            messages.success(
+                request,
+                f"Sous-acte {sous_acte.code_sous_acte} créé avec succès."
+            )
+            return redirect("sous_actes")
+    else:
+        id_acte_preselectionne = request.GET.get("id_acte", "").strip()
+
+        form = SousActeForm(
+            initial={"id_acte": id_acte_preselectionne}
+        )
+
+    form.fields["id_acte"].choices = [
+        (acte.id_acte, f"{acte.code_acte} - {acte.libelle}")
+        for acte in actes_liste
+    ]
+
+    return render(
+        request,
+        "core/sous_acte_form.html",
+        {
+            "form": form,
+            "titre": "Nouveau sous-acte",
+            "permissions": permissions,
+            "page": "sous_actes",
+        }
+    )
