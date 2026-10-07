@@ -32,6 +32,35 @@ from core.views.dashboard import enregistrer_audit
 from core.views.decorators import session_utilisateur_required
 
 
+# ============================================================
+# IMPORTS POUR LES PDF
+# ============================================================
+from django.conf import settings
+from django.http import HttpResponse
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A5, landscape
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import cm
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Table,
+    TableStyle,
+    Paragraph,
+    Spacer,
+    Image,
+)
+# Imports pour les PDF
+from django.http import HttpResponse
+from django.conf import settings
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A5, landscape
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import cm
+from reportlab.platypus import (
+SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image,
+)
+
+
 @session_utilisateur_required
 def adherents(request):
     """Liste des adhérents."""
@@ -544,3 +573,252 @@ def adherent_radier(request, id_adherent):
             "adherent": adherent,
         }
     )
+
+
+def adherent_carte_pdf(request, id_adherent):
+    """Génère la carte d'adhérent en PDF (avec ayants droit)."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "ADHERENT_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("adherents")
+
+    try:
+        adherent = (
+            Adherent.objects
+            .select_related("id_personne")
+            .get(id_adherent=id_adherent)
+        )
+    except Adherent.DoesNotExist:
+        messages.error(request, "Adhérent introuvable.")
+        return redirect("adherents")
+
+    adhesion = (
+        Adhesion.objects
+        .filter(id_adherent=adherent, statut="ACTIF")
+        .select_related("id_contrat", "id_contrat__id_souscripteur")
+        .order_by("-date_debut")
+        .first()
+    )
+
+    # ⬇️ Récupérer les ayants droit ACTIFS
+    ayants_droit = (
+        AyantDroit.objects
+        .select_related("id_personne")
+        .filter(id_adherent=adherent, statut="ACTIF")
+        .order_by("id_ayant_droit")
+    )
+        # Récupérer les champs personnalisés
+    champs_perso = get_valeurs_champs_entite(
+        "ADHERENT", adherent.id_adherent
+    )
+    # Filtrer pour ne garder que ceux qui ont une valeur
+    champs_perso = [
+        item for item in champs_perso
+        if item["valeur"] and str(item["valeur"]).strip()
+    ]
+
+    personne = adherent.id_personne
+
+    import os
+    from django.conf import settings
+    from django.http import HttpResponse
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A5, landscape
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.platypus import (
+        SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image,
+    )
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="Carte-{adherent.numero_adherent}.pdf"'
+    )
+
+    document = SimpleDocTemplate(
+        response,
+        pagesize=landscape(A5),
+        rightMargin=0.8 * cm,
+        leftMargin=0.8 * cm,
+        topMargin=0.6 * cm,
+        bottomMargin=0.6 * cm,
+    )
+
+    elements = []
+    styles = getSampleStyleSheet()
+
+    style_titre = ParagraphStyle(
+        "Titre", parent=styles["Title"], fontSize=16,
+        textColor=colors.HexColor("#123b65"), alignment=2, leading=20,
+    )
+
+    # =========================
+    # EN-TÊTE AVEC LOGO
+    # =========================
+    logo_path = os.path.join(
+        settings.BASE_DIR, "core", "static", "core", "img", "logo-sagps.png"
+    )
+
+    if os.path.exists(logo_path):
+        logo = Image(logo_path, width=5 * cm, height=2.2 * cm)
+    else:
+        logo = ""
+
+    titre_header = Paragraph(
+        "<b>CARTE D'ADHÉRENT</b><br/>"
+        f"<font size=10>Djazair Med - Tiers Payant</font>",
+        style_titre,
+    )
+
+    header_table = Table([[logo, titre_header]], colWidths=[7 * cm, 11.5 * cm])
+    header_table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("LINEBELOW", (0, 0), (-1, 0), 2, colors.HexColor("#123b65")),
+    ]))
+    elements.append(header_table)
+    elements.append(Spacer(1, 0.4 * cm))
+
+    # =========================
+    # INFOS DU TITULAIRE
+    # =========================
+    infos_data = [
+        ["Nom", personne.nom or "-"],
+        ["Prénom", personne.prenom or "-"],
+        ["Date de naissance",
+         personne.date_naissance.strftime("%d/%m/%Y") if personne.date_naissance else "-"],
+        ["N° Adhérent", adherent.numero_adherent],
+        ["Contrat", adhesion.id_contrat.numero_contrat if adhesion else "-"],
+        ["Organisme",
+         adhesion.id_contrat.id_souscripteur.raison_sociale if adhesion else "-"],
+        ["Valide du",
+         adhesion.date_debut.strftime("%d/%m/%Y") if adhesion and adhesion.date_debut else "-"],
+        ["Au",
+         adhesion.date_fin.strftime("%d/%m/%Y") if adhesion and adhesion.date_fin else "Illimité"],
+    ]
+
+    # Ajouter les champs personnalisés
+    for item in champs_perso:
+        infos_data.append([
+            item["champ"].libelle,
+            str(item["valeur"]),
+        ])
+
+    infos_table = Table(infos_data, colWidths=[4 * cm, 14.5 * cm])
+    infos_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#eaf2fb")),
+        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (0, -1), 8),
+        ("FONTSIZE", (1, 0), (1, -1), 9),
+        ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#475569")),
+        ("TEXTCOLOR", (1, 0), (1, -1), colors.HexColor("#123b65")),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+    ]))
+    elements.append(infos_table)
+
+    # =========================
+    # AYANTS DROIT (si présents)
+    # =========================
+    if ayants_droit:
+        elements.append(Spacer(1, 0.3 * cm))
+
+        # Titre de section
+        style_section_ayant = ParagraphStyle(
+            "SectionAyant",
+            parent=styles["Normal"],
+            fontSize=10,
+            textColor=colors.HexColor("#123b65"),
+            fontName="Helvetica-Bold",
+            spaceAfter=5,
+        )
+        elements.append(Paragraph("AYANTS DROIT", style_section_ayant))
+
+        # Tableau des ayants droit
+        ad_data = [["Nom & Prénom", "N° Personne", "Lien", "Date de naissance"]]
+
+        for ad in ayants_droit:
+            p = ad.id_personne
+            lien_label = ad.type_lien
+            if ad.type_lien == "ENFANT":
+                lien_label = "Enfant"
+            elif ad.type_lien == "CONJOINT":
+                lien_label = "Conjoint(e)"
+            elif ad.type_lien == "PARENT":
+                lien_label = "Parent"
+
+            ad_data.append([
+                f"{p.nom} {p.prenom}",
+                p.numero_personne or "-",
+                lien_label,
+                p.date_naissance.strftime("%d/%m/%Y") if p.date_naissance else "-",
+            ])
+
+        ad_table = Table(
+            ad_data,
+            colWidths=[6 * cm, 4 * cm, 4 * cm, 4.5 * cm],
+            repeatRows=1,
+        )
+        ad_table.setStyle(TableStyle([
+            # En-tête
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123b65")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+            # Corps
+            ("ALIGN", (0, 1), (0, -1), "LEFT"),
+            ("ALIGN", (1, 1), (-1, -1), "CENTER"),
+            # Bordures
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            # Padding
+            ("LEFTPADDING", (0, 0), (-1, -1), 5),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ]))
+        elements.append(ad_table)
+
+    # =========================
+    # PIED : SIGNATURE
+    # =========================
+    
+    elements.append(Spacer(1, 0.3 * cm))
+
+    pied_data = [[
+        Paragraph("<b>Signature et cachet</b>", styles["Normal"]),
+        Paragraph(
+            f"<b>N° : {adherent.numero_adherent}</b>",
+            ParagraphStyle("right", parent=styles["Normal"], alignment=2),
+        ),
+    ]]
+    pied_table = Table(pied_data, colWidths=[9 * cm, 9.5 * cm])
+    pied_table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+    ]))
+    elements.append(pied_table)
+
+    document.build(elements)
+
+    return response
+
