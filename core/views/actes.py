@@ -712,3 +712,133 @@ def sous_acte_create(request):
             "page": "sous_actes",
         }
     )
+
+
+def sous_acte_modifier(request, id_sous_acte):
+    """Modifier un sous-acte existant."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "ACTE_UPDATE" not in permissions:
+        messages.error(
+            request,
+            "Vous n'avez pas l'autorisation de modifier un sous-acte."
+        )
+        return redirect("sous_actes")
+
+    try:
+        sous_acte = SousActe.objects.get(id_sous_acte=id_sous_acte)
+    except SousActe.DoesNotExist:
+        messages.error(request, "Sous-acte introuvable.")
+        return redirect("sous_actes")
+
+    actes_liste = (
+        Acte.objects
+        .filter(statut="ACTIF")
+        .order_by("libelle")
+    )
+
+    if request.method == "POST":
+        form = SousActeForm(request.POST)
+        form.fields["id_acte"].choices = [
+            (acte.id_acte, f"{acte.code_acte} - {acte.libelle}")
+            for acte in actes_liste
+        ]
+
+        if form.is_valid():
+            try:
+                sous_acte.id_acte_id = form.cleaned_data["id_acte"]
+                sous_acte.libelle = form.cleaned_data["libelle"]
+                sous_acte.description = form.cleaned_data["description"]
+                sous_acte.unite = form.cleaned_data["unite"]
+                sous_acte.statut = form.cleaned_data["statut"]
+                sous_acte.save()
+
+                messages.success(
+                    request,
+                    f"Sous-acte {sous_acte.code_sous_acte} modifié avec succès."
+                )
+                return redirect("sous_actes")
+
+            except Exception as e:
+                messages.error(
+                    request,
+                    f"Erreur lors de la modification : {e}"
+                )
+    else:
+        form = SousActeForm(
+            initial={
+                "id_acte": sous_acte.id_acte_id,
+                "code_sous_acte": sous_acte.code_sous_acte,
+                "libelle": sous_acte.libelle,
+                "description": sous_acte.description,
+                "unite": sous_acte.unite,
+                "statut": sous_acte.statut,
+            }
+        )
+        form.fields["id_acte"].choices = [
+            (acte.id_acte, f"{acte.code_acte} - {acte.libelle}")
+            for acte in actes_liste
+        ]
+
+    return render(
+        request,
+        "core/sous_acte_form.html",
+        {
+            "form": form,
+            "titre": "Modifier le sous-acte",
+            "permissions": permissions,
+            "page": "sous_actes",
+        }
+    )
+
+
+def sous_acte_radier(request, id_sous_acte):
+    """Radier un sous-acte."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "ACTE_DELETE" not in permissions:
+        messages.error(
+            request,
+            "Vous n'avez pas l'autorisation de radier un sous-acte."
+        )
+        return redirect("sous_actes")
+
+    try:
+        sous_acte = SousActe.objects.get(id_sous_acte=id_sous_acte)
+    except SousActe.DoesNotExist:
+        messages.error(request, "Sous-acte introuvable.")
+        return redirect("sous_actes")
+
+    if request.method == "POST":
+        sous_acte.statut = "INACTIF"
+        sous_acte.save()
+
+        messages.success(request, "Sous-acte radié avec succès.")
+
+    return redirect("sous_actes")
