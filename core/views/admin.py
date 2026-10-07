@@ -34,8 +34,9 @@ from core.models import (
 from core.views.dashboard import enregistrer_audit
 from core.views.decorators import session_utilisateur_required
 
+@session_utilisateur_required
 def utilisateurs(request):
-    
+
     utilisateur = request.utilisateur
     id_utilisateur = utilisateur.id_utilisateur
 
@@ -398,10 +399,7 @@ def role_create(request):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
 
     if "ROLE_CREATE" not in permissions:
@@ -411,43 +409,68 @@ def role_create(request):
         )
         return redirect("roles")
 
+    # Construire un formulaire manuellement
+    from django import forms as django_forms
+
+    class RoleFormCreate(django_forms.Form):
+        code_role = django_forms.CharField(
+            label="Code du rôle",
+            max_length=50,
+        )
+        libelle = django_forms.CharField(
+            label="Libellé",
+            max_length=100,
+        )
+        description = django_forms.CharField(
+            label="Description",
+            required=False,
+            widget=django_forms.Textarea(attrs={"rows": 4}),
+        )
+        statut = django_forms.ChoiceField(
+            label="Statut",
+            choices=[
+                ("ACTIF", "Actif"),
+                ("INACTIF", "Inactif"),
+            ],
+            initial="ACTIF",
+        )
+
     if request.method == "POST":
-        code_role = request.POST.get("code_role", "").strip()
-        libelle = request.POST.get("libelle", "").strip()
-        description = request.POST.get("description", "").strip()
-        statut = request.POST.get("statut", "ACTIF")
+        form = RoleFormCreate(request.POST)
 
-        if not code_role or not libelle:
-            messages.error(
-                request,
-                "Le code du rôle et le libellé sont obligatoires."
-            )
-        elif Role.objects.filter(code_role=code_role).exists():
-            messages.error(
-                request,
-                "Ce code de rôle existe déjÃ ."
-            )
-        else:
-            Role.objects.create(
-                code_role=code_role,
-                libelle=libelle,
-                description=description or None,
-                statut=statut
-            )
+        if form.is_valid():
+            code_role = form.cleaned_data["code_role"].strip()
+            libelle = form.cleaned_data["libelle"].strip()
+            description = form.cleaned_data["description"].strip()
+            statut = form.cleaned_data["statut"]
 
-            messages.success(
-                request,
-                "Rôle créé avec succès."
-            )
+            if Role.objects.filter(code_role=code_role).exists():
+                messages.error(
+                    request,
+                    "Ce code de rôle existe déjà."
+                )
+            else:
+                Role.objects.create(
+                    code_role=code_role,
+                    libelle=libelle,
+                    description=description or None,
+                    statut=statut
+                )
 
-            return redirect("roles")
+                messages.success(
+                    request,
+                    "Rôle créé avec succès."
+                )
+                return redirect("roles")
+    else:
+        form = RoleFormCreate()
 
     return render(
         request,
         "core/role_form.html",
         {
             "titre": "Nouveau rôle",
-            "page": "roles",
+            "form": form,              # ✅ AJOUTER form
         }
     )
 
@@ -624,10 +647,7 @@ def role_modifier(request, id_role):
             id_role__utilisateurrole__statut="ACTIF",
             id_permission__statut="ACTIF"
         )
-        .values_list(
-            "id_permission__code_permission",
-            flat=True
-        )
+        .values_list("id_permission__code_permission", flat=True)
     )
 
     if "ROLE_UPDATE" not in permissions:
@@ -640,11 +660,37 @@ def role_modifier(request, id_role):
     try:
         role = Role.objects.get(id_role=id_role)
     except Role.DoesNotExist:
-        messages.error(
-            request,
-            "Rôle introuvable."
-        )
+        messages.error(request, "Rôle introuvable.")
         return redirect("roles")
+
+    # Construire un formulaire manuellement
+    from django import forms as django_forms
+
+    class RoleFormModifier(django_forms.Form):
+        code_role = django_forms.CharField(
+            label="Code du rôle",
+            max_length=50,
+            initial=role.code_role,
+        )
+        libelle = django_forms.CharField(
+            label="Libellé",
+            max_length=100,
+            initial=role.libelle,
+        )
+        description = django_forms.CharField(
+            label="Description",
+            required=False,
+            widget=django_forms.Textarea(attrs={"rows": 4}),
+            initial=role.description,
+        )
+        statut = django_forms.ChoiceField(
+            label="Statut",
+            choices=[
+                ("ACTIF", "Actif"),
+                ("INACTIF", "Inactif"),
+            ],
+            initial=role.statut,
+        )
 
     if request.method == "POST":
         code_role = request.POST.get("code_role", "").strip()
@@ -657,6 +703,7 @@ def role_modifier(request, id_role):
                 request,
                 "Le code du rôle et le libellé sont obligatoires."
             )
+            form = RoleFormModifier(request.POST)
         elif Role.objects.filter(
             code_role=code_role
         ).exclude(
@@ -664,8 +711,9 @@ def role_modifier(request, id_role):
         ).exists():
             messages.error(
                 request,
-                "Ce code de rôle existe déjÃ ."
+                "Ce code de rôle existe déjà."
             )
+            form = RoleFormModifier(request.POST)
         else:
             role.code_role = code_role
             role.libelle = libelle
@@ -677,8 +725,9 @@ def role_modifier(request, id_role):
                 request,
                 "Rôle modifié avec succès."
             )
-
             return redirect("roles")
+    else:
+        form = RoleFormModifier()
 
     return render(
         request,
@@ -686,9 +735,9 @@ def role_modifier(request, id_role):
         {
             "titre": "Modifier le rôle",
             "role": role,
+            "form": form,             
         }
     )
-@session_utilisateur_required
 
 
 
