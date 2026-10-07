@@ -53,6 +53,8 @@ from .documents import *
 
 # Administration
 from .admin import *
+# Rapports
+from .rapports import *
 
 
 # ============================================================

@@ -137,6 +137,8 @@ from .views import (
     sauvegarde_telecharger,
     sauvegarde_supprimer,
     sauvegarde_restaurer,
+    rapports,
+    rapport_mensuel,
     
 )
 
@@ -795,6 +797,8 @@ path(
         ajax_prestataires_par_sous_acte,
         name="ajax_prestataires_par_sous_acte"
     ),
+path("rapports/", rapports, name="rapports"),
+path("rapports/mensuel/", rapport_mensuel, name="rapport_mensuel"),
 ]
 
 

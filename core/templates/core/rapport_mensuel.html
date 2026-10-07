@@ -1,0 +1,369 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Rapport mensuel - Tiers Payant{% endblock %}
+{% block header_title %}Rapport mensuel{% endblock %}
+{% block header_sub %}{{ nom_mois }} {{ annee }} — du {{ date_debut|date:"d/m/Y" }} au {{ date_fin|date:"d/m/Y" }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== FILTRES ===== */
+    .filters-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 18px 20px;
+        margin-bottom: 22px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 2px 8px rgba(0,0,0,.04);
+        display: flex;
+        gap: 15px;
+        align-items: end;
+        flex-wrap: wrap;
+    }
+
+    .filters-bar .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .filters-bar label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .filters-bar select,
+    .filters-bar input {
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 7px;
+        font-size: 14px;
+        background: white;
+        outline: none;
+    }
+
+    .filters-bar select:focus,
+    .filters-bar input:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 18px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .btn-primary { background: #123b65; color: white; }
+    .btn-primary:hover { background: #1d5d91; }
+
+    .btn-success { background: #15803d; color: white; }
+    .btn-success:hover { background: #166534; }
+
+    /* ===== STATS ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 22px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 3px 10px rgba(0,0,0,.04);
+    }
+
+    .stat-icon { font-size: 28px; margin-bottom: 8px; }
+    .stat-label { font-size: 12px; color: #6b7280; font-weight: 600; text-transform: uppercase; }
+    .stat-value { font-size: 24px; font-weight: 700; color: #123b65; margin-top: 5px; }
+    .stat-value.small { font-size: 18px; }
+    .stat-evolution { font-size: 12px; margin-top: 6px; }
+    .stat-evolution.up { color: #16a34a; }
+    .stat-evolution.down { color: #dc2626; }
+
+    /* ===== CARTES ===== */
+    .card {
+        background: white;
+        border-radius: 14px;
+        padding: 25px;
+        margin-bottom: 22px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 4px 15px rgba(0,0,0,.05);
+    }
+
+    .card h2 {
+        margin: 0 0 20px;
+        font-size: 18px;
+        color: #123b65;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5ebf2;
+    }
+
+    /* ===== TABLEAUX ===== */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 11px 12px;
+        text-align: left;
+        border-bottom: 1px solid #edf1f5;
+        font-size: 13px;
+    }
+
+    th {
+        background: #f7f9fc;
+        color: #123b65;
+        font-weight: 700;
+    }
+
+    tbody tr:hover { background: #f8fbfe; }
+
+    .montant { text-align: right; font-weight: 600; }
+
+    .empty {
+        text-align: center;
+        padding: 35px;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    /* ===== GRAPHIQUE ===== */
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+
+    /* ===== PRINT ===== */
+    @media print {
+        .filters-bar, .btn { display: none; }
+        .card { box-shadow: none; border: 1px solid #ccc; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- FILTRES -->
+<form method="get" class="filters-bar">
+    <div class="field">
+        <label>Mois</label>
+        <select name="mois">
+            <option value="1" {% if mois == 1 %}selected{% endif %}>Janvier</option>
+            <option value="2" {% if mois == 2 %}selected{% endif %}>Février</option>
+            <option value="3" {% if mois == 3 %}selected{% endif %}>Mars</option>
+            <option value="4" {% if mois == 4 %}selected{% endif %}>Avril</option>
+            <option value="5" {% if mois == 5 %}selected{% endif %}>Mai</option>
+            <option value="6" {% if mois == 6 %}selected{% endif %}>Juin</option>
+            <option value="7" {% if mois == 7 %}selected{% endif %}>Juillet</option>
+            <option value="8" {% if mois == 8 %}selected{% endif %}>Août</option>
+            <option value="9" {% if mois == 9 %}selected{% endif %}>Septembre</option>
+            <option value="10" {% if mois == 10 %}selected{% endif %}>Octobre</option>
+            <option value="11" {% if mois == 11 %}selected{% endif %}>Novembre</option>
+            <option value="12" {% if mois == 12 %}selected{% endif %}>Décembre</option>
+        </select>
+    </div>
+
+    <div class="field">
+        <label>Année</label>
+        <input type="number" name="annee" value="{{ annee }}" min="2020" max="2100">
+    </div>
+
+    <button type="submit" class="btn btn-primary">🔍 Afficher</button>
+    <a href="{% url 'rapports' %}" class="btn btn-secondary" style="background: #64748b; color: white;">← Retour</a>
+</form>
+
+<!-- KPIs -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">📝</div>
+        <div class="stat-label">Demandes TP</div>
+        <div class="stat-value">{{ nb_demandes }}</div>
+        {% if demandes_prec > 0 %}
+            <div class="stat-evolution {% if evolution_demandes_pct >= 0 %}up{% else %}down{% endif %}">
+                {% if evolution_demandes_pct >= 0 %}▲{% else %}▼{% endif %}
+                {{ evolution_demandes_pct|floatformat:1 }}% vs mois préc.
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">🏥</div>
+        <div class="stat-label">PEC</div>
+        <div class="stat-value">{{ nb_pec }}</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">🧾</div>
+        <div class="stat-label">Consommations</div>
+        <div class="stat-value">{{ nb_consommations }}</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-label">Factures</div>
+        <div class="stat-value">{{ nb_factures }}</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">💳</div>
+        <div class="stat-label">Règlements</div>
+        <div class="stat-value">{{ nb_reglements }}</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-label">Taux d'acceptation</div>
+        <div class="stat-value success">{{ taux_acceptation }}%</div>
+    </div>
+</div>
+
+<!-- MONTANTS -->
+<div class="card">
+    <h2>💰 Situation financière</h2>
+
+    <table>
+        <tbody>
+            <tr>
+                <td><strong>Montant total demandé</strong></td>
+                <td class="montant">{{ montant_demandes|floatformat:2 }} DA</td>
+            </tr>
+            <tr>
+                <td><strong>Montant accordé (PEC)</strong></td>
+                <td class="montant" style="color: #16a34a;">{{ montant_pec_accepte|floatformat:2 }} DA</td>
+            </tr>
+            <tr>
+                <td><strong>Montant rejeté (PEC)</strong></td>
+                <td class="montant" style="color: #dc2626;">{{ montant_pec_rejete|floatformat:2 }} DA</td>
+            </tr>
+            <tr>
+                <td><strong>Montant consommations validées</strong></td>
+                <td class="montant">{{ montant_consommations|floatformat:2 }} DA</td>
+            </tr>
+            <tr>
+                <td><strong>Montant facturé validé</strong></td>
+                <td class="montant">{{ montant_factures_valide|floatformat:2 }} DA</td>
+            </tr>
+            <tr>
+                <td><strong>Montant réglé</strong></td>
+                <td class="montant" style="color: #16a34a;">{{ montant_reglements|floatformat:2 }} DA</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- GRAPHIQUE -->
+{% if graphique_demandes %}
+<div class="card">
+    <h2>📈 Évolution journalière des demandes</h2>
+    <div class="chart-container">
+        <canvas id="evolutionChart"></canvas>
+    </div>
+</div>
+{% endif %}
+
+<!-- TOP PRESTATAIRES -->
+<div class="card">
+    <h2>🏆 Top 10 prestataires (par montant facturé)</h2>
+
+    {% if top_prestataires %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Prestataire</th>
+                    <th>Nb factures</th>
+                    <th>Montant validé</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in top_prestataires %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ p.id_prestataire__raison_sociale }}</strong></td>
+                    <td>{{ p.nb_factures }}</td>
+                    <td class="montant">{{ p.total|floatformat:2 }} DA</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="empty">Aucune facture ce mois-ci.</p>
+    {% endif %}
+</div>
+
+<!-- TOP ACTES -->
+<div class="card">
+    <h2>🩺 Top 10 actes (par fréquence)</h2>
+
+    {% if top_actes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Code</th>
+                    <th>Acte</th>
+                    <th>Nb consommations</th>
+                    <th>Montant total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in top_actes %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ a.id_acte__code_acte }}</strong></td>
+                    <td>{{ a.id_acte__libelle }}</td>
+                    <td>{{ a.nb }}</td>
+                    <td class="montant">{{ a.total|floatformat:2 }} DA</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="empty">Aucune consommation ce mois-ci.</p>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+{% if graphique_demandes %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    new Chart(document.getElementById("evolutionChart"), {
+        type: "line",
+        data: {
+            labels: {{ graphique_labels|safe }},
+            datasets: [{
+                label: "Nombre de demandes",
+                data: {{ graphique_demandes|safe }},
+                borderColor: "#123b65",
+                backgroundColor: "rgba(18, 59, 101, 0.1)",
+                borderWidth: 3,
+                tension: 0.3,
+                fill: true,
+                pointBackgroundColor: "#123b65",
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}
