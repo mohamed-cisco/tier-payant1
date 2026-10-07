@@ -842,3 +842,392 @@ def sous_acte_radier(request, id_sous_acte):
         messages.success(request, "Sous-acte radié avec succès.")
 
     return redirect("sous_actes")
+
+
+def tarif_sous_acte_create(request):
+    """Créer un nouveau tarif de sous-acte."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "ACTE_CREATE" not in permissions:
+        messages.error(
+            request,
+            "Vous n'avez pas l'autorisation de créer un tarif de sous-acte."
+        )
+        return redirect("tarifs_sous_actes")
+
+    sous_actes_liste = (
+        SousActe.objects
+        .filter(statut="ACTIF")
+        .select_related("id_acte")
+        .order_by("libelle")
+    )
+
+    prestataires_liste = (
+        Prestataire.objects
+        .filter(statut="ACTIF")
+        .order_by("raison_sociale")
+    )
+
+    if request.method == "POST":
+        form = TarifSousActeForm(request.POST)
+
+        form.fields["id_sous_acte"].choices = [
+            (sa.id_sous_acte, f"{sa.code_sous_acte} - {sa.libelle}")
+            for sa in sous_actes_liste
+        ]
+        form.fields["id_prestataire"].choices = [
+            (p.id_prestataire, f"{p.code_prestataire} - {p.raison_sociale}")
+            for p in prestataires_liste
+        ]
+
+        if form.is_valid():
+            id_sous_acte = form.cleaned_data["id_sous_acte"]
+            id_prestataire = form.cleaned_data["id_prestataire"]
+            montant = form.cleaned_data["montant"]
+            date_debut = form.cleaned_data["date_debut"]
+            date_fin = form.cleaned_data["date_fin"]
+
+            if date_fin and date_fin < date_debut:
+                form.add_error(
+                    "date_fin",
+                    "La date de fin doit être supérieure ou égale à la date de début."
+                )
+            else:
+                tarifs_existants = TarifSousActe.objects.filter(
+                    id_sous_acte_id=id_sous_acte,
+                    id_prestataire_id=id_prestataire
+                )
+
+                if date_fin:
+                    tarifs_existants = tarifs_existants.filter(
+                        date_debut__lte=date_fin
+                    ).filter(
+                        Q(date_fin__isnull=True) | Q(date_fin__gte=date_debut)
+                    )
+                else:
+                    tarifs_existants = tarifs_existants.filter(
+                        Q(date_fin__isnull=True) | Q(date_fin__gte=date_debut)
+                    )
+
+                if tarifs_existants.exists():
+                    messages.error(
+                        request,
+                        "Impossible de créer ce tarif : "
+                        "une autre période tarifaire existe déjà "
+                        "pour ce sous-acte et ce prestataire."
+                    )
+                else:
+                    tarif = TarifSousActe.objects.create(
+                        id_sous_acte_id=id_sous_acte,
+                        id_prestataire_id=id_prestataire,
+                        montant=montant,
+                        date_debut=date_debut,
+                        date_fin=date_fin,
+                        statut="ACTIF",
+                    )
+                    messages.success(
+                        request,
+                        f"Tarif {tarif.montant} créé avec succès."
+                    )
+                    return redirect("tarifs_sous_actes")
+    else:
+        form = TarifSousActeForm()
+        form.fields["id_sous_acte"].choices = [
+            (sa.id_sous_acte, f"{sa.code_sous_acte} - {sa.libelle}")
+            for sa in sous_actes_liste
+        ]
+        form.fields["id_prestataire"].choices = [
+            (p.id_prestataire, f"{p.code_prestataire} - {p.raison_sociale}")
+            for p in prestataires_liste
+        ]
+
+    return render(
+        request,
+        "core/tarif_sous_acte_form.html",
+        {
+            "form": form,
+            "titre": "Nouveau tarif sous-acte",
+            "permissions": permissions,
+            "page": "tarifs_sous_actes",
+        }
+    )
+
+
+def tarif_sous_acte_modifier(request, id_tarif_sous_acte):
+    """Modifier un tarif de sous-acte."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "ACTE_UPDATE" not in permissions:
+        messages.error(
+            request,
+            "Vous n'avez pas l'autorisation de modifier un tarif de sous-acte."
+        )
+        return redirect("tarifs_sous_actes")
+
+    try:
+        tarif = TarifSousActe.objects.get(id_tarif_sous_acte=id_tarif_sous_acte)
+    except TarifSousActe.DoesNotExist:
+        messages.error(request, "Tarif sous-acte introuvable.")
+        return redirect("tarifs_sous_actes")
+
+    sous_actes_liste = (
+        SousActe.objects
+        .filter(statut="ACTIF")
+        .select_related("id_acte")
+        .order_by("libelle")
+    )
+
+    prestataires_liste = (
+        Prestataire.objects
+        .filter(statut="ACTIF")
+        .order_by("raison_sociale")
+    )
+
+    if request.method == "POST":
+        form = TarifSousActeForm(request.POST)
+
+        form.fields["id_sous_acte"].choices = [
+            (sa.id_sous_acte, f"{sa.code_sous_acte} - {sa.libelle}")
+            for sa in sous_actes_liste
+        ]
+        form.fields["id_prestataire"].choices = [
+            (p.id_prestataire, f"{p.code_prestataire} - {p.raison_sociale}")
+            for p in prestataires_liste
+        ]
+
+        if form.is_valid():
+            id_sous_acte = form.cleaned_data["id_sous_acte"]
+            id_prestataire = form.cleaned_data["id_prestataire"]
+            montant = form.cleaned_data["montant"]
+            date_debut = form.cleaned_data["date_debut"]
+            date_fin = form.cleaned_data["date_fin"]
+
+            if date_fin and date_fin < date_debut:
+                form.add_error(
+                    "date_fin",
+                    "La date de fin doit être supérieure ou égale à la date de début."
+                )
+            else:
+                tarifs_existants = (
+                    TarifSousActe.objects
+                    .filter(
+                        id_sous_acte_id=id_sous_acte,
+                        id_prestataire_id=id_prestataire
+                    )
+                    .exclude(id_tarif_sous_acte=id_tarif_sous_acte)
+                )
+
+                if date_fin:
+                    tarifs_existants = tarifs_existants.filter(
+                        date_debut__lte=date_fin
+                    ).filter(
+                        Q(date_fin__isnull=True) | Q(date_fin__gte=date_debut)
+                    )
+                else:
+                    tarifs_existants = tarifs_existants.filter(
+                        Q(date_fin__isnull=True) | Q(date_fin__gte=date_debut)
+                    )
+
+                if tarifs_existants.exists():
+                    messages.error(
+                        request,
+                        "Impossible de modifier ce tarif : "
+                        "une autre période tarifaire existe déjà "
+                        "pour ce sous-acte et ce prestataire."
+                    )
+                else:
+                    tarif.id_sous_acte_id = id_sous_acte
+                    tarif.id_prestataire_id = id_prestataire
+                    tarif.montant = montant
+                    tarif.date_debut = date_debut
+                    tarif.date_fin = date_fin
+                    tarif.save()
+
+                    messages.success(
+                        request,
+                        "Tarif sous-acte modifié avec succès."
+                    )
+                    return redirect("tarifs_sous_actes")
+    else:
+        form = TarifSousActeForm(
+            initial={
+                "id_sous_acte": tarif.id_sous_acte_id,
+                "id_prestataire": tarif.id_prestataire_id,
+                "montant": tarif.montant,
+                "date_debut": tarif.date_debut,
+                "date_fin": tarif.date_fin,
+                "statut": tarif.statut,
+            }
+        )
+        form.fields["id_sous_acte"].choices = [
+            (sa.id_sous_acte, f"{sa.code_sous_acte} - {sa.libelle}")
+            for sa in sous_actes_liste
+        ]
+        form.fields["id_prestataire"].choices = [
+            (p.id_prestataire, f"{p.code_prestataire} - {p.raison_sociale}")
+            for p in prestataires_liste
+        ]
+
+    return render(
+        request,
+        "core/tarif_sous_acte_form.html",
+        {
+            "form": form,
+            "titre": "Modifier le tarif sous-acte",
+            "permissions": permissions,
+        }
+    )
+
+
+def tarif_sous_acte_radier(request, id_tarif_sous_acte):
+    """Radier un tarif de sous-acte."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "ACTE_DELETE" not in permissions:
+        messages.error(
+            request,
+            "Vous n'avez pas l'autorisation de radier un tarif de sous-acte."
+        )
+        return redirect("tarifs_sous_actes")
+
+    try:
+        tarif = TarifSousActe.objects.get(id_tarif_sous_acte=id_tarif_sous_acte)
+    except TarifSousActe.DoesNotExist:
+        messages.error(request, "Tarif sous-acte introuvable.")
+        return redirect("tarifs_sous_actes")
+
+    if request.method == "POST":
+        tarif.statut = "INACTIF"
+        tarif.save()
+
+        messages.success(request, "Tarif sous-acte radié avec succès.")
+
+    return redirect("tarifs_sous_actes")
+
+
+def tarifs_sous_actes(request):
+    """Liste des tarifs de sous-actes."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    permissions = set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+    if "ACTE_VIEW" not in permissions:
+        messages.error(
+            request,
+            "Vous n'avez pas l'autorisation de consulter les tarifs des sous-actes."
+        )
+        return redirect("accueil")
+
+    recherche = request.GET.get("recherche", "").strip()
+    id_sous_acte = request.GET.get("id_sous_acte", "").strip()
+    id_prestataire = request.GET.get("id_prestataire", "").strip()
+    statut = request.GET.get("statut", "").strip()
+
+    tarifs_liste = (
+        TarifSousActe.objects
+        .select_related(
+            "id_sous_acte",
+            "id_sous_acte__id_acte",
+            "id_prestataire"
+        )
+        .all()
+        .order_by("-id_tarif_sous_acte")
+    )
+
+    if recherche:
+        tarifs_liste = tarifs_liste.filter(
+            Q(id_sous_acte__code_sous_acte__icontains=recherche)
+            | Q(id_sous_acte__libelle__icontains=recherche)
+            | Q(id_sous_acte__id_acte__code_acte__icontains=recherche)
+            | Q(id_sous_acte__id_acte__libelle__icontains=recherche)
+            | Q(id_prestataire__code_prestataire__icontains=recherche)
+            | Q(id_prestataire__raison_sociale__icontains=recherche)
+        )
+
+    if id_sous_acte:
+        tarifs_liste = tarifs_liste.filter(id_sous_acte_id=id_sous_acte)
+
+    if id_prestataire:
+        tarifs_liste = tarifs_liste.filter(id_prestataire_id=id_prestataire)
+
+    if statut:
+        tarifs_liste = tarifs_liste.filter(statut=statut)
+
+    sous_actes_liste = (
+        SousActe.objects
+        .filter(statut="ACTIF")
+        .select_related("id_acte")
+        .order_by("libelle")
+    )
+
+    prestataires_liste = (
+        Prestataire.objects
+        .filter(statut="ACTIF")
+        .order_by("raison_sociale")
+    )
+
+    return render(
+        request,
+        "core/tarifs_sous_actes.html",
+        {
+            "tarifs": tarifs_liste,
+            "sous_actes": sous_actes_liste,
+            "prestataires": prestataires_liste,
+            "recherche": recherche,
+            "id_sous_acte": id_sous_acte,
+            "id_prestataire": id_prestataire,
+            "statut": statut,
+            "permissions": permissions,
+            "page": "tarifs_sous_actes",
+        }
+    )
