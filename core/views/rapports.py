@@ -1553,3 +1553,99 @@ def top_actes(request):
             "tableau_complet": tableau_complet,
         }
     )
+
+
+def rapport_utilisateurs(request):
+    """Rapport d'activité par utilisateur."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "USER_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("accueil")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    # Récupérer tous les utilisateurs
+    from core.models import Utilisateur, AuditLog
+
+    utilisateurs = Utilisateur.objects.filter(statut="ACTIF").order_by("nom_utilisateur")
+
+    tableau_complet = []
+
+    for u in utilisateurs:
+        # Nombre d'audits par type d'action
+        audits = AuditLog.objects.filter(
+            id_utilisateur=u,
+            date_action__date__gte=date_debut,
+            date_action__date__lte=date_fin,
+        )
+
+        nb_creations = audits.filter(type_action="CREATION").count()
+        nb_modifications = audits.filter(type_action="MODIFICATION").count()
+        nb_validations = audits.filter(type_action="VALIDATION").count()
+        nb_radiations = audits.filter(type_action="RADIATION").count()
+        nb_total = audits.count()
+
+        if nb_total > 0:
+            tableau_complet.append({
+                "utilisateur": u,
+                "nb_creations": nb_creations,
+                "nb_modifications": nb_modifications,
+                "nb_validations": nb_validations,
+                "nb_radiations": nb_radiations,
+                "nb_total": nb_total,
+            })
+
+    # Trier par activité décroissante
+    tableau_complet.sort(key=lambda x: x["nb_total"], reverse=True)
+
+    # Top 10 des utilisateurs les plus actifs
+    top_utilisateurs = tableau_complet[:10]
+
+    # Répartition par type d'action
+    total_creations = sum(u["nb_creations"] for u in tableau_complet)
+    total_modifications = sum(u["nb_modifications"] for u in tableau_complet)
+    total_validations = sum(u["nb_validations"] for u in tableau_complet)
+    total_radiations = sum(u["nb_radiations"] for u in tableau_complet)
+
+    # Noms des mois
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    return render(
+        request,
+        "core/rapport_utilisateurs.html",
+        {
+            "permissions": permissions,
+            "page": "rapports",
+            "mois": mois,
+            "annee": annee,
+            "nom_mois": noms_mois[mois - 1],
+            "date_debut": date_debut,
+            "date_fin": date_fin,
+            "tableau_complet": tableau_complet,
+            "top_utilisateurs": top_utilisateurs,
+            "total_creations": total_creations,
+            "total_modifications": total_modifications,
+            "total_validations": total_validations,
+            "total_radiations": total_radiations,
+        }
+    )
