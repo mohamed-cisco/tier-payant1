@@ -1,0 +1,261 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Rapport par prestataire{% endblock %}
+{% block header_title %}Rapport par prestataire{% endblock %}
+{% block header_sub %}Activité détaillée par prestataire{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filters-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 18px 20px;
+        margin-bottom: 22px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 2px 8px rgba(0,0,0,.04);
+        display: flex;
+        gap: 15px;
+        align-items: end;
+        flex-wrap: wrap;
+    }
+
+    .filters-bar .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 180px;
+    }
+
+    .filters-bar label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .filters-bar select,
+    .filters-bar input {
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 7px;
+        font-size: 14px;
+        background: white;
+        outline: none;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 18px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .btn-primary { background: #123b65; color: white; }
+    .btn-primary:hover { background: #1d5d91; }
+    .btn-secondary { background: #64748b; color: white; }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
+        margin-bottom: 22px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 3px 10px rgba(0,0,0,.04);
+    }
+
+    .stat-icon { font-size: 26px; margin-bottom: 8px; }
+    .stat-label { font-size: 12px; color: #6b7280; font-weight: 600; text-transform: uppercase; }
+    .stat-value { font-size: 22px; font-weight: 700; color: #123b65; margin-top: 5px; }
+
+    .card {
+        background: white;
+        border-radius: 14px;
+        padding: 25px;
+        margin-bottom: 22px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 4px 15px rgba(0,0,0,.05);
+    }
+
+    .card h2 {
+        margin: 0 0 20px;
+        font-size: 18px;
+        color: #123b65;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5ebf2;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 11px 12px; text-align: left; border-bottom: 1px solid #edf1f5; font-size: 13px; }
+    th { background: #f7f9fc; color: #123b65; font-weight: 700; }
+    .montant { text-align: right; font-weight: 600; }
+    .empty { text-align: center; padding: 35px; color: #6b7280; font-size: 14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- FILTRES -->
+<form method="get" class="filters-bar">
+    <div class="field">
+        <label>Prestataire</label>
+        <select name="id_prestataire" required>
+            <option value="">-- Sélectionner --</option>
+            {% for p in prestataires %}
+                <option value="{{ p.id_prestataire }}"
+                    {% if id_prestataire == p.id_prestataire|stringformat:"s" %}selected{% endif %}>
+                    {{ p.code_prestataire }} - {{ p.raison_sociale }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="field">
+        <label>Mois</label>
+        <select name="mois">
+            {% for i in "123456789012"|make_list %}
+                <option value="{{ forloop.counter }}" {% if mois == forloop.counter %}selected{% endif %}>
+                    {% if forloop.counter == 1 %}Janvier
+                    {% elif forloop.counter == 2 %}Février
+                    {% elif forloop.counter == 3 %}Mars
+                    {% elif forloop.counter == 4 %}Avril
+                    {% elif forloop.counter == 5 %}Mai
+                    {% elif forloop.counter == 6 %}Juin
+                    {% elif forloop.counter == 7 %}Juillet
+                    {% elif forloop.counter == 8 %}Août
+                    {% elif forloop.counter == 9 %}Septembre
+                    {% elif forloop.counter == 10 %}Octobre
+                    {% elif forloop.counter == 11 %}Novembre
+                    {% elif forloop.counter == 12 %}Décembre
+                    {% endif %}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="field">
+        <label>Année</label>
+        <input type="number" name="annee" value="{{ annee }}" min="2020" max="2100">
+    </div>
+
+    <button type="submit" class="btn btn-primary">🔍 Afficher</button>
+    <a href="{% url 'rapports' %}" class="btn btn-secondary">← Retour</a>
+</form>
+
+{% if rapport_data %}
+
+<!-- EN-TÊTE PRESTATAIRE -->
+<div class="card">
+    <h2>🏥 {{ prestataire_selectionne.code_prestataire }} - {{ prestataire_selectionne.raison_sociale }}</h2>
+    <p style="margin: 0; color: #6b7280; font-size: 14px;">
+        <strong>{{ nom_mois }} {{ annee }}</strong> — du {{ date_debut|date:"d/m/Y" }} au {{ date_fin|date:"d/m/Y" }}
+    </p>
+</div>
+
+<!-- KPIs -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">📝</div>
+        <div class="stat-label">Demandes TP</div>
+        <div class="stat-value">{{ rapport_data.nb_demandes }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🏥</div>
+        <div class="stat-label">PEC</div>
+        <div class="stat-value">{{ rapport_data.nb_pec }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🧾</div>
+        <div class="stat-label">Consommations</div>
+        <div class="stat-value">{{ rapport_data.nb_consommations }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-label">Factures</div>
+        <div class="stat-value">{{ rapport_data.nb_factures }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">💳</div>
+        <div class="stat-label">Règlements</div>
+        <div class="stat-value">{{ rapport_data.nb_reglements }}</div>
+    </div>
+</div>
+
+<!-- MONTANTS -->
+<div class="card">
+    <h2>💰 Situation financière</h2>
+    <table>
+        <tbody>
+            <tr>
+                <td><strong>Montant total demandé</strong></td>
+                <td class="montant">{{ rapport_data.montant_demandes|floatformat:2 }} DA</td>
+            </tr>
+            <tr>
+                <td><strong>Montant accordé (PEC)</strong></td>
+                <td class="montant" style="color: #16a34a;">{{ rapport_data.montant_pec_accepte|floatformat:2 }} DA</td>
+            </tr>
+            <tr>
+                <td><strong>Montant consommations</strong></td>
+                <td class="montant">{{ rapport_data.montant_consommations|floatformat:2 }} DA</td>
+            </tr>
+            <tr>
+                <td><strong>Montant facturé validé</strong></td>
+                <td class="montant">{{ rapport_data.montant_factures|floatformat:2 }} DA</td>
+            </tr>
+            <tr>
+                <td><strong>Montant réglé</strong></td>
+                <td class="montant" style="color: #16a34a;">{{ rapport_data.montant_reglements|floatformat:2 }} DA</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- TOP ACTES -->
+<div class="card">
+    <h2>🩺 Top actes du prestataire</h2>
+    {% if rapport_data.top_actes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Code</th>
+                    <th>Acte</th>
+                    <th>Nb</th>
+                    <th>Montant</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in rapport_data.top_actes %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ a.id_acte__code_acte }}</strong></td>
+                    <td>{{ a.id_acte__libelle }}</td>
+                    <td>{{ a.nb }}</td>
+                    <td class="montant">{{ a.total|floatformat:2 }} DA</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="empty">Aucune consommation pour ce prestataire.</p>
+    {% endif %}
+</div>
+
+{% else %}
+    <div class="card">
+        <p class="empty">👈 Sélectionnez un prestataire pour afficher son rapport.</p>
+    </div>
+{% endif %}
+
+{% endblock %}

@@ -141,7 +141,7 @@ from .views import (
     rapport_mensuel,
     rapport_mensuel_pdf,
     rapport_mensuel_excel,
-    
+    rapport_prestataire,
 )
 
 
@@ -803,6 +803,7 @@ path("rapports/", rapports, name="rapports"),
 path("rapports/mensuel/", rapport_mensuel, name="rapport_mensuel"),
 path("rapports/mensuel/pdf/", rapport_mensuel_pdf, name="rapport_mensuel_pdf"),
 path("rapports/mensuel/excel/", rapport_mensuel_excel, name="rapport_mensuel_excel"),
+path("rapports/prestataire/", rapport_prestataire, name="rapport_prestataire"),
 ]
 
 

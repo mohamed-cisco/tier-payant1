@@ -673,3 +673,328 @@ def rapport_mensuel_excel(request):
     )
     workbook.save(response)
     return response
+
+
+
+def rapport_prestataire(request):
+    """Rapport d'activité par prestataire."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "FACTURE_VIEW" not in permissions and "DEMANDE_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("accueil")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    # Bornes du mois
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    # Prestataire sélectionné
+    id_prestataire = request.GET.get("id_prestataire", "").strip()
+
+    # Récupérer tous les prestataires pour le filtre
+    prestataires = Prestataire.objects.filter(statut="ACTIF").order_by("raison_sociale")
+
+    rapport_data = None
+    prestataire_selectionne = None
+
+    if id_prestataire:
+        try:
+            prestataire_selectionne = Prestataire.objects.get(
+                id_prestataire=id_prestataire
+            )
+        except Prestataire.DoesNotExist:
+            messages.error(request, "Prestataire introuvable.")
+
+        if prestataire_selectionne:
+            # Factures du prestataire
+            factures = Facture.objects.filter(
+                id_prestataire=prestataire_selectionne,
+                date_facture__gte=date_debut,
+                date_facture__lte=date_fin,
+            )
+
+            # Règlements liés
+            reglements = Reglement.objects.filter(
+                id_facture__id_prestataire=prestataire_selectionne,
+                date_reglement__gte=date_debut,
+                date_reglement__lte=date_fin,
+            )
+
+            # Demandes TP liées
+            demandes = DemandeTp.objects.filter(
+                id_prestataire=prestataire_selectionne,
+                date_demande__date__gte=date_debut,
+                date_demande__date__lte=date_fin,
+            )
+
+            # PEC liées
+            pec = PriseEnCharge.objects.filter(
+                id_demande__id_prestataire=prestataire_selectionne,
+                date_pec__date__gte=date_debut,
+                date_pec__date__lte=date_fin,
+            )
+
+            # Consommations liées
+            consommations = Consommation.objects.filter(
+                id_prestataire=prestataire_selectionne,
+                date_prestation__gte=date_debut,
+                date_prestation__lte=date_fin,
+            )
+
+            # Calculs
+            nb_demandes = demandes.count()
+            nb_pec = pec.count()
+            nb_consommations = consommations.count()
+            nb_factures = factures.count()
+            nb_reglements = reglements.count()
+
+            montant_demandes = demandes.aggregate(
+                total=Sum("montant_demande")
+            )["total"] or Decimal("0.00")
+
+            montant_pec_accepte = pec.aggregate(
+                total=Sum("montant_accepte")
+            )["total"] or Decimal("0.00")
+
+            montant_consommations = consommations.aggregate(
+                total=Sum("montant_prise_en_charge")
+            )["total"] or Decimal("0.00")
+
+            montant_factures = factures.aggregate(
+                total=Sum("montant_valide")
+            )["total"] or Decimal("0.00")
+
+            montant_reglements = reglements.aggregate(
+                total=Sum("montant")
+            )["total"] or Decimal("0.00")
+
+            # Top actes du prestataire
+            top_actes = (
+                Consommation.objects
+                .filter(
+                    id_prestataire=prestataire_selectionne,
+                    date_prestation__gte=date_debut,
+                    date_prestation__lte=date_fin,
+                )
+                .values("id_acte__code_acte", "id_acte__libelle")
+                .annotate(
+                    total=Sum("montant_prise_en_charge"),
+                    nb=Count("id_consommation"),
+                )
+                .order_by("-nb")[:10]
+            )
+
+            rapport_data = {
+                "nb_demandes": nb_demandes,
+                "nb_pec": nb_pec,
+                "nb_consommations": nb_consommations,
+                "nb_factures": nb_factures,
+                "nb_reglements": nb_reglements,
+                "montant_demandes": montant_demandes,
+                "montant_pec_accepte": montant_pec_accepte,
+                "montant_consommations": montant_consommations,
+                "montant_factures": montant_factures,
+                "montant_reglements": montant_reglements,
+                "top_actes": top_actes,
+            }
+
+    # Noms des mois
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    return render(
+        request,
+        "core/rapport_prestataire.html",
+        {
+            "permissions": permissions,
+            "page": "rapports",
+            "prestataires": prestataires,
+            "prestataire_selectionne": prestataire_selectionne,
+            "id_prestataire": id_prestataire,
+            "rapport_data": rapport_data,
+            "mois": mois,
+            "annee": annee,
+            "nom_mois": noms_mois[mois - 1],
+            "date_debut": date_debut,
+            "date_fin": date_fin,
+        }
+    )
+
+
+def rapport_prestataire(request):
+    """Rapport d'activité par prestataire."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "FACTURE_VIEW" not in permissions and "DEMANDE_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("accueil")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    # Bornes du mois
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    # Prestataire sélectionné
+    id_prestataire = request.GET.get("id_prestataire", "").strip()
+
+    # Récupérer tous les prestataires pour le filtre
+    prestataires = Prestataire.objects.filter(statut="ACTIF").order_by("raison_sociale")
+
+    rapport_data = None
+    prestataire_selectionne = None
+
+    if id_prestataire:
+        try:
+            prestataire_selectionne = Prestataire.objects.get(
+                id_prestataire=id_prestataire
+            )
+        except Prestataire.DoesNotExist:
+            messages.error(request, "Prestataire introuvable.")
+
+        if prestataire_selectionne:
+            # Factures du prestataire
+            factures = Facture.objects.filter(
+                id_prestataire=prestataire_selectionne,
+                date_facture__gte=date_debut,
+                date_facture__lte=date_fin,
+            )
+
+            # Règlements liés
+            reglements = Reglement.objects.filter(
+                id_facture__id_prestataire=prestataire_selectionne,
+                date_reglement__gte=date_debut,
+                date_reglement__lte=date_fin,
+            )
+
+            # Demandes TP liées
+            demandes = DemandeTp.objects.filter(
+                id_prestataire=prestataire_selectionne,
+                date_demande__date__gte=date_debut,
+                date_demande__date__lte=date_fin,
+            )
+
+            # PEC liées
+            pec = PriseEnCharge.objects.filter(
+                id_demande__id_prestataire=prestataire_selectionne,
+                date_pec__date__gte=date_debut,
+                date_pec__date__lte=date_fin,
+            )
+
+            # Consommations liées
+            consommations = Consommation.objects.filter(
+                id_prestataire=prestataire_selectionne,
+                date_prestation__gte=date_debut,
+                date_prestation__lte=date_fin,
+            )
+
+            # Calculs
+            nb_demandes = demandes.count()
+            nb_pec = pec.count()
+            nb_consommations = consommations.count()
+            nb_factures = factures.count()
+            nb_reglements = reglements.count()
+
+            montant_demandes = demandes.aggregate(
+                total=Sum("montant_demande")
+            )["total"] or Decimal("0.00")
+
+            montant_pec_accepte = pec.aggregate(
+                total=Sum("montant_accepte")
+            )["total"] or Decimal("0.00")
+
+            montant_consommations = consommations.aggregate(
+                total=Sum("montant_prise_en_charge")
+            )["total"] or Decimal("0.00")
+
+            montant_factures = factures.aggregate(
+                total=Sum("montant_valide")
+            )["total"] or Decimal("0.00")
+
+            montant_reglements = reglements.aggregate(
+                total=Sum("montant")
+            )["total"] or Decimal("0.00")
+
+            # Top actes du prestataire
+            top_actes = (
+                Consommation.objects
+                .filter(
+                    id_prestataire=prestataire_selectionne,
+                    date_prestation__gte=date_debut,
+                    date_prestation__lte=date_fin,
+                )
+                .values("id_acte__code_acte", "id_acte__libelle")
+                .annotate(
+                    total=Sum("montant_prise_en_charge"),
+                    nb=Count("id_consommation"),
+                )
+                .order_by("-nb")[:10]
+            )
+
+            rapport_data = {
+                "nb_demandes": nb_demandes,
+                "nb_pec": nb_pec,
+                "nb_consommations": nb_consommations,
+                "nb_factures": nb_factures,
+                "nb_reglements": nb_reglements,
+                "montant_demandes": montant_demandes,
+                "montant_pec_accepte": montant_pec_accepte,
+                "montant_consommations": montant_consommations,
+                "montant_factures": montant_factures,
+                "montant_reglements": montant_reglements,
+                "top_actes": top_actes,
+            }
+
+    # Noms des mois
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    return render(
+        request,
+        "core/rapport_prestataire.html",
+        {
+            "permissions": permissions,
+            "page": "rapports",
+            "prestataires": prestataires,
+            "prestataire_selectionne": prestataire_selectionne,
+            "id_prestataire": id_prestataire,
+            "rapport_data": rapport_data,
+            "mois": mois,
+            "annee": annee,
+            "nom_mois": noms_mois[mois - 1],
+            "date_debut": date_debut,
+            "date_fin": date_fin,
+        }
+    )
