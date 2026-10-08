@@ -145,6 +145,7 @@ from .views import (
     rapport_financier,
     rapport_contrat,
     top_prestataires,
+    top_actes,
 )
 
 
@@ -810,6 +811,7 @@ path("rapports/prestataire/", rapport_prestataire, name="rapport_prestataire"),
 path("rapports/financier/", rapport_financier, name="rapport_financier"),
 path("rapports/contrat/", rapport_contrat, name="rapport_contrat"),
 path("rapports/top-prestataires/", top_prestataires, name="top_prestataires"),
+path("rapports/top-actes/", top_actes, name="top_actes"),
 ]
 
 

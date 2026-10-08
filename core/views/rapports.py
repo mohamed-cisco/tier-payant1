@@ -19,6 +19,7 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 
 from core.models import (
+    Acte,
     Adhesion, 
     Consommation,
     Contrat,
@@ -1441,6 +1442,114 @@ def top_prestataires(request):
             "top_montant": top_montant,
             "top_nb_factures": top_nb_factures,
             "top_nb_demandes": top_nb_demandes,
+            "tableau_complet": tableau_complet,
+        }
+    )
+
+
+def top_actes(request):
+    """Top 10 actes (détaillé)."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "CONSOMMATION_VIEW" not in permissions and "DEMANDE_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("accueil")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    # Bornes du mois
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    # ============================================================
+    # TOP 10 PAR FRÉQUENCE (nb consommations)
+    # ============================================================
+    top_frequence = (
+        Consommation.objects
+        .filter(date_prestation__gte=date_debut, date_prestation__lte=date_fin)
+        .values("id_acte__code_acte", "id_acte__libelle")
+        .annotate(
+            nb=Count("id_consommation"),
+            total=Sum("montant_prise_en_charge"),
+        )
+        .order_by("-nb")[:10]
+    )
+
+    # ============================================================
+    # TOP 10 PAR MONTANT
+    # ============================================================
+    top_montant = (
+        Consommation.objects
+        .filter(date_prestation__gte=date_debut, date_prestation__lte=date_fin)
+        .values("id_acte__code_acte", "id_acte__libelle")
+        .annotate(
+            total=Sum("montant_prise_en_charge"),
+            nb=Count("id_consommation"),
+        )
+        .order_by("-total")[:10]
+    )
+
+    # ============================================================
+    # TABLEAU COMPLET
+    # ============================================================
+    actes = Acte.objects.filter(statut="ACTIF").order_by("libelle")
+    tableau_complet = []
+
+    for a in actes:
+        consommations = Consommation.objects.filter(
+            id_acte=a,
+            date_prestation__gte=date_debut,
+            date_prestation__lte=date_fin,
+        )
+
+        nb_consommations = consommations.count()
+
+        montant_conso = consommations.aggregate(
+            total=Sum("montant_prise_en_charge")
+        )["total"] or Decimal("0.00")
+
+        if nb_consommations > 0:
+            tableau_complet.append({
+                "acte": a,
+                "nb_consommations": nb_consommations,
+                "montant_conso": montant_conso,
+            })
+
+    # Trier par nombre décroissant
+    tableau_complet.sort(key=lambda x: x["nb_consommations"], reverse=True)
+
+    # Noms des mois
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    return render(
+        request,
+        "core/top_actes.html",
+        {
+            "permissions": permissions,
+            "page": "rapports",
+            "mois": mois,
+            "annee": annee,
+            "nom_mois": noms_mois[mois - 1],
+            "date_debut": date_debut,
+            "date_fin": date_fin,
+            "top_frequence": top_frequence,
+            "top_montant": top_montant,
             "tableau_complet": tableau_complet,
         }
     )

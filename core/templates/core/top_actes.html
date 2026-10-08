@@ -1,0 +1,216 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Top actes{% endblock %}
+{% block header_title %}Top actes{% endblock %}
+{% block header_sub %}Classement des actes — {{ nom_mois }} {{ annee }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filters-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 18px 20px;
+        margin-bottom: 22px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 2px 8px rgba(0,0,0,.04);
+        display: flex;
+        gap: 15px;
+        align-items: end;
+        flex-wrap: wrap;
+    }
+
+    .filters-bar .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .filters-bar label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .filters-bar select,
+    .filters-bar input {
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 7px;
+        font-size: 14px;
+        background: white;
+        outline: none;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 18px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .btn-primary { background: #123b65; color: white; }
+    .btn-primary:hover { background: #1d5d91; }
+    .btn-secondary { background: #64748b; color: white; }
+
+    .card {
+        background: white;
+        border-radius: 14px;
+        padding: 25px;
+        margin-bottom: 22px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 4px 15px rgba(0,0,0,.05);
+    }
+
+    .card h2 {
+        margin: 0 0 20px;
+        font-size: 18px;
+        color: #123b65;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5ebf2;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 11px 12px; text-align: left; border-bottom: 1px solid #edf1f5; font-size: 13px; }
+    th { background: #f7f9fc; color: #123b65; font-weight: 700; }
+    .montant { text-align: right; font-weight: 600; }
+    .rang { font-weight: 700; color: #123b65; }
+    .empty { text-align: center; padding: 35px; color: #6b7280; font-size: 14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- FILTRES -->
+<form method="get" class="filters-bar">
+    <div class="field">
+        <label>Mois</label>
+        <select name="mois">
+            <option value="1" {% if mois == 1 %}selected{% endif %}>Janvier</option>
+            <option value="2" {% if mois == 2 %}selected{% endif %}>Février</option>
+            <option value="3" {% if mois == 3 %}selected{% endif %}>Mars</option>
+            <option value="4" {% if mois == 4 %}selected{% endif %}>Avril</option>
+            <option value="5" {% if mois == 5 %}selected{% endif %}>Mai</option>
+            <option value="6" {% if mois == 6 %}selected{% endif %}>Juin</option>
+            <option value="7" {% if mois == 7 %}selected{% endif %}>Juillet</option>
+            <option value="8" {% if mois == 8 %}selected{% endif %}>Août</option>
+            <option value="9" {% if mois == 9 %}selected{% endif %}>Septembre</option>
+            <option value="10" {% if mois == 10 %}selected{% endif %}>Octobre</option>
+            <option value="11" {% if mois == 11 %}selected{% endif %}>Novembre</option>
+            <option value="12" {% if mois == 12 %}selected{% endif %}>Décembre</option>
+        </select>
+    </div>
+
+    <div class="field">
+        <label>Année</label>
+        <input type="number" name="annee" value="{{ annee }}" min="2020" max="2100">
+    </div>
+
+    <button type="submit" class="btn btn-primary">🔍 Afficher</button>
+    <a href="{% url 'rapports' %}" class="btn btn-secondary">← Retour</a>
+</form>
+
+<!-- TOP PAR FRÉQUENCE -->
+<div class="card">
+    <h2>🩺 Top 10 actes par fréquence</h2>
+    {% if top_frequence %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Rang</th>
+                    <th>Code</th>
+                    <th>Acte</th>
+                    <th>Nb consommations</th>
+                    <th>Montant total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in top_frequence %}
+                <tr>
+                    <td class="rang">
+                        {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}{{ forloop.counter }}{% endif %}
+                    </td>
+                    <td><strong>{{ a.id_acte__code_acte }}</strong></td>
+                    <td>{{ a.id_acte__libelle }}</td>
+                    <td>{{ a.nb }}</td>
+                    <td class="montant">{{ a.total|floatformat:2 }} DA</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="empty">Aucune consommation ce mois-ci.</p>
+    {% endif %}
+</div>
+
+<!-- TOP PAR MONTANT -->
+<div class="card">
+    <h2>💰 Top 10 actes par montant</h2>
+    {% if top_montant %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Rang</th>
+                    <th>Code</th>
+                    <th>Acte</th>
+                    <th>Montant total</th>
+                    <th>Nb consommations</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in top_montant %}
+                <tr>
+                    <td class="rang">
+                        {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}{{ forloop.counter }}{% endif %}
+                    </td>
+                    <td><strong>{{ a.id_acte__code_acte }}</strong></td>
+                    <td>{{ a.id_acte__libelle }}</td>
+                    <td class="montant" style="color: #16a34a;">{{ a.total|floatformat:2 }} DA</td>
+                    <td>{{ a.nb }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="empty">Aucune consommation ce mois-ci.</p>
+    {% endif %}
+</div>
+
+<!-- TABLEAU COMPLET -->
+<div class="card">
+    <h2>📋 Tableau complet des actes consommés</h2>
+    {% if tableau_complet %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Code</th>
+                    <th>Acte</th>
+                    <th>Nb consommations</th>
+                    <th>Montant total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in tableau_complet %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ item.acte.code_acte }}</strong></td>
+                    <td>{{ item.acte.libelle }}</td>
+                    <td>{{ item.nb_consommations }}</td>
+                    <td class="montant">{{ item.montant_conso|floatformat:2 }} DA</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="empty">Aucune consommation ce mois-ci.</p>
+    {% endif %}
+</div>
+
+{% endblock %}
