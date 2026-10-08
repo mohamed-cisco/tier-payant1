@@ -1,0 +1,312 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Rapport financier{% endblock %}
+{% block header_title %}Rapport financier{% endblock %}
+{% block header_sub %}Situation financière — {{ nom_mois }} {{ annee }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filters-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 18px 20px;
+        margin-bottom: 22px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 2px 8px rgba(0,0,0,.04);
+        display: flex;
+        gap: 15px;
+        align-items: end;
+        flex-wrap: wrap;
+    }
+
+    .filters-bar .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .filters-bar label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .filters-bar select,
+    .filters-bar input {
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 7px;
+        font-size: 14px;
+        background: white;
+        outline: none;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 18px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .btn-primary { background: #123b65; color: white; }
+    .btn-primary:hover { background: #1d5d91; }
+    .btn-secondary { background: #64748b; color: white; }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 22px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 3px 10px rgba(0,0,0,.04);
+    }
+
+    .stat-icon { font-size: 28px; margin-bottom: 8px; }
+    .stat-label { font-size: 12px; color: #6b7280; font-weight: 600; text-transform: uppercase; }
+    .stat-value { font-size: 22px; font-weight: 700; color: #123b65; margin-top: 5px; }
+    .stat-value.small { font-size: 16px; }
+    .stat-value.success { color: #16a34a; }
+    .stat-value.danger { color: #dc2626; }
+    .stat-value.warning { color: #d97706; }
+
+    .card {
+        background: white;
+        border-radius: 14px;
+        padding: 25px;
+        margin-bottom: 22px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 4px 15px rgba(0,0,0,.05);
+    }
+
+    .card h2 {
+        margin: 0 0 20px;
+        font-size: 18px;
+        color: #123b65;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5ebf2;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 11px 12px; text-align: left; border-bottom: 1px solid #edf1f5; font-size: 13px; }
+    th { background: #f7f9fc; color: #123b65; font-weight: 700; }
+    .montant { text-align: right; font-weight: 600; }
+    .empty { text-align: center; padding: 35px; color: #6b7280; font-size: 14px; }
+
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+    .badge-success { background: #dcfce7; color: #166534; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-danger { background: #fee2e2; color: #991b1b; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- FILTRES -->
+<form method="get" class="filters-bar">
+    <div class="field">
+        <label>Mois</label>
+        <select name="mois">
+            <option value="1" {% if mois == 1 %}selected{% endif %}>Janvier</option>
+            <option value="2" {% if mois == 2 %}selected{% endif %}>Février</option>
+            <option value="3" {% if mois == 3 %}selected{% endif %}>Mars</option>
+            <option value="4" {% if mois == 4 %}selected{% endif %}>Avril</option>
+            <option value="5" {% if mois == 5 %}selected{% endif %}>Mai</option>
+            <option value="6" {% if mois == 6 %}selected{% endif %}>Juin</option>
+            <option value="7" {% if mois == 7 %}selected{% endif %}>Juillet</option>
+            <option value="8" {% if mois == 8 %}selected{% endif %}>Août</option>
+            <option value="9" {% if mois == 9 %}selected{% endif %}>Septembre</option>
+            <option value="10" {% if mois == 10 %}selected{% endif %}>Octobre</option>
+            <option value="11" {% if mois == 11 %}selected{% endif %}>Novembre</option>
+            <option value="12" {% if mois == 12 %}selected{% endif %}>Décembre</option>
+        </select>
+    </div>
+
+    <div class="field">
+        <label>Année</label>
+        <input type="number" name="annee" value="{{ annee }}" min="2020" max="2100">
+    </div>
+
+    <button type="submit" class="btn btn-primary">🔍 Afficher</button>
+    <a href="{% url 'rapports' %}" class="btn btn-secondary">← Retour</a>
+</form>
+
+<!-- KPIs FINANCIERS -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">📋</div>
+        <div class="stat-label">Factures</div>
+        <div class="stat-value">{{ nb_factures }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">💵</div>
+        <div class="stat-label">Montant facturé</div>
+        <div class="stat-value small">{{ montant_facture|floatformat:2 }} DA</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-label">Montant validé</div>
+        <div class="stat-value small success">{{ montant_valide|floatformat:2 }} DA</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">❌</div>
+        <div class="stat-label">Montant rejeté</div>
+        <div class="stat-value small danger">{{ montant_rejete|floatformat:2 }} DA</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">💳</div>
+        <div class="stat-label">Montant payé</div>
+        <div class="stat-value small success">{{ montant_paye|floatformat:2 }} DA</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-label">Reste à payer</div>
+        <div class="stat-value small {% if reste_a_payer > 0 %}danger{% else %}success{% endif %}">
+            {{ reste_a_payer|floatformat:2 }} DA
+        </div>
+    </div>
+</div>
+
+<!-- GRAPHIQUE -->
+{% if graphique_montants %}
+<div class="card">
+    <h2>📈 Évolution des factures validées</h2>
+    <div class="chart-container">
+        <canvas id="facturesChart"></canvas>
+    </div>
+</div>
+{% endif %}
+
+<!-- FACTURES NON PAYÉES -->
+<div class="card">
+    <h2>⏳ Factures non payées ({{ factures_non_payees|length }})</h2>
+    {% if factures_non_payees %}
+        <table>
+            <thead>
+                <tr>
+                    <th>N° Facture</th>
+                    <th>Prestataire</th>
+                    <th>Date</th>
+                    <th>Montant validé</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in factures_non_payees %}
+                <tr>
+                    <td><strong>{{ f.numero_facture }}</strong></td>
+                    <td>{{ f.id_prestataire.raison_sociale }}</td>
+                    <td>{{ f.date_facture|date:"d/m/Y" }}</td>
+                    <td class="montant">{{ f.montant_valide|floatformat:2 }} DA</td>
+                    <td>
+                        {% if f.statut == "VALIDEE" %}
+                            <span class="badge badge-success">Validée</span>
+                        {% elif f.statut == "EN_ATTENTE" %}
+                            <span class="badge badge-warning">En attente</span>
+                        {% else %}
+                            <span class="badge">{{ f.statut }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="empty">✅ Aucune facture en attente de paiement.</p>
+    {% endif %}
+</div>
+
+<!-- TOP DÉBITEURS -->
+<div class="card">
+    <h2>🏥 Top 10 prestataires débiteurs (reste à payer)</h2>
+    {% if top_debiteurs %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Prestataire</th>
+                    <th>Facturé</th>
+                    <th>Payé</th>
+                    <th>Reste</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in top_debiteurs %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ d.prestataire.raison_sociale }}</strong></td>
+                    <td class="montant">{{ d.montant_du|floatformat:2 }} DA</td>
+                    <td class="montant" style="color: #16a34a;">{{ d.montant_regle|floatformat:2 }} DA</td>
+                    <td class="montant" style="color: #dc2626; font-weight: 700;">{{ d.reste|floatformat:2 }} DA</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="empty">✅ Aucun prestataire débiteur.</p>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+{% if graphique_montants %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    new Chart(document.getElementById("facturesChart"), {
+        type: "line",
+        data: {
+            labels: {{ graphique_labels|safe }},
+            datasets: [{
+                label: "Montant validé (DA)",
+                data: {{ graphique_montants|safe }},
+                borderColor: "#16a34a",
+                backgroundColor: "rgba(22, 163, 74, 0.1)",
+                borderWidth: 3,
+                tension: 0.3,
+                fill: true,
+                pointBackgroundColor: "#16a34a",
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(v) {
+                            return v.toLocaleString('fr-FR') + ' DA';
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

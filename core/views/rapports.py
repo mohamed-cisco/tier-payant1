@@ -998,3 +998,158 @@ def rapport_prestataire(request):
             "date_fin": date_fin,
         }
     )
+
+
+def rapport_financier(request):
+    """Rapport financier global."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "FACTURE_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("accueil")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    # Bornes du mois
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    # ============================================================
+    # FACTURES
+    # ============================================================
+    factures = Facture.objects.filter(
+        date_facture__gte=date_debut,
+        date_facture__lte=date_fin,
+    )
+
+    nb_factures = factures.count()
+    montant_facture = factures.aggregate(total=Sum("montant_total"))["total"] or Decimal("0.00")
+    montant_valide = factures.aggregate(total=Sum("montant_valide"))["total"] or Decimal("0.00")
+    montant_rejete = factures.aggregate(total=Sum("montant_rejete"))["total"] or Decimal("0.00")
+
+    # ============================================================
+    # RÈGLEMENTS
+    # ============================================================
+    reglements = Reglement.objects.filter(
+        date_reglement__gte=date_debut,
+        date_reglement__lte=date_fin,
+        statut="VALIDEE",
+    )
+
+    nb_reglements = reglements.count()
+    montant_paye = reglements.aggregate(total=Sum("montant"))["total"] or Decimal("0.00")
+
+    # ============================================================
+    # RESTE À PAYER
+    # ============================================================
+    reste_a_payer = montant_valide - montant_paye
+
+    # ============================================================
+    # FACTURES NON PAYÉES
+    # ============================================================
+    factures_non_payees = factures.filter(
+        statut__in=["VALIDEE", "EN_ATTENTE"]
+    ).order_by("-date_facture")
+
+    # ============================================================
+    # TOP DÉBITEURS (prestataires avec reste à payer)
+    # ============================================================
+    top_debiteurs = []
+    prestataires = Prestataire.objects.filter(statut="ACTIF")
+
+    for prest in prestataires:
+        factures_prest = Facture.objects.filter(
+            id_prestataire=prest,
+            statut__in=["VALIDEE", "EN_ATTENTE"],
+        )
+        montant_du = factures_prest.aggregate(total=Sum("montant_valide"))["total"] or Decimal("0.00")
+
+        if montant_du > 0:
+            # Règlements liés
+            reglements_prest = Reglement.objects.filter(
+                id_facture__id_prestataire=prest,
+                statut="VALIDEE",
+            )
+            montant_regle = reglements_prest.aggregate(total=Sum("montant"))["total"] or Decimal("0.00")
+
+            reste = montant_du - montant_regle
+
+            if reste > 0:
+                top_debiteurs.append({
+                    "prestataire": prest,
+                    "montant_du": montant_du,
+                    "montant_regle": montant_regle,
+                    "reste": reste,
+                })
+
+    # Trier par reste décroissant
+    top_debiteurs.sort(key=lambda x: x["reste"], reverse=True)
+    top_debiteurs = top_debiteurs[:10]
+
+    # ============================================================
+    # ÉVOLUTION JOURNALIÈRE
+    # ============================================================
+    evolution_factures = (
+        factures
+        .annotate(jour=TruncDay("date_facture"))
+        .values("jour")
+        .annotate(total=Sum("montant_valide"))
+        .order_by("jour")
+    )
+
+    graphique_labels = [item["jour"].strftime("%d/%m") for item in evolution_factures]
+    graphique_montants = [float(item["total"] or 0) for item in evolution_factures]
+
+    # Noms des mois
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    return render(
+        request,
+        "core/rapport_financier.html",
+        {
+            "permissions": permissions,
+            "page": "rapports",
+
+            # Paramètres
+            "mois": mois,
+            "annee": annee,
+            "nom_mois": noms_mois[mois - 1],
+            "date_debut": date_debut,
+            "date_fin": date_fin,
+
+            # Factures
+            "nb_factures": nb_factures,
+            "montant_facture": montant_facture,
+            "montant_valide": montant_valide,
+            "montant_rejete": montant_rejete,
+
+            # Règlements
+            "nb_reglements": nb_reglements,
+            "montant_paye": montant_paye,
+
+            # Reste
+            "reste_a_payer": reste_a_payer,
+            "factures_non_payees": factures_non_payees,
+            "top_debiteurs": top_debiteurs,
+
+            # Graphique
+            "graphique_labels": graphique_labels,
+            "graphique_montants": graphique_montants,
+        }
+    )
