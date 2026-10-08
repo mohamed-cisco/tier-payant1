@@ -1649,3 +1649,213 @@ def rapport_utilisateurs(request):
             "total_radiations": total_radiations,
         }
     )
+
+
+def rapport_pdf_generique(request, type_rapport):
+    """
+    Export PDF générique pour tous les rapports.
+    
+    Types : 'prestataire', 'financier', 'contrat', 'utilisateurs'
+    """
+    from django.http import HttpResponse
+    from django.conf import settings
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.platypus import (
+        SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    )
+
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    # Créer le PDF
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="rapport_{type_rapport}_{mois:02d}_{annee}.pdf"'
+    )
+
+    document = SimpleDocTemplate(
+        response,
+        pagesize=landscape(A4),
+        rightMargin=1.5*cm,
+        leftMargin=1.5*cm,
+        topMargin=1.5*cm,
+        bottomMargin=1.5*cm,
+    )
+
+    elements = []
+    styles = getSampleStyleSheet()
+
+    # Titre
+    titre_rapport = {
+        "prestataire": "RAPPORT PAR PRESTATAIRE",
+        "financier": "RAPPORT FINANCIER",
+        "contrat": "RAPPORT PAR CONTRAT",
+        "utilisateurs": "RAPPORT UTILISATEURS",
+    }.get(type_rapport, "RAPPORT")
+
+    style_titre = ParagraphStyle(
+        "Titre", parent=styles["Title"], fontSize=18,
+        textColor=colors.HexColor("#123b65"), alignment=1,
+    )
+    elements.append(Paragraph(
+        f"{titre_rapport} — {noms_mois[mois-1]} {annee}", style_titre
+    ))
+    elements.append(Spacer(1, 0.3*cm))
+
+    style_normal = ParagraphStyle("Normal", parent=styles["Normal"], fontSize=10)
+    elements.append(Paragraph(
+        f"Du {date_debut.strftime('%d/%m/%Y')} au {date_fin.strftime('%d/%m/%Y')}",
+        style_normal
+    ))
+    elements.append(Spacer(1, 0.5*cm))
+
+    # Contenu selon le type
+    if type_rapport == "utilisateurs":
+        from core.models import Utilisateur, AuditLog
+
+        utilisateurs = Utilisateur.objects.filter(statut="ACTIF")
+
+        data = [["Utilisateur", "Nom complet", "Créations", "Modifications", "Validations", "Radiations", "Total"]]
+
+        for u in utilisateurs:
+            audits = AuditLog.objects.filter(
+                id_utilisateur=u,
+                date_action__date__gte=date_debut,
+                date_action__date__lte=date_fin,
+            )
+            nb_crea = audits.filter(type_action="CREATION").count()
+            nb_modif = audits.filter(type_action="MODIFICATION").count()
+            nb_valid = audits.filter(type_action="VALIDATION").count()
+            nb_rad = audits.filter(type_action="RADIATION").count()
+            nb_total = audits.count()
+
+            if nb_total > 0:
+                data.append([
+                    u.nom_utilisateur,
+                    f"{u.nom} {u.prenom}",
+                    str(nb_crea),
+                    str(nb_modif),
+                    str(nb_valid),
+                    str(nb_rad),
+                    str(nb_total),
+                ])
+
+    elif type_rapport == "financier":
+        factures = Facture.objects.filter(
+            date_facture__gte=date_debut, date_facture__lte=date_fin
+        )
+        reglements = Reglement.objects.filter(
+            date_reglement__gte=date_debut, date_reglement__lte=date_fin,
+            statut="VALIDEE"
+        )
+
+        nb_factures = factures.count()
+        montant_valide = factures.aggregate(total=Sum("montant_valide"))["total"] or Decimal("0.00")
+        montant_paye = reglements.aggregate(total=Sum("montant"))["total"] or Decimal("0.00")
+
+        data = [
+            ["Indicateur", "Valeur"],
+            ["Nombre de factures", str(nb_factures)],
+            ["Montant validé", f"{montant_valide:,.2f} DA"],
+            ["Montant payé", f"{montant_paye:,.2f} DA"],
+            ["Reste à payer", f"{montant_valide - montant_paye:,.2f} DA"],
+        ]
+
+    elif type_rapport == "contrat":
+        id_contrat = request.GET.get("id_contrat", "").strip()
+
+        if id_contrat:
+            try:
+                contrat = Contrat.objects.get(id_contrat=id_contrat)
+                demandes = DemandeTp.objects.filter(
+                    id_contrat=contrat,
+                    date_demande__date__gte=date_debut,
+                    date_demande__date__lte=date_fin,
+                )
+                consommations = Consommation.objects.filter(
+                    id_adhesion__id_contrat=contrat,
+                    date_prestation__gte=date_debut,
+                    date_prestation__lte=date_fin,
+                )
+
+                data = [
+                    ["Indicateur", "Valeur"],
+                    ["Contrat", contrat.numero_contrat],
+                    ["Souscripteur", contrat.id_souscripteur.raison_sociale],
+                    ["Nombre de demandes", str(demandes.count())],
+                    ["Montant demandé", f"{demandes.aggregate(total=Sum('montant_demande'))['total'] or 0:,.2f} DA"],
+                    ["Nombre de consommations", str(consommations.count())],
+                    ["Montant consommations", f"{consommations.aggregate(total=Sum('montant_prise_en_charge'))['total'] or 0:,.2f} DA"],
+                ]
+            except Contrat.DoesNotExist:
+                data = [["Erreur", "Contrat introuvable"]]
+        else:
+            data = [["Info", "Aucun contrat sélectionné"]]
+
+    else:  # prestataire par défaut
+        id_prestataire = request.GET.get("id_prestataire", "").strip()
+
+        if id_prestataire:
+            try:
+                prestataire = Prestataire.objects.get(id_prestataire=id_prestataire)
+                factures = Facture.objects.filter(
+                    id_prestataire=prestataire,
+                    date_facture__gte=date_debut,
+                    date_facture__lte=date_fin,
+                )
+
+                data = [
+                    ["Indicateur", "Valeur"],
+                    ["Prestataire", prestataire.raison_sociale],
+                    ["Type", prestataire.type_prestataire],
+                    ["Nombre de factures", str(factures.count())],
+                    ["Montant validé", f"{factures.aggregate(total=Sum('montant_valide'))['total'] or 0:,.2f} DA"],
+                ]
+            except Prestataire.DoesNotExist:
+                data = [["Erreur", "Prestataire introuvable"]]
+        else:
+            data = [["Info", "Aucun prestataire sélectionné"]]
+
+    # Créer le tableau
+    if data:
+        table = Table(data, repeatRows=1)
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123b65")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ]))
+        elements.append(table)
+
+    document.build(elements)
+    return response

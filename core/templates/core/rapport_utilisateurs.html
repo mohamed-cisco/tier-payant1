@@ -98,6 +98,10 @@
         <input type="number" name="annee" value="{{ annee }}" min="2020" max="2100">
     </div>
     <button type="submit" class="btn btn-primary">🔍 Afficher</button>
+        <a href="{% url 'rapport_utilisateurs_pdf' %}?mois={{ mois }}&annee={{ annee }}"
+       target="_blank" class="btn" style="background: #dc2626; color: white;">
+        📄 Export PDF
+    </a>
     <a href="{% url 'rapports' %}" class="btn btn-secondary">← Retour</a>
 </form>
 

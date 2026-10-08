@@ -146,6 +146,12 @@
     </div>
 
     <button type="submit" class="btn btn-primary">🔍 Afficher</button>
+        {% if id_contrat %}
+        <a href="{% url 'rapport_contrat_pdf' %}?id_contrat={{ id_contrat }}&mois={{ mois }}&annee={{ annee }}"
+           target="_blank" class="btn" style="background: #dc2626; color: white;">
+            📄 Export PDF
+        </a>
+    {% endif %}
     <a href="{% url 'rapports' %}" class="btn btn-secondary">← Retour</a>
 </form>
 

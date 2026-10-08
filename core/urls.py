@@ -147,6 +147,7 @@ from .views import (
     top_prestataires,
     top_actes,
     rapport_utilisateurs,
+    rapport_pdf_generique,
 )
 
 
@@ -814,6 +815,10 @@ path("rapports/contrat/", rapport_contrat, name="rapport_contrat"),
 path("rapports/top-prestataires/", top_prestataires, name="top_prestataires"),
 path("rapports/top-actes/", top_actes, name="top_actes"),
 path("rapports/utilisateurs/", rapport_utilisateurs, name="rapport_utilisateurs"),
+path("rapports/prestataire/pdf/", lambda r: rapport_pdf_generique(r, "prestataire"), name="rapport_prestataire_pdf"),
+path("rapports/financier/pdf/", lambda r: rapport_pdf_generique(r, "financier"), name="rapport_financier_pdf"),
+path("rapports/contrat/pdf/", lambda r: rapport_pdf_generique(r, "contrat"), name="rapport_contrat_pdf"),
+path("rapports/utilisateurs/pdf/", lambda r: rapport_pdf_generique(r, "utilisateurs"), name="rapport_utilisateurs_pdf"),
 ]
 
 
