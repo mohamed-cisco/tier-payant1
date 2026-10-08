@@ -143,6 +143,8 @@ from .views import (
     rapport_mensuel_excel,
     rapport_prestataire,
     rapport_financier,
+    rapport_contrat,
+    top_prestataires,
 )
 
 
@@ -806,6 +808,8 @@ path("rapports/mensuel/pdf/", rapport_mensuel_pdf, name="rapport_mensuel_pdf"),
 path("rapports/mensuel/excel/", rapport_mensuel_excel, name="rapport_mensuel_excel"),
 path("rapports/prestataire/", rapport_prestataire, name="rapport_prestataire"),
 path("rapports/financier/", rapport_financier, name="rapport_financier"),
+path("rapports/contrat/", rapport_contrat, name="rapport_contrat"),
+path("rapports/top-prestataires/", top_prestataires, name="top_prestataires"),
 ]
 
 

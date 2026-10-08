@@ -1,0 +1,244 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Rapport par contrat{% endblock %}
+{% block header_title %}Rapport par contrat{% endblock %}
+{% block header_sub %}Activité détaillée par contrat{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filters-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 18px 20px;
+        margin-bottom: 22px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 2px 8px rgba(0,0,0,.04);
+        display: flex;
+        gap: 15px;
+        align-items: end;
+        flex-wrap: wrap;
+    }
+
+    .filters-bar .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 200px;
+    }
+
+    .filters-bar label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .filters-bar select,
+    .filters-bar input {
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 7px;
+        font-size: 14px;
+        background: white;
+        outline: none;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 18px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .btn-primary { background: #123b65; color: white; }
+    .btn-primary:hover { background: #1d5d91; }
+    .btn-secondary { background: #64748b; color: white; }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 22px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 3px 10px rgba(0,0,0,.04);
+    }
+
+    .stat-icon { font-size: 28px; margin-bottom: 8px; }
+    .stat-label { font-size: 12px; color: #6b7280; font-weight: 600; text-transform: uppercase; }
+    .stat-value { font-size: 22px; font-weight: 700; color: #123b65; margin-top: 5px; }
+    .stat-value.small { font-size: 16px; }
+
+    .card {
+        background: white;
+        border-radius: 14px;
+        padding: 25px;
+        margin-bottom: 22px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 4px 15px rgba(0,0,0,.05);
+    }
+
+    .card h2 {
+        margin: 0 0 20px;
+        font-size: 18px;
+        color: #123b65;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5ebf2;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 11px 12px; text-align: left; border-bottom: 1px solid #edf1f5; font-size: 13px; }
+    th { background: #f7f9fc; color: #123b65; font-weight: 700; }
+    .montant { text-align: right; font-weight: 600; }
+    .empty { text-align: center; padding: 35px; color: #6b7280; font-size: 14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- FILTRES -->
+<form method="get" class="filters-bar">
+    <div class="field">
+        <label>Contrat</label>
+        <select name="id_contrat" required>
+            <option value="">-- Sélectionner --</option>
+            {% for c in contrats %}
+                <option value="{{ c.id_contrat }}"
+                    {% if id_contrat == c.id_contrat|stringformat:"s" %}selected{% endif %}>
+                    {{ c.numero_contrat }} - {{ c.id_souscripteur.raison_sociale }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="field">
+        <label>Mois</label>
+        <select name="mois">
+            <option value="1" {% if mois == 1 %}selected{% endif %}>Janvier</option>
+            <option value="2" {% if mois == 2 %}selected{% endif %}>Février</option>
+            <option value="3" {% if mois == 3 %}selected{% endif %}>Mars</option>
+            <option value="4" {% if mois == 4 %}selected{% endif %}>Avril</option>
+            <option value="5" {% if mois == 5 %}selected{% endif %}>Mai</option>
+            <option value="6" {% if mois == 6 %}selected{% endif %}>Juin</option>
+            <option value="7" {% if mois == 7 %}selected{% endif %}>Juillet</option>
+            <option value="8" {% if mois == 8 %}selected{% endif %}>Août</option>
+            <option value="9" {% if mois == 9 %}selected{% endif %}>Septembre</option>
+            <option value="10" {% if mois == 10 %}selected{% endif %}>Octobre</option>
+            <option value="11" {% if mois == 11 %}selected{% endif %}>Novembre</option>
+            <option value="12" {% if mois == 12 %}selected{% endif %}>Décembre</option>
+        </select>
+    </div>
+
+    <div class="field">
+        <label>Année</label>
+        <input type="number" name="annee" value="{{ annee }}" min="2020" max="2100">
+    </div>
+
+    <button type="submit" class="btn btn-primary">🔍 Afficher</button>
+    <a href="{% url 'rapports' %}" class="btn btn-secondary">← Retour</a>
+</form>
+
+{% if rapport_data %}
+
+<!-- EN-TÊTE CONTRAT -->
+<div class="card">
+    <h2>📄 {{ contrat_selectionne.numero_contrat }} - {{ contrat_selectionne.id_souscripteur.raison_sociale }}</h2>
+    <p style="margin: 0; color: #6b7280; font-size: 14px;">
+        <strong>{{ nom_mois }} {{ annee }}</strong> — du {{ date_debut|date:"d/m/Y" }} au {{ date_fin|date:"d/m/Y" }}
+    </p>
+</div>
+
+<!-- KPIs -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-label">Adhérents</div>
+        <div class="stat-value">{{ rapport_data.nb_adherents }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📝</div>
+        <div class="stat-label">Demandes TP</div>
+        <div class="stat-value">{{ rapport_data.nb_demandes }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🏥</div>
+        <div class="stat-label">PEC</div>
+        <div class="stat-value">{{ rapport_data.nb_pec }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🧾</div>
+        <div class="stat-label">Consommations</div>
+        <div class="stat-value">{{ rapport_data.nb_consommations }}</div>
+    </div>
+</div>
+
+<!-- MONTANTS -->
+<div class="card">
+    <h2>💰 Situation financière</h2>
+    <table>
+        <tbody>
+            <tr>
+                <td><strong>Montant total demandé</strong></td>
+                <td class="montant">{{ rapport_data.montant_demandes|floatformat:2 }} DA</td>
+            </tr>
+            <tr>
+                <td><strong>Montant accordé (PEC)</strong></td>
+                <td class="montant" style="color: #16a34a;">{{ rapport_data.montant_pec_accepte|floatformat:2 }} DA</td>
+            </tr>
+            <tr>
+                <td><strong>Montant consommations</strong></td>
+                <td class="montant">{{ rapport_data.montant_consommations|floatformat:2 }} DA</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- TOP ACTES -->
+<div class="card">
+    <h2>🩺 Top actes du contrat</h2>
+    {% if rapport_data.top_actes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Code</th>
+                    <th>Acte</th>
+                    <th>Nb</th>
+                    <th>Montant</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in rapport_data.top_actes %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ a.id_acte__code_acte }}</strong></td>
+                    <td>{{ a.id_acte__libelle }}</td>
+                    <td>{{ a.nb }}</td>
+                    <td class="montant">{{ a.total|floatformat:2 }} DA</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="empty">Aucune consommation pour ce contrat.</p>
+    {% endif %}
+</div>
+
+{% else %}
+    <div class="card">
+        <p class="empty">👈 Sélectionnez un contrat pour afficher son rapport.</p>
+    </div>
+{% endif %}
+
+{% endblock %}
