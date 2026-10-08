@@ -2,6 +2,7 @@
 
 from .views import (
     accueil,
+    a_propos,
     aide,
     connexion,
     deconnexion,
@@ -824,6 +825,7 @@ path("rapports/prestataire/excel/", lambda r: rapport_excel_generique(r, "presta
 path("rapports/financier/excel/", lambda r: rapport_excel_generique(r, "financier"), name="rapport_financier_excel"),
 path("rapports/contrat/excel/", lambda r: rapport_excel_generique(r, "contrat"), name="rapport_contrat_excel"),
 path("rapports/utilisateurs/excel/", lambda r: rapport_excel_generique(r, "utilisateurs"), name="rapport_utilisateurs_excel"),
+path("a-propos/", a_propos, name="a_propos"),
 ]
 
 

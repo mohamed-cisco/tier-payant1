@@ -291,7 +291,7 @@
     <a href="{% url 'champs_personnalises' %}" class="{% if page == 'champs_personnalises' %}active{% endif %}">⚙️ Champs personnalisés</a>
     <a href="{% url 'sauvegardes_liste' %}" class="{% if page == 'sauvegardes' %}active{% endif %}">💾 Sauvegardes</a>
 {% endif %}
-
+    <a href="{% url 'a_propos' %}" class="{% if page == 'a_propos' %}active{% endif %}">ℹ️ À propos</a>
 <div class="sep"></div>
 <a href="{% url 'rapports' %}" class="{% if page == 'rapports' %}active{% endif %}">📊 Rapports</a>
 
@@ -328,7 +328,12 @@
             {% block content %}{% endblock %}
         </main>
 
-        <div class="app-footer">© 2026 — Plateforme Tiers Payant SAGPS</div>
+      <div class="app-footer">
+    © 2026 — Plateforme Tiers Payant SAGPS —
+    <a href="{% url 'a_propos' %}" style="color: #9ca3af; text-decoration: none;">
+        v{{ VERSION }}
+    </a>
+</div>
     </div>
 
 </div>

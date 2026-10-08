@@ -347,3 +347,25 @@ def accueil(request):
             "dernieres_factures": dernieres_factures,
         }
     )
+
+
+def a_propos(request):
+    """Page À propos avec l'historique des versions."""
+    if not request.session.get("id_utilisateur"):
+        return redirect("connexion")
+
+    from core.version import (
+        VERSION, DATE_VERSION, NOM_VERSION, get_historique
+    )
+
+    return render(
+        request,
+        "core/a_propos.html",
+        {
+            "VERSION": VERSION,
+            "DATE_VERSION": DATE_VERSION,
+            "NOM_VERSION": NOM_VERSION,
+            "historique": get_historique(),
+            "page": "a_propos",
+        }
+    )

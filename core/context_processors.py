@@ -32,3 +32,21 @@ def utilisateur_context(request):
         "roles": roles,
         "permissions": permissions,
     }
+
+
+def version_context(request):
+    """Ajoute la version dans tous les templates."""
+    try:
+        from core.version import VERSION, get_date_version, get_nom_version
+
+        return {
+            "VERSION": VERSION,
+            "DATE_VERSION": get_date_version(),
+            "NOM_VERSION": get_nom_version(),
+        }
+    except ImportError:
+        return {
+            "VERSION": "1.0.0",
+            "DATE_VERSION": "2026-01-01",
+            "NOM_VERSION": "Version initiale",
+        }
