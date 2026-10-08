@@ -151,6 +151,10 @@
            target="_blank" class="btn" style="background: #dc2626; color: white;">
             📄 Export PDF
         </a>
+                <a href="{% url 'rapport_contrat_excel' %}?id_contrat={{ id_contrat }}&mois={{ mois }}&annee={{ annee }}"
+           class="btn" style="background: #16a34a; color: white;">
+            📊 Export Excel
+        </a>
     {% endif %}
     <a href="{% url 'rapports' %}" class="btn btn-secondary">← Retour</a>
 </form>

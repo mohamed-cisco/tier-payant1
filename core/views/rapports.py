@@ -1859,3 +1859,233 @@ def rapport_pdf_generique(request, type_rapport):
 
     document.build(elements)
     return response
+
+
+def rapport_excel_generique(request, type_rapport):
+    """
+    Export Excel générique pour tous les rapports.
+    
+    Types : 'prestataire', 'financier', 'contrat', 'utilisateurs'
+    """
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from django.http import HttpResponse
+
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    # Styles
+    font_titre = Font(bold=True, size=14, color="123B65")
+    font_entete = Font(bold=True, color="FFFFFF", size=10)
+    fill_entete = PatternFill(start_color="123B65", end_color="123B65", fill_type="solid")
+    align_center = Alignment(horizontal="center", vertical="center")
+
+    workbook = openpyxl.Workbook()
+    feuille = workbook.active
+    feuille.title = "Rapport"
+
+    titre_rapport = {
+        "prestataire": "RAPPORT PAR PRESTATAIRE",
+        "financier": "RAPPORT FINANCIER",
+        "contrat": "RAPPORT PAR CONTRAT",
+        "utilisateurs": "RAPPORT UTILISATEURS",
+    }.get(type_rapport, "RAPPORT")
+
+    # Titre
+    feuille["A1"] = f"{titre_rapport} — {noms_mois[mois-1]} {annee}"
+    feuille["A1"].font = font_titre
+    feuille.merge_cells("A1:G1")
+
+    feuille["A2"] = f"Du {date_debut.strftime('%d/%m/%Y')} au {date_fin.strftime('%d/%m/%Y')}"
+    feuille.merge_cells("A2:G2")
+
+    # Contenu selon le type
+    ligne_debut = 4
+
+    if type_rapport == "utilisateurs":
+        from core.models import Utilisateur, AuditLog
+
+        headers = ["Utilisateur", "Nom complet", "Créations", "Modifications", "Validations", "Radiations", "Total"]
+        for col, h in enumerate(headers, 1):
+            c = feuille.cell(row=ligne_debut, column=col, value=h)
+            c.font = font_entete
+            c.fill = fill_entete
+            c.alignment = align_center
+
+        utilisateurs = Utilisateur.objects.filter(statut="ACTIF")
+        ligne = ligne_debut + 1
+
+        for u in utilisateurs:
+            audits = AuditLog.objects.filter(
+                id_utilisateur=u,
+                date_action__date__gte=date_debut,
+                date_action__date__lte=date_fin,
+            )
+            nb_crea = audits.filter(type_action="CREATION").count()
+            nb_modif = audits.filter(type_action="MODIFICATION").count()
+            nb_valid = audits.filter(type_action="VALIDATION").count()
+            nb_rad = audits.filter(type_action="RADIATION").count()
+            nb_total = audits.count()
+
+            if nb_total > 0:
+                feuille.cell(row=ligne, column=1, value=u.nom_utilisateur)
+                feuille.cell(row=ligne, column=2, value=f"{u.nom} {u.prenom}")
+                feuille.cell(row=ligne, column=3, value=nb_crea)
+                feuille.cell(row=ligne, column=4, value=nb_modif)
+                feuille.cell(row=ligne, column=5, value=nb_valid)
+                feuille.cell(row=ligne, column=6, value=nb_rad)
+                feuille.cell(row=ligne, column=7, value=nb_total)
+                ligne += 1
+
+    elif type_rapport == "financier":
+        factures = Facture.objects.filter(
+            date_facture__gte=date_debut, date_facture__lte=date_fin
+        )
+        reglements = Reglement.objects.filter(
+            date_reglement__gte=date_debut, date_reglement__lte=date_fin,
+            statut="VALIDEE"
+        )
+
+        nb_factures = factures.count()
+        montant_valide = factures.aggregate(total=Sum("montant_valide"))["total"] or Decimal("0.00")
+        montant_paye = reglements.aggregate(total=Sum("montant"))["total"] or Decimal("0.00")
+        reste = montant_valide - montant_paye
+
+        headers = ["Indicateur", "Valeur"]
+        for col, h in enumerate(headers, 1):
+            c = feuille.cell(row=ligne_debut, column=col, value=h)
+            c.font = font_entete
+            c.fill = fill_entete
+            c.alignment = align_center
+
+        data = [
+            ("Nombre de factures", nb_factures),
+            ("Montant validé", float(montant_valide)),
+            ("Montant payé", float(montant_paye)),
+            ("Reste à payer", float(reste)),
+        ]
+
+        ligne = ligne_debut + 1
+        for label, valeur in data:
+            feuille.cell(row=ligne, column=1, value=label)
+            c = feuille.cell(row=ligne, column=2, value=valeur)
+            if isinstance(valeur, float):
+                c.number_format = '#,##0.00" DA"'
+            ligne += 1
+
+    elif type_rapport == "contrat":
+        id_contrat = request.GET.get("id_contrat", "").strip()
+
+        headers = ["Indicateur", "Valeur"]
+        for col, h in enumerate(headers, 1):
+            c = feuille.cell(row=ligne_debut, column=col, value=h)
+            c.font = font_entete
+            c.fill = fill_entete
+            c.alignment = align_center
+
+        ligne = ligne_debut + 1
+
+        if id_contrat:
+            try:
+                contrat = Contrat.objects.get(id_contrat=id_contrat)
+                demandes = DemandeTp.objects.filter(
+                    id_contrat=contrat,
+                    date_demande__date__gte=date_debut,
+                    date_demande__date__lte=date_fin,
+                )
+                consommations = Consommation.objects.filter(
+                    id_adhesion__id_contrat=contrat,
+                    date_prestation__gte=date_debut,
+                    date_prestation__lte=date_fin,
+                )
+
+                data = [
+                    ("Contrat", contrat.numero_contrat),
+                    ("Souscripteur", contrat.id_souscripteur.raison_sociale),
+                    ("Nombre de demandes", demandes.count()),
+                    ("Montant demandé", float(demandes.aggregate(total=Sum('montant_demande'))['total'] or 0)),
+                    ("Nombre de consommations", consommations.count()),
+                    ("Montant consommations", float(consommations.aggregate(total=Sum('montant_prise_en_charge'))['total'] or 0)),
+                ]
+
+                for label, valeur in data:
+                    feuille.cell(row=ligne, column=1, value=label)
+                    c = feuille.cell(row=ligne, column=2, value=valeur)
+                    if isinstance(valeur, float):
+                        c.number_format = '#,##0.00" DA"'
+                    ligne += 1
+            except Contrat.DoesNotExist:
+                feuille.cell(row=ligne, column=1, value="Contrat introuvable")
+
+    else:  # prestataire
+        id_prestataire = request.GET.get("id_prestataire", "").strip()
+
+        headers = ["Indicateur", "Valeur"]
+        for col, h in enumerate(headers, 1):
+            c = feuille.cell(row=ligne_debut, column=col, value=h)
+            c.font = font_entete
+            c.fill = fill_entete
+            c.alignment = align_center
+
+        ligne = ligne_debut + 1
+
+        if id_prestataire:
+            try:
+                prestataire = Prestataire.objects.get(id_prestataire=id_prestataire)
+                factures = Facture.objects.filter(
+                    id_prestataire=prestataire,
+                    date_facture__gte=date_debut,
+                    date_facture__lte=date_fin,
+                )
+
+                data = [
+                    ("Prestataire", prestataire.raison_sociale),
+                    ("Type", prestataire.type_prestataire),
+                    ("Nombre de factures", factures.count()),
+                    ("Montant validé", float(factures.aggregate(total=Sum('montant_valide'))['total'] or 0)),
+                ]
+
+                for label, valeur in data:
+                    feuille.cell(row=ligne, column=1, value=label)
+                    c = feuille.cell(row=ligne, column=2, value=valeur)
+                    if isinstance(valeur, float):
+                        c.number_format = '#,##0.00" DA"'
+                    ligne += 1
+            except Prestataire.DoesNotExist:
+                feuille.cell(row=ligne, column=1, value="Prestataire introuvable")
+
+    # Ajuster les largeurs
+    for col in range(1, 8):
+        feuille.column_dimensions[chr(64 + col)].width = 22
+
+    # Réponse
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = (
+        f'attachment; filename="rapport_{type_rapport}_{mois:02d}_{annee}.xlsx"'
+    )
+    workbook.save(response)
+    return response
