@@ -27,13 +27,15 @@ def config_cnas(request):
     utilisateur = request.utilisateur
     permissions = _get_permissions(utilisateur.id_utilisateur)
     
-    if "CONFIG_CNAS_VIEW" not in permissions and "REMBOURSEMENT_VALIDATE" not in permissions:
-        messages.error(request, "Vous n'avez pas l'autorisation.")
-        return redirect("accueil")
+    # ✅ CORRECTION : seul CONFIG_CNAS_VIEW donne accès
+    if "CONFIG_CNAS_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation d'accéder à la configuration CNAS.")
+        return redirect("remb_dashboard")
     
     if request.method == "POST":
-        if "CONFIG_CNAS_UPDATE" not in permissions and "REMBOURSEMENT_VALIDATE" not in permissions:
-            messages.error(request, "Vous n'avez pas l'autorisation de modifier.")
+        # ✅ CORRECTION : seul CONFIG_CNAS_UPDATE permet de modifier
+        if "CONFIG_CNAS_UPDATE" not in permissions:
+            messages.error(request, "Vous n'avez pas l'autorisation de modifier la configuration CNAS.")
             return redirect("remb_config_cnas")
         
         try:
@@ -125,8 +127,9 @@ def config_cnas_supprimer(request, id_config):
     utilisateur = request.utilisateur
     permissions = _get_permissions(utilisateur.id_utilisateur)
     
-    if "CONFIG_CNAS_UPDATE" not in permissions and "REMBOURSEMENT_VALIDATE" not in permissions:
-        messages.error(request, "Vous n'avez pas l'autorisation.")
+    # ✅ CORRECTION : seul CONFIG_CNAS_UPDATE permet de supprimer
+    if "CONFIG_CNAS_UPDATE" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation de supprimer une configuration CNAS.")
         return redirect("remb_config_cnas")
     
     try:

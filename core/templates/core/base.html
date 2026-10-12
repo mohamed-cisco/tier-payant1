@@ -389,9 +389,9 @@
                 <a href="{% url 'remb_virements' %}" class="nav-link {% if page == 'remb_virements' %}active{% endif %}"><span>💸</span> Virements adhérents</a>
                 <a href="{% url 'remb_virements_bordereau' %}" class="nav-link {% if page == 'remb_bordereau' %}active{% endif %}"><span>📥</span> Bordereau bancaire</a>
                 <a href="{% url 'rapport_remb_par_mois' %}" class="nav-link {% if page == 'rapport_remb' %}active{% endif %}"><span>📈</span> Rapports Remb.</a>
-                {% if "CONFIG_CNAS_VIEW" in permissions or "REMBOURSEMENT_VALIDATE" in permissions %}
-                    <a href="{% url 'remb_config_cnas' %}" class="nav-link {% if page == 'remb_config_cnas' %}active{% endif %}"><span>⚙️</span> Config CNAS</a>
-                {% endif %}
+                {% if "CONFIG_CNAS_VIEW" in permissions %}
+    <a href="{% url 'remb_config_cnas' %}" class="nav-link">⚙️ Config CNAS</a>
+{% endif %}
             </div>
         </div>
         {% endif %}
