@@ -25,52 +25,119 @@
 
         /* ================= SIDEBAR ================= */
         .sidebar {
-            width: 235px;
+            width: 245px;
             background: #123b65;
             flex-shrink: 0;
-            padding: 22px 14px;
+            padding: 18px 12px;
             overflow-y: auto;
             position: sticky;
             top: 0;
             height: 100vh;
+            font-size: 13.5px;
         }
 
         .sidebar-title {
             color: white;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: .5px;
-            margin: 0 10px 14px;
-            opacity: .7;
+            letter-spacing: .8px;
+            margin: 0 10px 12px;
+            opacity: .65;
         }
 
-        .sidebar a {
+        /* ============ LIENS SIMPLES ============ */
+        .sidebar a.nav-link {
             display: flex;
             align-items: center;
             gap: 9px;
             color: white;
             text-decoration: none;
-            padding: 10px 12px;
-            margin-bottom: 4px;
-            border-radius: 8px;
+            padding: 9px 12px;
+            margin-bottom: 2px;
+            border-radius: 7px;
             font-size: 13.5px;
             transition: background .18s;
         }
 
-        .sidebar a:hover { background: rgba(255,255,255,.12); }
+        .sidebar a.nav-link:hover { background: rgba(255,255,255,.10); }
 
-        .sidebar a.active {
+        .sidebar a.nav-link.active {
             background: rgba(255,255,255,.22);
             font-weight: 600;
         }
 
+        /* ============ GROUPES ACCORDÉON ============ */
+        .nav-group {
+            margin-bottom: 4px;
+        }
+
+        .nav-group-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            color: white;
+            padding: 10px 12px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 13.5px;
+            font-weight: 600;
+            letter-spacing: .2px;
+            opacity: .85;
+            transition: background .18s, opacity .18s;
+            user-select: none;
+        }
+
+        .nav-group-header:hover {
+            background: rgba(255,255,255,.08);
+            opacity: 1;
+        }
+
+        .nav-group-header .chevron {
+            font-size: 10px;
+            transition: transform .25s;
+            opacity: .6;
+        }
+
+        .nav-group.open .nav-group-header {
+            opacity: 1;
+            background: rgba(255,255,255,.12);
+        }
+
+        .nav-group.open .nav-group-header .chevron {
+            transform: rotate(90deg);
+        }
+
+        .nav-group-items {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .3s ease;
+            padding-left: 4px;
+        }
+
+        .nav-group.open .nav-group-items {
+            max-height: 800px;
+        }
+
+        .nav-group-items a.nav-link {
+            padding-left: 22px;
+            font-size: 13px;
+            opacity: .9;
+        }
+
+        .nav-group-items a.nav-link.active {
+            opacity: 1;
+        }
+
+        /* ============ SÉPARATEUR ============ */
         .sidebar .sep {
             height: 1px;
             background: rgba(255,255,255,.12);
             margin: 12px 10px;
         }
 
+        /* ============ BOUTON LOGOUT ============ */
         .sidebar .logout {
             color: #fca5a5;
         }
@@ -171,21 +238,37 @@
             border-top: 1px solid #e8edf3;
         }
 
+        /* ================= BURGER MOBILE ================= */
+        .burger {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: #123b65;
+            padding: 6px 10px;
+        }
+
         /* ================= RESPONSIVE ================= */
         @media (max-width: 900px) {
             .app-layout { flex-direction: column; }
+
             .sidebar {
                 width: 100%;
                 height: auto;
                 position: static;
-                padding: 14px;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 6px;
+                padding: 12px;
+                max-height: 400px;
+                overflow-y: auto;
             }
-            .sidebar-title { width: 100%; }
-            .sidebar a { margin-bottom: 0; font-size: 12px; padding: 8px 10px; }
-            .sidebar .sep { display: none; }
+
+            .sidebar.hidden {
+                display: none;
+            }
+
+            .burger { display: block; }
+
+            .app-header { padding: 12px 18px; }
             .app-content { padding: 20px; }
         }
     </style>
@@ -198,119 +281,186 @@
 <div class="app-layout">
 
     {# ================ MENU LATÉRAL ================ #}
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         <div class="sidebar-title">Navigation</div>
 
-        <a href="{% url 'accueil' %}" class="{% if page == 'accueil' %}active{% endif %}">🏠 Tableau de bord</a>
+        {# ---- TABLEAU DE BORD (lien direct) ---- #}
+        <a href="{% url 'accueil' %}"
+           class="nav-link {% if page == 'accueil' %}active{% endif %}">
+            <span>🏠</span> Tableau de bord
+        </a>
 
         <div class="sep"></div>
 
-        {% if "ADHERENT_VIEW" in permissions %}
-            <a href="{% url 'adherents' %}" class="{% if page == 'adherents' %}active{% endif %}">👥 Adhérents</a>
-        {% endif %}
-        {% if "AYANT_DROIT_VIEW" in permissions %}
-            <a href="{% url 'ayant_droits' %}" class="{% if page == 'ayant_droits' %}active{% endif %}">👨‍👩‍👧 Ayants droit</a>
-        {% endif %}
-        {% if "ADHESION_VIEW" in permissions %}
-            <a href="{% url 'adhesions' %}" class="{% if page == 'adhesions' %}active{% endif %}">📋 Adhésions</a>
-        {% endif %}
-
-        <div class="sep"></div>
-
-        {% if "SOUSCRIPTEUR_VIEW" in permissions %}
-            <a href="{% url 'souscripteurs' %}" class="{% if page == 'souscripteurs' %}active{% endif %}">🏢 Souscripteurs</a>
-        {% endif %}
-        {% if "CONTRAT_VIEW" in permissions %}
-            <a href="{% url 'contrats' %}" class="{% if page == 'contrats' %}active{% endif %}">📄 Contrats</a>
-        {% endif %}
-        {% if "GARANTIE_VIEW" in permissions %}
-            <a href="{% url 'garanties' %}" class="{% if page == 'garanties' %}active{% endif %}">🛡️ Garanties</a>
-            <a href="{% url 'garantie_actes' %}" class="{% if page == 'garantie_actes' %}active{% endif %}">🔗 Garantie ↔ Acte</a>
-            <a href="{% url 'plafonds' %}" class="{% if page == 'plafonds' %}active{% endif %}">💰 Plafonds</a>
+        {# ============ GROUPE : ASSURÉS ============ #}
+        {% if "ADHERENT_VIEW" in permissions or "AYANT_DROIT_VIEW" in permissions or "ADHESION_VIEW" in permissions %}
+        <div class="nav-group" data-group="assures">
+            <div class="nav-group-header">
+                <span><span>👥</span> Assurés</span>
+                <span class="chevron">▶</span>
+            </div>
+            <div class="nav-group-items">
+                {% if "ADHERENT_VIEW" in permissions %}
+                    <a href="{% url 'adherents' %}" class="nav-link {% if page == 'adherents' %}active{% endif %}"><span>👤</span> Adhérents</a>
+                {% endif %}
+                {% if "AYANT_DROIT_VIEW" in permissions %}
+                    <a href="{% url 'ayant_droits' %}" class="nav-link {% if page == 'ayant_droits' %}active{% endif %}"><span>👨‍👩‍👧</span> Ayants droit</a>
+                {% endif %}
+                {% if "ADHESION_VIEW" in permissions %}
+                    <a href="{% url 'adhesions' %}" class="nav-link {% if page == 'adhesions' %}active{% endif %}"><span>📋</span> Adhésions</a>
+                {% endif %}
+            </div>
+        </div>
         {% endif %}
 
-        <div class="sep"></div>
-
-        {% if "ACTE_VIEW" in permissions %}
-            <a href="{% url 'types_prestation' %}" class="{% if page == 'types_prestation' %}active{% endif %}">📚 Types de prestation</a>
-            <a href="{% url 'actes' %}" class="{% if page == 'actes' %}active{% endif %}">🩺 Actes</a>
-            <a href="{% url 'sous_actes' %}" class="{% if page == 'sous_actes' %}active{% endif %}">📊 Sous-actes</a>
-            <a href="{% url 'tarifs_sous_actes' %}" class="{% if page == 'tarifs_sous_actes' %}active{% endif %}">💵 Tarifs sous-actes</a>
+        {# ============ GROUPE : CONTRATS & GARANTIES ============ #}
+        {% if "SOUSCRIPTEUR_VIEW" in permissions or "CONTRAT_VIEW" in permissions or "GARANTIE_VIEW" in permissions %}
+        <div class="nav-group" data-group="contrats">
+            <div class="nav-group-header">
+                <span><span>📄</span> Contrats</span>
+                <span class="chevron">▶</span>
+            </div>
+            <div class="nav-group-items">
+                {% if "SOUSCRIPTEUR_VIEW" in permissions %}
+                    <a href="{% url 'souscripteurs' %}" class="nav-link {% if page == 'souscripteurs' %}active{% endif %}"><span>🏢</span> Souscripteurs</a>
+                {% endif %}
+                {% if "CONTRAT_VIEW" in permissions %}
+                    <a href="{% url 'contrats' %}" class="nav-link {% if page == 'contrats' %}active{% endif %}"><span>📄</span> Contrats</a>
+                {% endif %}
+                {% if "GARANTIE_VIEW" in permissions %}
+                    <a href="{% url 'garanties' %}" class="nav-link {% if page == 'garanties' %}active{% endif %}"><span>🛡️</span> Garanties</a>
+                    <a href="{% url 'garantie_actes' %}" class="nav-link {% if page == 'garantie_actes' %}active{% endif %}"><span>🔗</span> Garantie ↔ Acte</a>
+                    <a href="{% url 'plafonds' %}" class="nav-link {% if page == 'plafonds' %}active{% endif %}"><span>💰</span> Plafonds</a>
+                {% endif %}
+            </div>
+        </div>
         {% endif %}
 
-        <div class="sep"></div>
-
-        {% if "PRESTATAIRE_VIEW" in permissions %}
-            <a href="{% url 'prestataires' %}" class="{% if page == 'prestataires' %}active{% endif %}">🏥 Prestataires</a>
+        {# ============ GROUPE : RÉFÉRENTIELS ============ #}
+        {% if "ACTE_VIEW" in permissions or "PRESTATAIRE_VIEW" in permissions or "CONVENTION_VIEW" in permissions %}
+        <div class="nav-group" data-group="referentiels">
+            <div class="nav-group-header">
+                <span><span>🏥</span> Référentiels</span>
+                <span class="chevron">▶</span>
+            </div>
+            <div class="nav-group-items">
+                {% if "ACTE_VIEW" in permissions %}
+                    <a href="{% url 'types_prestation' %}" class="nav-link {% if page == 'types_prestation' %}active{% endif %}"><span>📚</span> Types de prestation</a>
+                    <a href="{% url 'actes' %}" class="nav-link {% if page == 'actes' %}active{% endif %}"><span>🩺</span> Actes</a>
+                    <a href="{% url 'sous_actes' %}" class="nav-link {% if page == 'sous_actes' %}active{% endif %}"><span>📊</span> Sous-actes</a>
+                    <a href="{% url 'tarifs_sous_actes' %}" class="nav-link {% if page == 'tarifs_sous_actes' %}active{% endif %}"><span>💵</span> Tarifs sous-actes</a>
+                {% endif %}
+                {% if "PRESTATAIRE_VIEW" in permissions %}
+                    <a href="{% url 'prestataires' %}" class="nav-link {% if page == 'prestataires' %}active{% endif %}"><span>🏥</span> Prestataires</a>
+                {% endif %}
+                {% if "CONVENTION_VIEW" in permissions %}
+                    <a href="{% url 'conventions' %}" class="nav-link {% if page == 'conventions' %}active{% endif %}"><span>🤝</span> Conventions</a>
+                {% endif %}
+            </div>
+        </div>
         {% endif %}
-        {% if "CONVENTION_VIEW" in permissions %}
-            <a href="{% url 'conventions' %}" class="{% if page == 'conventions' %}active{% endif %}">🤝 Conventions</a>
-        {% endif %}
 
-        <div class="sep"></div>
-
+        {# ============ GROUPE : TIERS PAYANT ============ #}
         {% if "DEMANDE_VIEW" in permissions %}
-            <a href="{% url 'demandes_tp' %}" class="{% if page == 'demandes_tp' %}active{% endif %}">📝 Demandes TP</a>
-            <a href="{% url 'prises_en_charge' %}" class="{% if page == 'prises_en_charge' %}active{% endif %}">🏥 Prises en charge</a>
+        <div class="nav-group" data-group="tp">
+            <div class="nav-group-header">
+                <span><span>📝</span> Tiers Payant</span>
+                <span class="chevron">▶</span>
+            </div>
+            <div class="nav-group-items">
+                <a href="{% url 'demandes_tp' %}" class="nav-link {% if page == 'demandes_tp' %}active{% endif %}"><span>📝</span> Demandes TP</a>
+                <a href="{% url 'prises_en_charge' %}" class="nav-link {% if page == 'prises_en_charge' %}active{% endif %}"><span>🏥</span> Prises en charge</a>
+            </div>
+        </div>
         {% endif %}
 
-{# ============ MODULE REMBOURSEMENT ============ #}
-{% if "REMBOURSEMENT_VIEW" in permissions %}
-    <div class="sep"></div>
-    <div class="sidebar-title">Remboursement</div>
-        <a href="{% url 'remb_dashboard' %}" class="{% if page == 'remb_dashboard' %}active{% endif %}">📊 Tableau de bord</a>
-        <a href="{% url 'remb_ribs_manquants' %}" class="{% if page == 'remb_ribs' %}active{% endif %}">🏦 Coordonnées bancaires</a>
-    <a href="{% url 'remb_bulletins' %}" class="{% if page == 'remb_bulletins' %}active{% endif %}">📄 Bulletins de soins</a>
-    <a href="{% url 'remb_recaps' %}" class="{% if page == 'remb_recaps' %}active{% endif %}">📊 Récaps souscripteur</a>
-    <a href="{% url 'remb_virements' %}" class="{% if page == 'remb_virements' %}active{% endif %}">💰 Virements adhérents</a>
-    {% if "CONFIG_CNAS_VIEW" in permissions or "REMBOURSEMENT_VALIDATE" in permissions %}
-        <a href="{% url 'remb_config_cnas' %}" class="{% if page == 'remb_config_cnas' %}active{% endif %}">⚙️ Config CNAS</a>
-        <a href="{% url 'rapports' %}" class<a href="{% url 'rapports' %}" class="{% if page == 'rapport_remb' %}active{% endif %}">📈 Rapports Remb.</a>="{% if page == 'rapport_remb' %}active{% endif %}">📈 Rapports Remb.</a>
-    {% endif %}
-    {% endif %}
+        {# ============ GROUPE : REMBOURSEMENT ============ #}
+        {% if "REMBOURSEMENT_VIEW" in permissions %}
+        <div class="nav-group" data-group="remboursement">
+            <div class="nav-group-header">
+                <span><span>💰</span> Remboursement</span>
+                <span class="chevron">▶</span>
+            </div>
+            <div class="nav-group-items">
+                <a href="{% url 'remb_dashboard' %}" class="nav-link {% if page == 'remb_dashboard' %}active{% endif %}"><span>📊</span> Tableau de bord</a>
+                <a href="{% url 'remb_ribs_manquants' %}" class="nav-link {% if page == 'remb_ribs' %}active{% endif %}"><span>🏦</span> Coordonnées bancaires</a>
+                <a href="{% url 'remb_bulletins' %}" class="nav-link {% if page == 'remb_bulletins' %}active{% endif %}"><span>📄</span> Bulletins de soins</a>
+                <a href="{% url 'remb_recaps' %}" class="nav-link {% if page == 'remb_recaps' %}active{% endif %}"><span>📊</span> Récaps souscripteur</a>
+                <a href="{% url 'remb_virements' %}" class="nav-link {% if page == 'remb_virements' %}active{% endif %}"><span>💸</span> Virements adhérents</a>
+                <a href="{% url 'remb_virements_bordereau' %}" class="nav-link {% if page == 'remb_bordereau' %}active{% endif %}"><span>📥</span> Bordereau bancaire</a>
+                <a href="{% url 'rapport_remb_par_mois' %}" class="nav-link {% if page == 'rapport_remb' %}active{% endif %}"><span>📈</span> Rapports Remb.</a>
+                {% if "CONFIG_CNAS_VIEW" in permissions or "REMBOURSEMENT_VALIDATE" in permissions %}
+                    <a href="{% url 'remb_config_cnas' %}" class="nav-link {% if page == 'remb_config_cnas' %}active{% endif %}"><span>⚙️</span> Config CNAS</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# ============ GROUPE : FACTURATION ============ #}
+        {% if "FACTURE_VIEW" in permissions or "REGLEMENT_VIEW" in permissions or "RECOURS_VIEW" in permissions %}
+        <div class="nav-group" data-group="facturation">
+            <div class="nav-group-header">
+                <span><span>💼</span> Facturation</span>
+                <span class="chevron">▶</span>
+            </div>
+            <div class="nav-group-items">
+                {% if "FACTURE_VIEW" in permissions %}
+                    <a href="{% url 'factures' %}" class="nav-link {% if page == 'factures' %}active{% endif %}"><span>💰</span> Factures</a>
+                {% endif %}
+                {% if "REGLEMENT_VIEW" in permissions %}
+                    <a href="{% url 'reglements' %}" class="nav-link {% if page == 'reglements' %}active{% endif %}"><span>💳</span> Règlements</a>
+                {% endif %}
+                {% if "RECOURS_VIEW" in permissions %}
+                    <a href="{% url 'recours' %}" class="nav-link {% if page == 'recours' %}active{% endif %}"><span>⚖️</span> Recours</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# ============ GROUPE : ADMINISTRATION ============ #}
+        {% if "USER_VIEW" in permissions or "ROLE_VIEW" in permissions or "DOCUMENT_VIEW" in permissions or "AUDIT_VIEW" in permissions %}
+        <div class="nav-group" data-group="admin">
+            <div class="nav-group-header">
+                <span><span>⚙️</span> Administration</span>
+                <span class="chevron">▶</span>
+            </div>
+            <div class="nav-group-items">
+                {% if "DOCUMENT_VIEW" in permissions %}
+                    <a href="{% url 'documents' %}" class="nav-link {% if page == 'documents' %}active{% endif %}"><span>📎</span> Documents</a>
+                {% endif %}
+                {% if "AUDIT_VIEW" in permissions %}
+                    <a href="{% url 'audit_logs' %}" class="nav-link {% if page == 'audit' %}active{% endif %}"><span>🔎</span> Audit</a>
+                {% endif %}
+                {% if "USER_VIEW" in permissions %}
+                    <a href="{% url 'utilisateurs' %}" class="nav-link {% if page == 'utilisateurs' %}active{% endif %}"><span>👤</span> Utilisateurs</a>
+                {% endif %}
+                {% if "ROLE_VIEW" in permissions %}
+                    <a href="{% url 'roles' %}" class="nav-link {% if page == 'roles' %}active{% endif %}"><span>🛡️</span> Rôles & Permissions</a>
+                    <a href="{% url 'champs_personnalises' %}" class="nav-link {% if page == 'champs_personnalises' %}active{% endif %}"><span>⚙️</span> Champs personnalisés</a>
+                    <a href="{% url 'sauvegardes_liste' %}" class="nav-link {% if page == 'sauvegardes' %}active{% endif %}"><span>💾</span> Sauvegardes</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
         <div class="sep"></div>
 
-        {% if "FACTURE_VIEW" in permissions %}
-            <a href="{% url 'factures' %}" class="{% if page == 'factures' %}active{% endif %}">💰 Factures</a>
-        {% endif %}
-        {% if "REGLEMENT_VIEW" in permissions %}
-            <a href="{% url 'reglements' %}" class="{% if page == 'reglements' %}active{% endif %}">💳 Règlements</a>
-        {% endif %}
-        {% if "RECOURS_VIEW" in permissions %}
-            <a href="{% url 'recours' %}" class="{% if page == 'recours' %}active{% endif %}">⚖️ Recours</a>
-        {% endif %}
+        {# ---- LIENS BAS DE PAGE ---- #}
+        <a href="{% url 'rapports' %}" class="nav-link {% if page == 'rapports' %}active{% endif %}">
+            <span>📊</span> Rapports
+        </a>
+        <a href="{% url 'aide' %}" class="nav-link {% if page == 'aide' %}active{% endif %}">
+            <span>❓</span> Aide
+        </a>
+        <a href="{% url 'a_propos' %}" class="nav-link {% if page == 'a_propos' %}active{% endif %}">
+            <span>ℹ️</span> À propos
+        </a>
 
         <div class="sep"></div>
 
-        {% if "DOCUMENT_VIEW" in permissions %}
-            <a href="{% url 'documents' %}" class="{% if page == 'documents' %}active{% endif %}">📎 Documents</a>
-        {% endif %}
-        {% if "AUDIT_VIEW" in permissions %}
-            <a href="{% url 'audit_logs' %}" class="{% if page == 'audit' %}active{% endif %}">🔎 Audit</a>
-        {% endif %}
-
-        <div class="sep"></div>
-
-        {% if "USER_VIEW" in permissions %}
-            <a href="{% url 'utilisateurs' %}" class="{% if page == 'utilisateurs' %}active{% endif %}">👤 Utilisateurs</a>
-        {% endif %}
-        {% if "ROLE_VIEW" in permissions %}
-            <a href="{% url 'roles' %}" class="{% if page == 'roles' %}active{% endif %}">🛡️ Rôles & Permissions</a>
-        {% endif %}
-
-        {% if "ROLE_VIEW" in permissions %}
-    <a href="{% url 'champs_personnalises' %}" class="{% if page == 'champs_personnalises' %}active{% endif %}">⚙️ Champs personnalisés</a>
-    <a href="{% url 'sauvegardes_liste' %}" class="{% if page == 'sauvegardes' %}active{% endif %}">💾 Sauvegardes</a>
-{% endif %}
-    <a href="{% url 'a_propos' %}" class="{% if page == 'a_propos' %}active{% endif %}">ℹ️ À propos</a>
-<div class="sep"></div>
-<a href="{% url 'rapports' %}" class="{% if page == 'rapports' %}active{% endif %}">📊 Rapports</a>
-
-        <div class="sep"></div>
-<a href="{% url 'aide' %}" class="{% if page == 'aide' %}active{% endif %}">❓ Aide</a>
-
-<div class="sep"></div>
-        <a href="{% url 'deconnexion' %}" class="logout">🚪 Déconnexion</a>
+        <a href="{% url 'deconnexion' %}" class="nav-link logout">
+            <span>🚪</span> Déconnexion
+        </a>
     </aside>
 
     {# ================ ZONE PRINCIPALE ================ #}
@@ -318,6 +468,7 @@
 
         <header class="app-header">
             <div class="brand">
+                <button class="burger" onclick="toggleSidebar()">☰</button>
                 <img src="{% static 'core/img/logo-sagps.png' %}" alt="SAGPS">
                 <div>
                     <div class="brand-title">{% block header_title %}Tiers Payant{% endblock %}</div>
@@ -339,15 +490,64 @@
             {% block content %}{% endblock %}
         </main>
 
-      <div class="app-footer">
-    © 2026 — Plateforme Tiers Payant SAGPS —
-    <a href="{% url 'a_propos' %}" style="color: #9ca3af; text-decoration: none;">
-        v{{ VERSION }}
-    </a>
-</div>
+        <div class="app-footer">
+            © 2026 — Plateforme Tiers Payant SAGPS —
+            <a href="{% url 'a_propos' %}" style="color: #9ca3af; text-decoration: none;">
+                v{{ VERSION }}
+            </a>
+        </div>
     </div>
 
 </div>
+
+{# ================ JS : ACCORDÉON + PERSISTANCE ================ #}
+<script>
+(function () {
+    const STORAGE_KEY = 'sagps_nav_open_group';
+    const groups = document.querySelectorAll('.nav-group');
+
+    const savedGroup = localStorage.getItem(STORAGE_KEY);
+
+    let activeGroup = null;
+    groups.forEach(function (group) {
+        const hasActive = group.querySelector('.nav-link.active');
+        if (hasActive) {
+            activeGroup = group.dataset.group;
+        }
+    });
+
+    const groupToOpen = activeGroup || savedGroup;
+
+    groups.forEach(function (group) {
+        if (group.dataset.group === groupToOpen) {
+            group.classList.add('open');
+        }
+    });
+
+    groups.forEach(function (group) {
+        const header = group.querySelector('.nav-group-header');
+        if (!header) return;
+
+        header.addEventListener('click', function () {
+            if (!group.classList.contains('open')) {
+                groups.forEach(function (g) {
+                    g.classList.remove('open');
+                });
+                group.classList.add('open');
+                localStorage.setItem(STORAGE_KEY, group.dataset.group);
+            } else {
+                group.classList.remove('open');
+                localStorage.removeItem(STORAGE_KEY);
+            }
+        });
+    });
+
+    window.toggleSidebar = function () {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) sidebar.classList.toggle('hidden');
+    };
+})();
+</script>
 
 {% block extra_js %}{% endblock %}
 </body>

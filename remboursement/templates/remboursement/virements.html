@@ -45,8 +45,14 @@
             <option value="ANNULE" {% if statut == 'ANNULE' %}selected{% endif %}>Annulé</option>
         </select>
     </div>
-    <div class="field">
+       <div class="field">
         <button type="submit" class="btn btn-primary">🔍 Filtrer</button>
+    </div>
+    <div class="field">
+        <a href="{% url 'remb_virements_bordereau' %}" class="btn btn-primary"
+           style="background: #dc2626; color: white; text-decoration: none;">
+            📥 Générer bordereau bancaire
+        </a>
     </div>
 </form>
 

@@ -1,0 +1,165 @@
+{% extends "remboursement/base_remb.html" %}
+{% load static %}
+
+{% block title %}Bordereau bancaire{% endblock %}
+{% block header_title %}Bordereau bancaire{% endblock %}
+{% block header_sub %}Préparation du bordereau de virements adhérents{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card { background: white; padding: 25px; border-radius: 14px;
+            border: 1px solid #e5ebf2; box-shadow: 0 4px 15px rgba(0,0,0,.05);
+            margin-bottom: 20px; }
+    .card h2 { margin: 0 0 20px; color: #123b65; font-size: 20px; }
+
+    .filters-bar { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto;
+                   gap: 12px; align-items: end; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 13px; font-weight: 600; color: #475569; }
+    .field input, .field select {
+        padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 7px;
+        font-size: 14px; background: white; outline: none;
+    }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center;
+           padding: 10px 18px; border: none; border-radius: 8px;
+           font-size: 14px; font-weight: 600; cursor: pointer;
+           text-decoration: none; }
+    .btn-primary { background: #123b65; color: white; }
+    .btn-primary:hover { background: #1d5d91; }
+    .btn-secondary { background: #64748b; color: white; }
+    .btn-pdf { background: #dc2626; color: white; }
+    .btn-pdf:hover { background: #b91c1c; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr);
+                  gap: 15px; margin-bottom: 22px; }
+    .stat-card { background: white; border-radius: 12px; padding: 20px;
+                 border: 1px solid #e5ebf2; box-shadow: 0 3px 10px rgba(0,0,0,.04); }
+    .stat-label { font-size: 12px; color: #6b7280; font-weight: 600;
+                  text-transform: uppercase; }
+    .stat-value { font-size: 22px; font-weight: 700; color: #123b65; margin-top: 5px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 11px 12px; text-align: left;
+             border-bottom: 1px solid #edf1f5; font-size: 13px; }
+    th { background: #f7f9fc; color: #123b65; font-weight: 700; }
+    .montant { text-align: right; font-weight: 600; }
+    .empty { text-align: center; padding: 35px; color: #6b7280; }
+    .total-row { background: #f1f5f9; font-weight: 700; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- FILTRES -->
+<div class="card">
+    <h2>🔍 Filtres</h2>
+    <form method="get" class="filters-bar">
+        <div class="field">
+            <label>Date début</label>
+            <input type="date" name="date_debut" value="{{ date_debut }}">
+        </div>
+        <div class="field">
+            <label>Date fin</label>
+            <input type="date" name="date_fin" value="{{ date_fin }}">
+        </div>
+        <div class="field">
+            <label>Banque</label>
+            <select name="banque">
+                <option value="">Toutes</option>
+                {% for b in banques %}
+                    <option value="{{ b }}" {% if banque_filtre == b %}selected{% endif %}>
+                        {{ b }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label>Mode de paiement</label>
+            <select name="mode_paiement">
+                <option value="">Tous</option>
+                <option value="VIREMENT" {% if mode_paiement_filtre == "VIREMENT" %}selected{% endif %}>Virement</option>
+                <option value="CCP" {% if mode_paiement_filtre == "CCP" %}selected{% endif %}>CCP</option>
+                <option value="CHEQUE" {% if mode_paiement_filtre == "CHEQUE" %}selected{% endif %}>Chèque</option>
+                <option value="ESPECES" {% if mode_paiement_filtre == "ESPECES" %}selected{% endif %}>Espèces</option>
+            </select>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <button type="submit" class="btn btn-primary">🔎 Afficher</button>
+            <a href="{% url 'remb_virements_bordereau' %}" class="btn btn-secondary">↻ Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- KPIs -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Nombre de virements</div>
+        <div class="stat-value">{{ totaux.nb_virements }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Montant total</div>
+        <div class="stat-value">{{ totaux.total|floatformat:2 }} DA</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Banques concernées</div>
+        <div class="stat-value">{{ totaux.par_banque|length }}</div>
+    </div>
+</div>
+
+<!-- ACTIONS -->
+<div class="card">
+    <h2>📥 Génération du bordereau</h2>
+    <p style="color: #64748b; font-size: 14px; margin-bottom: 18px;">
+        Le PDF contient la liste complète des virements à effectuer,
+        avec zone de signature pour dépôt à la banque.
+    </p>
+    <a href="{% url 'remb_virements_bordereau_pdf' %}?date_debut={{ date_debut }}&date_fin={{ date_fin }}&banque={{ banque_filtre }}&mode_paiement={{ mode_paiement_filtre }}"
+       target="_blank"
+       class="btn btn-pdf">
+        📄 Télécharger le bordereau PDF
+    </a>
+</div>
+
+<!-- TABLEAU -->
+<div class="card">
+    <h2>📋 Détail des virements ({{ totaux.nb_virements }})</h2>
+    {% if lignes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>N° Virement</th>
+                    <th>Bénéficiaire</th>
+                    <th>N° Adhérent</th>
+                    <th>Banque</th>
+                    <th>RIB</th>
+                    <th>Mode</th>
+                    <th>Nb B.</th>
+                    <th style="text-align:right;">Montant</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in lignes %}
+                <tr>
+                    <td><strong>{{ l.numero }}</strong></td>
+                    <td>{{ l.adherent_nom }}</td>
+                    <td>{{ l.adherent_numero }}</td>
+                    <td>{{ l.banque }}</td>
+                    <td>{{ l.rib }}</td>
+                    <td>{{ l.mode_paiement }}</td>
+                    <td>{{ l.nb_bulletins }}</td>
+                    <td class="montant">{{ l.montant|floatformat:2 }} DA</td>
+                </tr>
+                {% endfor %}
+                <tr class="total-row">
+                    <td colspan="7" style="text-align:right;">TOTAL</td>
+                    <td class="montant">{{ totaux.total|floatformat:2 }} DA</td>
+                </tr>
+            </tbody>
+        </table>
+    {% else %}
+        <p class="empty">Aucun virement à afficher avec ces filtres.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

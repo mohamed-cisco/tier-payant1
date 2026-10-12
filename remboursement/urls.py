@@ -71,4 +71,8 @@ urlpatterns = [
     
     path('rapports/ecarts/', rapports.remb_ecarts, name='rapport_remb_ecarts'),
     path('rapports/ecarts/pdf/', rapports.remb_ecarts_pdf, name='rapport_remb_ecarts_pdf'),
+        # Bordereau bancaire
+    path('virements/bordereau/', virements.bordereau_bancaire, name='remb_virements_bordereau'),
+    path('virements/bordereau/pdf/', virements.bordereau_bancaire_pdf, name='remb_virements_bordereau_pdf'),
+    
 ]
