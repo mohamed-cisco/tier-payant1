@@ -253,10 +253,21 @@
             <a href="{% url 'demandes_tp' %}" class="{% if page == 'demandes_tp' %}active{% endif %}">📝 Demandes TP</a>
             <a href="{% url 'prises_en_charge' %}" class="{% if page == 'prises_en_charge' %}active{% endif %}">🏥 Prises en charge</a>
         {% endif %}
-        {% if "CONSOMMATION_VIEW" in permissions %}
-            <a href="{% url 'consommations' %}" class="{% if page == 'consommations' %}active{% endif %}">🧾 Consommations</a>
-        {% endif %}
 
+{# ============ MODULE REMBOURSEMENT ============ #}
+{% if "REMBOURSEMENT_VIEW" in permissions %}
+    <div class="sep"></div>
+    <div class="sidebar-title">Remboursement</div>
+        <a href="{% url 'remb_dashboard' %}" class="{% if page == 'remb_dashboard' %}active{% endif %}">📊 Tableau de bord</a>
+        <a href="{% url 'remb_ribs_manquants' %}" class="{% if page == 'remb_ribs' %}active{% endif %}">🏦 Coordonnées bancaires</a>
+    <a href="{% url 'remb_bulletins' %}" class="{% if page == 'remb_bulletins' %}active{% endif %}">📄 Bulletins de soins</a>
+    <a href="{% url 'remb_recaps' %}" class="{% if page == 'remb_recaps' %}active{% endif %}">📊 Récaps souscripteur</a>
+    <a href="{% url 'remb_virements' %}" class="{% if page == 'remb_virements' %}active{% endif %}">💰 Virements adhérents</a>
+    {% if "CONFIG_CNAS_VIEW" in permissions or "REMBOURSEMENT_VALIDATE" in permissions %}
+        <a href="{% url 'remb_config_cnas' %}" class="{% if page == 'remb_config_cnas' %}active{% endif %}">⚙️ Config CNAS</a>
+        <a href="{% url 'rapports' %}" class<a href="{% url 'rapports' %}" class="{% if page == 'rapport_remb' %}active{% endif %}">📈 Rapports Remb.</a>="{% if page == 'rapport_remb' %}active{% endif %}">📈 Rapports Remb.</a>
+    {% endif %}
+    {% endif %}
         <div class="sep"></div>
 
         {% if "FACTURE_VIEW" in permissions %}

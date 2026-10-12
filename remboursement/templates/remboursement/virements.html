@@ -1,0 +1,102 @@
+{# remboursement/templates/remboursement/virements.html #}
+{% extends "remboursement/base_remb.html" %}
+
+{% block remb_title %}Virements adhérents{% endblock %}
+{% block remb_header_title %}Virements adhérents{% endblock %}
+
+{% block remb_content %}
+
+<div style="margin-bottom:22px;">
+    <h1 style="margin:0; color:#123b65; font-size:24px;">💰 Virements adhérents</h1>
+    <p style="margin:6px 0 0; color:#64748b;">Virements individuels générés après paiement du souscripteur</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card blue">
+        <div class="stat-label">Total virements</div>
+        <div class="stat-value">{{ totaux.total }}</div>
+    </div>
+    <div class="stat-card orange">
+        <div class="stat-label">À payer</div>
+        <div class="stat-value">{{ totaux.a_payer }}</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-label">Payés</div>
+        <div class="stat-value">{{ totaux.payes }}</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-label">Montant total</div>
+        <div class="stat-value small">{{ totaux.montant_total|floatformat:2 }} DA</div>
+    </div>
+</div>
+
+<form method="get" class="filters-bar">
+    <div class="field">
+        <label>Recherche</label>
+        <input type="text" name="recherche" value="{{ recherche }}" placeholder="N° virement, adhérent...">
+    </div>
+    <div class="field">
+        <label>Statut</label>
+        <select name="statut">
+            <option value="">Tous</option>
+            <option value="A_PAYER" {% if statut == 'A_PAYER' %}selected{% endif %}>À payer</option>
+            <option value="PAYE" {% if statut == 'PAYE' %}selected{% endif %}>Payé</option>
+            <option value="ECHEC" {% if statut == 'ECHEC' %}selected{% endif %}>Échec</option>
+            <option value="ANNULE" {% if statut == 'ANNULE' %}selected{% endif %}>Annulé</option>
+        </select>
+    </div>
+    <div class="field">
+        <button type="submit" class="btn btn-primary">🔍 Filtrer</button>
+    </div>
+</form>
+
+<div class="table-wrap">
+    <div class="table-header">
+        <h2>Liste des virements</h2>
+    </div>
+    
+    {% if virements %}
+    <table class="data">
+        <thead>
+            <tr>
+                <th>N° Virement</th>
+                <th>Adhérent</th>
+                <th>Montant</th>
+                <th>Mode</th>
+                <th>RIB</th>
+                <th>Statut</th>
+                <th style="text-align:center;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in virements %}
+            <tr>
+                <td><strong>{{ v.numero }}</strong></td>
+                <td>{{ v.adherent.numero_adherent }} - {{ v.adherent.id_personne.nom }}</td>
+                <td style="text-align:right; font-weight:600;">{{ v.montant|floatformat:2 }} DA</td>
+                <td>{{ v.get_mode_paiement_display }}</td>
+                <td style="font-family:monospace; font-size:11px;">{{ v.rib|default:"—" }}</td>
+                <td>
+                    {% if v.statut == 'A_PAYER' %}<span class="badge orange">À payer</span>
+                    {% elif v.statut == 'PAYE' %}<span class="badge green">Payé</span>
+                    {% elif v.statut == 'ECHEC' %}<span class="badge red">Échec</span>
+                    {% elif v.statut == 'ANNULE' %}<span class="badge gray">Annulé</span>
+                    {% else %}<span class="badge gray">{{ v.statut }}</span>{% endif %}
+                </td>
+                <td style="text-align:center;">
+                    <a href="{% url 'remb_virement_detail' v.id %}" class="btn btn-secondary btn-sm">👁️ Voir</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div class="icon">💰</div>
+        <h3>Aucun virement</h3>
+        <p>Les virements sont générés automatiquement après paiement du souscripteur.</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

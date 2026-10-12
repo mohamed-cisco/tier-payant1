@@ -476,6 +476,12 @@ class Plafond(models.Model):
     date_debut = models.DateField()
     date_fin = models.DateField(blank=True, null=True)
     statut = models.CharField(max_length=20)
+    libelle = models.CharField(max_length=255, blank=True, null=True,
+                               help_text="Nom lisible pour l'admin")
+    comportement = models.CharField(max_length=20, blank=True, null=True,
+                                    help_text="ECRETER / REJETER / BLOQUER / ALERTER")
+    priorite = models.IntegerField(default=100,
+                                   help_text="Ordre d'application (1 = premier)")
 
     class Meta:
         managed = True
@@ -829,3 +835,111 @@ class ValeurChampPersonnalise(models.Model):
 
     def __str__(self):
         return f"{self.champ.libelle} = {self.valeur}"
+    # ============================================================
+# NOUVEAUX MODÈLES POUR LE REMBOURSEMENT
+# ============================================================
+
+
+
+
+class CoordonneesBancaires(models.Model):
+    """
+    Coordonnées bancaires d'un adhérent (pour les virements).
+    """
+    TYPE_COMPTE_CHOICES = [
+        ('CCP',      'Compte CCP (Algérie Poste)'),
+        ('BANCAIRE', 'Compte bancaire'),
+    ]
+    
+    # Lien avec l'adhérent
+    adherent          = models.OneToOneField(
+        Adherent, on_delete=models.CASCADE,
+        related_name='coordonnees_bancaires',
+        db_column='id_adherent'
+    )
+    
+    # Type de compte
+    type_compte       = models.CharField(max_length=20, choices=TYPE_COMPTE_CHOICES, default='CCP')
+    
+    # Informations bancaires
+    banque            = models.CharField(max_length=100, blank=True,
+                                         help_text="Nom de la banque ou 'Algérie Poste'")
+    rib               = models.CharField(max_length=50,
+                                         help_text="RIB complet (20-24 chiffres)")
+    titulaire         = models.CharField(max_length=255, blank=True,
+                                         help_text="Nom du titulaire du compte")
+    
+    # Statut
+    valide            = models.BooleanField(default=False,
+                                            help_text="Validé par l'agent SAGPS")
+    
+    # Métadonnées
+    date_creation     = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        managed = True
+        db_table = 'coordonnees_bancaires'
+        verbose_name = "Coordonnées bancaires"
+        verbose_name_plural = "Coordonnées bancaires"
+    
+    def __str__(self):
+        return f"{self.adherent} - {self.get_type_compte_display()} - {self.rib[-6:]}"
+
+# ============================================================
+# CONFIGURATION CNAS (paramétrable)
+# ============================================================
+
+class ConfigCNAS(models.Model):
+    """
+    Configuration des forfaits et taux CNAS.
+    Lié à un TypePrestation pour matcher automatiquement les actes.
+    """
+    # Lien avec le TypePrestation
+    type_prestation = models.OneToOneField(
+        'TypePrestation',
+        on_delete=models.CASCADE,
+        related_name='config_cnas',
+        db_column='id_type_prestation',
+        help_text="Type de prestation auquel cette config s'applique"
+    )
+    
+    # Montant fixe
+    forfait = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        help_text="Montant fixe (ex: 120 DA)"
+    )
+    
+    # Taux %
+    taux_pourcentage = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0,
+        help_text="Taux en % (ex: 80 pour médicaments)"
+    )
+    
+    actif = models.BooleanField(default=True)
+    
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        managed = True
+        db_table = 'config_cnas'
+        verbose_name = "Configuration CNAS"
+        verbose_name_plural = "Configurations CNAS"
+        ordering = ['type_prestation__libelle']
+    
+    def __str__(self):
+        if self.taux_pourcentage > 0:
+            return f"{self.type_prestation.libelle} : {self.taux_pourcentage}%"
+        return f"{self.type_prestation.libelle} : {self.forfait} DA"
+    
+    def __str__(self):
+        if self.taux_pourcentage > 0:
+            return f"{self.libelle} : {self.taux_pourcentage}%"
+        return f"{self.libelle} : {self.forfait} DA"
+    
+    def get_mots_cles_list(self):
+        """Retourne la liste des mots-clés."""
+        if not self.mots_cles:
+            return []
+        return [m.strip().lower() for m in self.mots_cles.split(',') if m.strip()]

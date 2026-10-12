@@ -151,7 +151,55 @@
         </p>
         <span class="rapport-badge">📊 Disponible</span>
     </a>
+    <!-- Remb. par mois -->
+    <a href="{% url 'rapport_remb_par_mois' %}" class="rapport-card">
+        <div class="rapport-icon">📈</div>
+        <h3 class="rapport-title">Remb. par mois</h3>
+        <p class="rapport-desc">
+            Évolution mensuelle des remboursements sur l'année.
+        </p>
+        <span class="rapport-badge">📄 PDF</span>
+    </a>
 
+    <!-- Remb. par souscripteur -->
+    <a href="{% url 'rapport_remb_par_souscripteur' %}" class="rapport-card">
+        <div class="rapport-icon">🏢</div>
+        <h3 class="rapport-title">Remb. par souscripteur</h3>
+        <p class="rapport-desc">
+            Détail des remboursements par souscripteur (TALA, AMANA...).
+        </p>
+        <span class="rapport-badge">📄 PDF</span>
+    </a>
+
+    <!-- Bulletins en attente -->
+    <a href="{% url 'rapport_remb_en_attente' %}" class="rapport-card">
+        <div class="rapport-icon">⏳</div>
+        <h3 class="rapport-title">Bulletins en attente</h3>
+        <p class="rapport-desc">
+            Détecter les bulletins en retard de traitement (> 30 jours).
+        </p>
+        <span class="rapport-badge">📄 PDF</span>
+    </a>
+
+    <!-- Virements en échec -->
+    <a href="{% url 'rapport_remb_echecs' %}" class="rapport-card">
+        <div class="rapport-icon">❌</div>
+        <h3 class="rapport-title">Virements en échec</h3>
+        <p class="rapport-desc">
+            Suivi des virements adhérents échoués à corriger.
+        </p>
+        <span class="rapport-badge">📄 PDF</span>
+    </a>
+
+    <!-- Écarts récaps -->
+    <a href="{% url 'rapport_remb_ecarts' %}" class="rapport-card">
+        <div class="rapport-icon">⚠️</div>
+        <h3 class="rapport-title">Écarts récaps</h3>
+        <p class="rapport-desc">
+            Contrôle des écarts entre montants demandés et reçus.
+        </p>
+        <span class="rapport-badge">📄 PDF</span>
+    </a>
         <!-- Rapport utilisateurs -->
     <a href="{% url 'rapport_utilisateurs' %}" class="rapport-card">
         <div class="rapport-icon">👤</div>

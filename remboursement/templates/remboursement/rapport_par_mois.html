@@ -1,0 +1,121 @@
+{# remboursement/templates/remboursement/rapport_par_mois.html #}
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Remb. par mois - Tiers Payant{% endblock %}
+{% block header_title %}Rapport remboursements par mois{% endblock %}
+{% block header_sub %}Évolution mensuelle {{ annee }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filters-bar {
+        background: white; border-radius: 12px; padding: 18px 20px;
+        margin-bottom: 22px; border: 1px solid #e5ebf2;
+        box-shadow: 0 2px 8px rgba(0,0,0,.04);
+        display: flex; gap: 15px; align-items: end; flex-wrap: wrap;
+    }
+    .filters-bar .field { display: flex; flex-direction: column; gap: 6px; }
+    .filters-bar label { font-size: 13px; font-weight: 600; color: #475569; }
+    .filters-bar select, .filters-bar input {
+        padding: 10px 12px; border: 1px solid #cbd5e1;
+        border-radius: 7px; font-size: 14px; background: white; outline: none;
+    }
+    .btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        padding: 10px 18px; border: none; border-radius: 8px;
+        font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
+    }
+    .btn-primary { background: #123b65; color: white; }
+    .btn-secondary { background: #64748b; color: white; }
+    .btn-danger { background: #dc2626; color: white; }
+    
+    .stats-grid {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px; margin-bottom: 22px;
+    }
+    .stat-card {
+        background: white; border-radius: 12px; padding: 20px;
+        border: 1px solid #e5ebf2; box-shadow: 0 3px 10px rgba(0,0,0,.04);
+    }
+    .stat-label { font-size: 12px; color: #6b7280; font-weight: 600; text-transform: uppercase; }
+    .stat-value { font-size: 22px; font-weight: 700; color: #123b65; margin-top: 5px; }
+    .stat-value.green { color: #16a34a; }
+    
+    .card {
+        background: white; border-radius: 14px; padding: 25px;
+        margin-bottom: 22px; border: 1px solid #e5ebf2;
+        box-shadow: 0 4px 15px rgba(0,0,0,.05);
+    }
+    .card h2 {
+        margin: 0 0 20px; font-size: 18px; color: #123b65;
+        padding-bottom: 12px; border-bottom: 1px solid #e5ebf2;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 11px 12px; text-align: left; border-bottom: 1px solid #edf1f5; font-size: 13px; }
+    th { background: #f7f9fc; color: #123b65; font-weight: 700; }
+    .montant { text-align: right; font-weight: 600; }
+    .empty { text-align: center; padding: 35px; color: #6b7280; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<form method="get" class="filters-bar">
+    <div class="field">
+        <label>Année</label>
+        <input type="number" name="annee" value="{{ annee }}" min="2020" max="2100">
+    </div>
+    <button type="submit" class="btn btn-primary">🔍 Afficher</button>
+    <a href="{% url 'rapport_remb_par_mois_pdf' %}?annee={{ annee }}" 
+       target="_blank" class="btn btn-danger">
+        📄 Export PDF
+    </a>
+    <a href="{% url 'rapports' %}" class="btn btn-secondary">← Retour</a>
+</form>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Bulletins remboursés</div>
+        <div class="stat-value">{{ total_annee_bulletins }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Montant remboursé</div>
+        <div class="stat-value green">{{ total_annee_rembourse|floatformat:2 }} DA</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Récaps payés</div>
+        <div class="stat-value">{{ total_annee_remboursements }}</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>📊 Évolution mensuelle {{ annee }}</h2>
+    {% if lignes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Mois</th>
+                    <th>Bulletins</th>
+                    <th>Remboursé (DA)</th>
+                    <th>Récaps payés</th>
+                    <th>Montant reçu (DA)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in lignes %}
+                <tr>
+                    <td><strong>{{ l.nom_mois }}</strong></td>
+                    <td>{{ l.nb_bulletins }}</td>
+                    <td class="montant">{{ l.montant_rembourse|floatformat:2 }}</td>
+                    <td>{{ l.nb_remboursements }}</td>
+                    <td class="montant">{{ l.montant_recu|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="empty">Aucune donnée pour {{ annee }}.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

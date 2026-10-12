@@ -60,4 +60,4 @@ from .rapports import *
 # ============================================================
 # VÉRIFICATION : TOUS LES MODULES DOIVENT ÊTRE IMPORTÉS
 # ============================================================
-print("✅ Tous les modules de core.views importés")
+print("[OK] Tous les modules de core.views importes")

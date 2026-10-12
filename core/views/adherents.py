@@ -180,6 +180,36 @@ def adherent_detail(request, id_adherent):
         if c["valeur"] and str(c["valeur"]).strip()
     ]
 
+    # ============ REMBOURSEMENTS ============
+    from remboursement.models import BulletinSoins
+    from django.db.models import Sum, Q
+
+    # Tous les bulletins de l'adhérent (via son adhésion)
+    bulletins = BulletinSoins.objects.filter(
+        adhesion__id_adherent=adherent,
+    ).order_by('-date_soins')
+
+    # Totaux
+    total_rembourse = bulletins.filter(
+        statut__in=['REMBOURSE', 'REVERSE']
+    ).aggregate(t=Sum('montant_total_rembourse'))['t'] or 0
+
+    total_en_attente = bulletins.filter(
+        statut__in=['RECU', 'EN_VERIFICATION', 'VALIDE', 'TRANSMIS']
+    ).aggregate(t=Sum('montant_total_rembourse'))['t'] or 0
+
+    # 5 derniers bulletins
+    derniers_bulletins = bulletins.select_related(
+        'patient', 'souscripteur'
+    )[:5]
+
+    remboursements = {
+        'total_rembourse': total_rembourse,
+        'total_en_attente': total_en_attente,
+        'nb_bulletins': bulletins.count(),
+        'derniers': derniers_bulletins,
+    }
+
     return render(
         request,
         "core/adherent_detail.html",
@@ -189,6 +219,7 @@ def adherent_detail(request, id_adherent):
             "permissions": permissions,
             "page": "adherents",
             "champs_personnalises": champs_perso_adherent,
+            "remboursements": remboursements,
         }
     )
 

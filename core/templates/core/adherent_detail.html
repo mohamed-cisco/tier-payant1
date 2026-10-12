@@ -357,6 +357,104 @@
     <div class="card">
 
         <div class="card-header">
+    {# ============ REMBOURSEMENTS ============ #}
+    {% if remboursements %}
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h2>💰 Remboursements</h2>
+                <p>Historique des remboursements de cet adhérent</p>
+            </div>
+            {% if "REMBOURSEMENT_VIEW" in permissions %}
+                <a href="{% url 'remb_bulletins' %}?recherche={{ adherent.numero_adherent }}"
+                   class="btn"
+                   style="display:inline-block; padding:10px 17px; background:#123b65; color:white; text-decoration:none; border-radius:7px; font-weight:bold; font-size:13px;">
+                    Voir tous les bulletins →
+                </a>
+            {% endif %}
+        </div>
+
+        {# KPIs #}
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:20px;">
+            <div style="background:#f0fdf4; border-left:4px solid #10b981; padding:14px 16px; border-radius:8px;">
+                <div style="font-size:11px; color:#64748b; text-transform:uppercase; font-weight:600;">Total remboursé</div>
+                <div style="font-size:18px; font-weight:700; color:#10b981; margin-top:4px;">
+                    {{ remboursements.total_rembourse|floatformat:2 }} DA
+                </div>
+            </div>
+            <div style="background:#fef3c7; border-left:4px solid #f59e0b; padding:14px 16px; border-radius:8px;">
+                <div style="font-size:11px; color:#64748b; text-transform:uppercase; font-weight:600;">En attente</div>
+                <div style="font-size:18px; font-weight:700; color:#f59e0b; margin-top:4px;">
+                    {{ remboursements.total_en_attente|floatformat:2 }} DA
+                </div>
+            </div>
+            <div style="background:#eff6ff; border-left:4px solid #3b82f6; padding:14px 16px; border-radius:8px;">
+                <div style="font-size:11px; color:#64748b; text-transform:uppercase; font-weight:600;">Nb bulletins</div>
+                <div style="font-size:18px; font-weight:700; color:#3b82f6; margin-top:4px;">
+                    {{ remboursements.nb_bulletins }}
+                </div>
+            </div>
+        </div>
+
+        {# Liste des 5 derniers #}
+        {% if remboursements.derniers %}
+        <div class="table-wrapper" style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                <thead>
+                    <tr style="background:#f8fafc;">
+                        <th style="padding:11px 12px; text-align:left; font-size:11.5px; color:#475569; text-transform:uppercase; border-bottom:2px solid #e5e7eb;">N° Bulletin</th>
+                        <th style="padding:11px 12px; text-align:left; font-size:11.5px; color:#475569; text-transform:uppercase; border-bottom:2px solid #e5e7eb;">Bénéficiaire</th>
+                        <th style="padding:11px 12px; text-align:left; font-size:11.5px; color:#475569; text-transform:uppercase; border-bottom:2px solid #e5e7eb;">Date soins</th>
+                        <th style="padding:11px 12px; text-align:left; font-size:11.5px; color:#475569; text-transform:uppercase; border-bottom:2px solid #e5e7eb;">Souscripteur</th>
+                        <th style="padding:11px 12px; text-align:right; font-size:11.5px; color:#475569; text-transform:uppercase; border-bottom:2px solid #e5e7eb;">Remboursé</th>
+                        <th style="padding:11px 12px; text-align:center; font-size:11.5px; color:#475569; text-transform:uppercase; border-bottom:2px solid #e5e7eb;">Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in remboursements.derniers %}
+                    <tr style="border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:11px 12px; font-weight:600; color:#123b65;">
+                            <a href="{% url 'remb_bulletin_detail' b.id %}" style="color:#123b65; text-decoration:none;">
+                                {{ b.numero }}
+                            </a>
+                        </td>
+                        <td style="padding:11px 12px;">{{ b.patient.nom }} {{ b.patient.prenom }}</td>
+                        <td style="padding:11px 12px;">{{ b.date_soins|date:"d/m/Y" }}</td>
+                        <td style="padding:11px 12px;">{{ b.souscripteur.raison_sociale }}</td>
+                        <td style="padding:11px 12px; text-align:right; color:#10b981; font-weight:600;">
+                            {{ b.montant_total_rembourse|floatformat:2 }} DA
+                        </td>
+                        <td style="padding:11px 12px; text-align:center;">
+                            {% if b.statut == 'REVERSE' %}
+                                <span style="background:#d1fae5; color:#065f46; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:700;">✅ REVERSÉ</span>
+                            {% elif b.statut == 'REMBOURSE' %}
+                                <span style="background:#d1fae5; color:#065f46; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:700;">✅ REMBOURSÉ</span>
+                            {% elif b.statut == 'TRANSMIS' %}
+                                <span style="background:#ede9fe; color:#6b21a8; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:700;">📤 TRANSMIS</span>
+                            {% elif b.statut == 'VALIDE' %}
+                                <span style="background:#dbeafe; color:#1e40af; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:700;">✓ VALIDÉ</span>
+                            {% elif b.statut == 'EN_VERIFICATION' %}
+                                <span style="background:#dbeafe; color:#1e40af; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:700;">🔄 EN VÉRIF.</span>
+                            {% elif b.statut == 'RECU' %}
+                                <span style="background:#fef3c7; color:#92400e; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:700;">⏳ REÇU</span>
+                            {% elif b.statut == 'REJETE' %}
+                                <span style="background:#fee2e2; color:#991b1b; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:700;">❌ REJETÉ</span>
+                            {% else %}
+                                <span style="background:#e5e7eb; color:#374151; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:700;">{{ b.statut }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align:center; padding:30px; color:#94a3b8;">
+            <p>Aucun remboursement enregistré pour cet adhérent.</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
 
             <div>
                 <h2>Ayants droit</h2>

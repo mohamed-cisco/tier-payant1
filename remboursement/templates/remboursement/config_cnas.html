@@ -1,0 +1,114 @@
+{# remboursement/templates/remboursement/config_cnas.html #}
+{% extends "remboursement/base_remb.html" %}
+
+{% block remb_title %}Configuration CNAS{% endblock %}
+{% block remb_header_title %}Configuration CNAS{% endblock %}
+
+{% block remb_content %}
+
+<div style="margin-bottom:22px;">
+    <h1 style="margin:0; color:#123b65; font-size:24px;">⚙️ Configuration CNAS</h1>
+    <p style="margin:6px 0 0; color:#64748b;">
+        Paramétrez les forfaits et taux CNAS appliqués lors du calcul des remboursements
+    </p>
+</div>
+
+<div style="padding:14px 18px; background:#eff6ff; border-left:4px solid #3b82f6; border-radius:8px; margin-bottom:20px; color:#1e40af; font-size:13px;">
+    <strong>ℹ️ Info :</strong>
+    Remplissez <strong>SOIT le forfait</strong> (montant fixe en DA), <strong>SOIT le taux</strong> (pourcentage).
+    Le moteur matche automatiquement les actes par leur <strong>type de prestation</strong>.
+</div>
+
+{% if types_sans_config %}
+<div style="background:white; border-radius:10px; padding:20px; margin-bottom:20px; box-shadow:0 1px 6px rgba(0,0,0,.05);">
+    <h3 style="margin:0 0 14px; color:#123b65; font-size:15px;">➕ Ajouter une configuration</h3>
+    <form method="post" style="display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:10px; align-items:end;">
+        {% csrf_token %}
+        <div>
+            <label style="font-size:12px; font-weight:600; color:#475569;">Type de prestation</label>
+            <select name="nouveau_type_prestation" required style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:7px; margin-top:4px;">
+                <option value="">-- Sélectionner --</option>
+                {% for tp in types_sans_config %}
+                    <option value="{{ tp.id_type_prestation }}">{{ tp.libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label style="font-size:12px; font-weight:600; color:#475569;">Forfait (DA)</label>
+            <input type="number" step="0.01" name="nouveau_forfait" value="0" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:7px; margin-top:4px;">
+        </div>
+        <div>
+            <label style="font-size:12px; font-weight:600; color:#475569;">Taux (%)</label>
+            <input type="number" step="0.01" name="nouveau_taux" value="0" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:7px; margin-top:4px;">
+        </div>
+        <button type="submit" name="ajouter_config" value="1" class="btn btn-success">➕ Ajouter</button>
+    </form>
+</div>
+{% endif %}
+
+<form method="post" action="">
+    {% csrf_token %}
+    
+    <div class="table-wrap">
+        <div class="table-header">
+            <h2>📋 Configurations actuelles ({{ configs|length }})</h2>
+            {% if "CONFIG_CNAS_UPDATE" in permissions or "REMBOURSEMENT_VALIDATE" in permissions %}
+                <button type="submit" class="btn btn-success">💾 Enregistrer les modifications</button>
+            {% endif %}
+        </div>
+        
+        {% if configs %}
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Type de prestation</th>
+                    <th style="text-align:right; width:150px;">Forfait (DA)</th>
+                    <th style="text-align:right; width:150px;">Taux (%)</th>
+                    <th style="text-align:center; width:100px;">Actif</th>
+                    <th style="text-align:center; width:100px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in configs %}
+                <tr>
+                    <td><strong>{{ c.type_prestation.libelle }}</strong></td>
+                    <td style="text-align:right;">
+                        <input type="number" step="0.01" name="forfait_{{ c.pk }}" 
+                               value="{{ c.forfait|floatformat:2 }}"
+                               style="width:100%; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; text-align:right; font-size:13px;">
+                    </td>
+                    <td style="text-align:right;">
+                        <input type="number" step="0.01" name="taux_{{ c.pk }}" 
+                               value="{{ c.taux_pourcentage|floatformat:2 }}"
+                               style="width:100%; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; text-align:right; font-size:13px;">
+                    </td>
+                    <td style="text-align:center;">
+                        <input type="checkbox" name="actif_{{ c.pk }}" {% if c.actif %}checked{% endif %}
+                               style="width:18px; height:18px; cursor:pointer;">
+                    </td>
+                    <td style="text-align:center;">
+                        <a href="{% url 'remb_config_cnas_supprimer' c.pk %}" 
+                           class="btn btn-danger btn-sm"
+                           onclick="return confirm('Supprimer cette configuration ?');">🗑️</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <div class="icon">⚙️</div>
+            <h3>Aucune configuration</h3>
+            <p>Ajoutez une configuration ci-dessus.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% if "CONFIG_CNAS_UPDATE" in permissions or "REMBOURSEMENT_VALIDATE" in permissions %}
+    <div class="form-actions" style="margin-top:20px;">
+        <button type="submit" class="btn btn-success">💾 Enregistrer les modifications</button>
+    </div>
+    {% endif %}
+</form>
+
+{% endblock %}

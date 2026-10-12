@@ -40,6 +40,35 @@ from core.models import (
     TypePrestation,
 )
 
+def generer_code_acte():
+    """Génère un code acte unique : ACT-{ANNEE}-{NNNN}"""
+    from django.utils import timezone
+    
+    annee = timezone.now().year
+    prefixe = f"ACT-{annee}-"
+    
+    # Chercher tous les codes existants pour cette année
+    actes = Acte.objects.filter(
+        code_acte__startswith=prefixe
+    ).values_list('code_acte', flat=True)
+    
+    # Extraire les numéros
+    numeros = []
+    for code in actes:
+        try:
+            numeros.append(int(code.rsplit('-', 1)[1]))
+        except (ValueError, IndexError):
+            continue
+    
+    prochain = max(numeros, default=0) + 1
+    nouveau_code = f"{prefixe}{prochain:04d}"
+    
+    # Vérifier l'unicité
+    while Acte.objects.filter(code_acte=nouveau_code).exists():
+        prochain += 1
+        nouveau_code = f"{prefixe}{prochain:04d}"
+    
+    return nouveau_code
 
 def types_prestation(request):
     """Liste des types de prestation."""
@@ -339,9 +368,9 @@ def acte_create(request):
         if form.is_valid():
             try:
                 type_prestation = TypePrestation.objects.get(
-                    id_type_prestation=form.cleaned_data["id_type_prestation"],
-                    statut="ACTIF"
-                )
+    id_type_prestation=int(form.cleaned_data["id_type_prestation"]),
+    statut="ACTIF"
+)
 
                 Acte.objects.create(
                     id_type_prestation=type_prestation,

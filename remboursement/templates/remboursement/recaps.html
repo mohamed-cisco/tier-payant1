@@ -1,0 +1,86 @@
+{# remboursement/templates/remboursement/recaps.html #}
+{% extends "remboursement/base_remb.html" %}
+
+{% block remb_title %}Récaps souscripteur{% endblock %}
+{% block remb_header_title %}Récaps souscripteur{% endblock %}
+
+{% block remb_content %}
+
+<div style="margin-bottom:22px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
+    <div>
+        <h1 style="margin:0; color:#123b65; font-size:24px;">📊 Récaps souscripteur</h1>
+        <p style="margin:6px 0 0; color:#64748b;">Envois mensuels aux souscripteurs (TALA, AMANA...)</p>
+    </div>
+    {% if "REMBOURSEMENT_VALIDATE" in permissions %}
+        <div style="display:flex; gap:8px;">
+    <a href="{% url 'remb_recap_rattrapage' %}" class="btn btn-secondary" 
+       style="background:#f59e0b; color:white;">
+        🔧 Récap de rattrapage
+    </a>
+    <a href="{% url 'remb_recap_create' %}" class="btn btn-success">➕ Nouveau récap</a>
+</div>
+    {% endif %}
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card blue">
+        <div class="stat-label">Total récaps</div>
+        <div class="stat-value">{{ stats.total }}</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-label">Montant total</div>
+        <div class="stat-value small">{{ stats.montant_total|floatformat:2 }} DA</div>
+    </div>
+</div>
+
+<div class="table-wrap">
+    <div class="table-header">
+        <h2>Liste des récaps</h2>
+    </div>
+    
+    {% if recaps %}
+    <table class="data">
+        <thead>
+            <tr>
+                <th>N°</th>
+                <th>Souscripteur</th>
+                <th>Période</th>
+                <th>Nb bulletins</th>
+                <th style="text-align:right;">Montant</th>
+                <th>Statut</th>
+                <th style="text-align:center;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in recaps %}
+            <tr>
+                <td><strong>{{ r.numero }}</strong></td>
+                <td>{{ r.souscripteur.raison_sociale }}</td>
+                <td>{{ r.periode_debut|date:"d/m/Y" }} → {{ r.periode_fin|date:"d/m/Y" }}</td>
+                <td>{{ r.nb_bulletins }}</td>
+                <td style="text-align:right;">{{ r.montant_total|floatformat:2 }} DA</td>
+                <td>
+                    {% if r.statut == 'BROUILLON' %}<span class="badge orange">Brouillon</span>
+                    {% elif r.statut == 'ENVOYE' %}<span class="badge purple">Envoyé</span>
+                    {% elif r.statut == 'VALIDE' %}<span class="badge blue">Validé</span>
+                    {% elif r.statut == 'PAYE' %}<span class="badge green">Payé</span>
+                    {% elif r.statut == 'REJETE' %}<span class="badge red">Rejeté</span>
+                    {% else %}<span class="badge gray">{{ r.statut }}</span>{% endif %}
+                </td>
+                <td style="text-align:center;">
+                    <a href="{% url 'remb_recap_detail' r.id %}" class="btn btn-secondary btn-sm">👁️ Voir</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div class="icon">📊</div>
+        <h3>Aucun récap</h3>
+        <p>Créez un récap pour envoyer les bulletins validés au souscripteur.</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
