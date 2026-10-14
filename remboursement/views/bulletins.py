@@ -319,3 +319,92 @@ def ligne_delete(request, id_ligne):
     
     messages.success(request, "Ligne supprimée.")
     return redirect("remb_bulletin_detail", id_bulletin=bulletin.id)
+# ============================================================
+# PIÈCES JOINTES
+# ============================================================
+
+@session_utilisateur_required
+def piece_jointe_create(request, id_bulletin):
+    """Upload d'une pièce jointe pour un bulletin."""
+    utilisateur = request.utilisateur
+    permissions = _get_permissions(utilisateur.id_utilisateur)
+    
+    if "REMBOURSEMENT_CREATE" not in permissions and "REMBOURSEMENT_UPDATE" not in permissions:
+        messages.error(request, "Accès refusé.")
+        return redirect("remb_bulletins")
+    
+    bulletin = get_object_or_404(BulletinSoins, id=id_bulletin)
+    
+    if request.method == "POST":
+        try:
+            fichier = request.FILES.get("fichier")
+            if not fichier:
+                messages.error(request, "Veuillez sélectionner un fichier.")
+            else:
+                piece = PieceJointe.objects.create(
+                    bulletin=bulletin,
+                    type_piece=request.POST.get("type_piece", "AUTRE"),
+                    fichier=fichier,
+                    description=request.POST.get("description", ""),
+                )
+                
+                enregistrer_audit(
+                    request=request,
+                    type_action="CREATION",
+                    module="REMBOURSEMENT",
+                    table_cible="piece_jointe",
+                    id_enregistrement=piece.id,
+                    nouvelle_valeur=f"Pièce {piece.get_type_piece_display()} - {fichier.name}",
+                    description=f"Ajout d'une pièce jointe au bulletin {bulletin.numero}",
+                )
+                
+                messages.success(request, f"Pièce jointe '{fichier.name}' ajoutée.")
+                return redirect("remb_bulletin_detail", id_bulletin=bulletin.id)
+        except Exception as e:
+            messages.error(request, f"Erreur upload : {e}")
+    
+    return render(request, "remboursement/piece_jointe_form.html", {
+        "bulletin": bulletin,
+        "titre": f"Ajouter une pièce jointe à {bulletin.numero}",
+        "permissions": permissions,
+        "page": "remb_bulletins",
+    })
+
+
+@session_utilisateur_required
+def piece_jointe_delete(request, id_piece):
+    """Suppression d'une pièce jointe."""
+    utilisateur = request.utilisateur
+    permissions = _get_permissions(utilisateur.id_utilisateur)
+    
+    if "REMBOURSEMENT_UPDATE" not in permissions and "REMBOURSEMENT_CREATE" not in permissions:
+        messages.error(request, "Accès refusé.")
+        return redirect("remb_bulletins")
+    
+    piece = get_object_or_404(PieceJointe, id=id_piece)
+    bulletin_id = piece.bulletin.id
+    nom = piece.fichier.name if piece.fichier else "—"
+    
+    if request.method == "POST":
+        # Supprimer le fichier physique
+        if piece.fichier:
+            try:
+                piece.fichier.delete(save=False)
+            except Exception:
+                pass
+        
+        piece.delete()
+        
+        enregistrer_audit(
+            request=request,
+            type_action="SUPPRESSION",
+            module="REMBOURSEMENT",
+            table_cible="piece_jointe",
+            id_enregistrement=id_piece,
+            ancienne_valeur=nom,
+            description=f"Suppression d'une pièce jointe du bulletin",
+        )
+        
+        messages.success(request, "Pièce jointe supprimée.")
+    
+    return redirect("remb_bulletin_detail", id_bulletin=bulletin_id)

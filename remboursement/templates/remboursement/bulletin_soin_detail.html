@@ -146,5 +146,59 @@
     <p>{{ bulletin.motif_rejet }}</p>
 </div>
 {% endif %}
-
+<!-- ============ PIÈCES JOINTES ============ -->
+<div class="table-wrap" style="margin-top:20px;">
+    <div class="table-header">
+        <h2>📎 Pièces jointes ({{ pieces|length }})</h2>
+        {% if "REMBOURSEMENT_CREATE" in permissions or "REMBOURSEMENT_UPDATE" in permissions %}
+            <a href="{% url 'remb_piece_jointe_create' bulletin.id %}" class="btn btn-success btn-sm">
+                ➕ Ajouter une pièce jointe
+            </a>
+        {% endif %}
+    </div>
+    
+    {% if pieces %}
+    <table class="data">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Fichier</th>
+                <th>Description</th>
+                <th>Date</th>
+                <th style="text-align:center;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in pieces %}
+            <tr>
+                <td><span class="badge blue">{{ p.get_type_piece_display }}</span></td>
+                <td>
+                    <a href="{{ p.fichier.url }}" target="_blank" style="color:#2563eb; text-decoration:none; font-weight:600;">
+                        📄 {{ p.fichier.name|slice:"30:" }}
+                    </a>
+                </td>
+                <td>{{ p.description|default:"—" }}</td>
+                <td>{{ p.date_ajout|date:"d/m/Y H:i" }}</td>
+                <td style="text-align:center;">
+                    <a href="{{ p.fichier.url }}" target="_blank" class="btn btn-secondary btn-sm" title="Télécharger">📥</a>
+                    {% if "REMBOURSEMENT_UPDATE" in permissions or "REMBOURSEMENT_CREATE" in permissions %}
+                    <form method="post" action="{% url 'remb_piece_jointe_delete' p.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm" 
+                                onclick="return confirm('Supprimer cette pièce jointe ?');" title="Supprimer">🗑️</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div class="icon">📎</div>
+        <h3>Aucune pièce jointe</h3>
+        <p>Ajoutez les ordonnances, factures ou vignettes liées à ce bulletin.</p>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

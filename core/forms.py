@@ -1370,3 +1370,59 @@ class ChampPersonnaliseForm(forms.ModelForm):
             )
 
         return cleaned_data
+
+    # ============================================================
+# CONFIGURATION TVA
+# ============================================================
+
+class ConfigTVAForm(forms.ModelForm):
+    """Formulaire de configuration du taux de TVA."""
+    
+    class Meta:
+        from .models import ConfigTVA
+        model = ConfigTVA
+        fields = ['taux', 'date_debut', 'date_fin', 'commentaire', 'actif']
+        widgets = {
+            'taux': forms.NumberInput(attrs={
+                'step': '0.01',
+                'min': '0',
+                'max': '100',
+                'placeholder': 'Ex: 19.00'
+            }),
+            'date_debut': forms.DateInput(attrs={'type': 'date'}),
+            'date_fin': forms.DateInput(attrs={'type': 'date'}),
+            'commentaire': forms.TextInput(attrs={
+                'placeholder': 'Ex: Taux normal 19%'
+            }),
+        }
+        labels = {
+            'taux': "Taux de TVA (%)",
+            'date_debut': "Date de début",
+            'date_fin': "Date de fin (optionnel)",
+            'commentaire': "Commentaire",
+            'actif': "Activer ce taux immédiatement",
+        }
+        help_texts = {
+            'taux': "Taux en pourcentage (ex: 19.00)",
+            'date_debut': "Date à partir de laquelle ce taux s'applique",
+            'date_fin': "Laisser vide si toujours actif",
+        }
+    
+    def clean_taux(self):
+        """Validation : taux entre 0 et 100."""
+        taux = self.cleaned_data.get('taux')
+        if taux is not None and (taux < 0 or taux > 100):
+            raise forms.ValidationError("Le taux doit être entre 0 et 100.")
+        return taux
+    
+    def clean(self):
+        """Validation : date_fin >= date_debut."""
+        cleaned_data = super().clean()
+        date_debut = cleaned_data.get('date_debut')
+        date_fin = cleaned_data.get('date_fin')
+        
+        if date_debut and date_fin and date_fin < date_debut:
+            self.add_error('date_fin', 
+                           "La date de fin doit être postérieure à la date de début.")
+        
+        return cleaned_data

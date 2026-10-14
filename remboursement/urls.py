@@ -15,7 +15,9 @@ urlpatterns = [
     path('bulletins/<int:id_bulletin>/', bulletins.bulletin_detail, name='remb_bulletin_detail'),
     path('bulletins/<int:id_bulletin>/ligne/ajouter/', bulletins.ligne_create, name='remb_ligne_create'),
     path('lignes/<int:id_ligne>/supprimer/', bulletins.ligne_delete, name='remb_ligne_delete'),
-    
+        # Pièces jointes
+    path('bulletins/<int:id_bulletin>/piece/ajouter/', bulletins.piece_jointe_create, name='remb_piece_jointe_create'),
+    path('pieces/<int:id_piece>/supprimer/', bulletins.piece_jointe_delete, name='remb_piece_jointe_delete'),
     # Workflow bulletin
     path('bulletins/<int:id_bulletin>/valider/', validation.valider, name='remb_bulletin_valider'),
     path('bulletins/<int:id_bulletin>/recalculer/', validation.recalculer, name='remb_bulletin_recalculer'),

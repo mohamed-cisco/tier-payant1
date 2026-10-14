@@ -201,6 +201,17 @@
         </div>
         <div class="info-item">
             <strong>Montant rejeté</strong>
+            <div class="info-item">
+    <strong>TVA ({{ facture.taux_tva }}%)</strong>
+    {{ facture.montant_tva|floatformat:2 }} DA
+</div>
+
+<div class="info-item" style="background:#f0fdf4; border-left:4px solid #10b981;">
+    <strong>Montant TTC</strong>
+    <div style="font-weight:700; color:#10b981; font-size:18px;">
+        {{ facture.montant_ttc|floatformat:2 }} DA
+    </div>
+</div>
             {{ facture.montant_rejete }} DA
         </div>
         <div class="info-item">

@@ -14,13 +14,16 @@ Fonctions :
 """
 
 from datetime import timedelta
-
+from django.db import transaction
 from django.contrib import messages
 from django.db.models import Q
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
 from core.forms import FactureForm
+from core.forms import ConfigTVAForm
+
+from core.models import ConfigTVA
 from core.models import (
     Consommation,
     DetailFacture,
@@ -34,6 +37,8 @@ from core.views.champs import (
     sauvegarder_valeurs_champs,
 )
 from core.views.dashboard import enregistrer_audit
+from core.views.decorators import session_utilisateur_required
+from core.services.tva import calculer_tva
 # Imports PDF
 from django.conf import settings
 from django.http import HttpResponse
@@ -48,6 +53,18 @@ from reportlab.platypus import (
     Paragraph,
     Spacer,
 )
+
+def _get_permissions(id_utilisateur):
+    """Récupère les permissions actives d'un utilisateur."""
+    return set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
 
 def _generer_numero_facture():
     """Génère un numéro unique de facture."""
@@ -234,6 +251,10 @@ def facture_create(request):
                 montant_valide = sum(c.montant_prise_en_charge for c in consommations_prestataire)
                 montant_rejete = sum(c.montant_reste for c in consommations_prestataire)
 
+                               # ✅ Calculer la TVA
+                tva = calculer_tva(montant_total)
+
+                # ✅ Créer la facture
                 facture = Facture.objects.create(
                     id_prestataire=prestataire,
                     numero_facture=_generer_numero_facture(),
@@ -246,6 +267,10 @@ def facture_create(request):
                     date_validation=None,
                     utilisateur_validation=None,
                     observation=form.cleaned_data["observation"] or None,
+                    # ✅ Champs TVA
+                    taux_tva=tva['taux'],
+                    montant_tva=tva['montant_tva'],
+                    montant_ttc=tva['montant_ttc'],
                 )
 
                 for consommation in consommations_prestataire:
@@ -1026,9 +1051,11 @@ def facture_pdf(request, id_facture):
     elements.append(details_table)
     elements.append(Spacer(1, 0.5 * cm))
 
-    # Totaux
+       # Totaux (avec TVA)
     totaux_data = [
-        ["Montant total", f"{facture.montant_total:.2f} DA"],
+        ["Montant total HT", f"{facture.montant_total:.2f} DA"],
+        [f"TVA ({facture.taux_tva}%)", f"{facture.montant_tva:.2f} DA"],
+        ["Montant TTC", f"{facture.montant_ttc:.2f} DA"],
         ["Montant validé", f"{facture.montant_valide:.2f} DA"],
         ["Montant rejeté", f"{facture.montant_rejete:.2f} DA"],
     ]
@@ -1036,8 +1063,13 @@ def facture_pdf(request, id_facture):
     totaux_table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#eaf2fb")),
         ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-        ("FONTNAME", (1, 1), (1, 1), "Helvetica-Bold"),
-        ("TEXTCOLOR", (1, 1), (1, 1), colors.HexColor("#166534")),
+        # Ligne TVA : fond jaune clair
+        ("BACKGROUND", (0, 1), (-1, 1), colors.HexColor("#fef3c7")),
+        # Ligne TTC : fond vert clair + gras
+        ("BACKGROUND", (0, 2), (-1, 2), colors.HexColor("#d1fae5")),
+        ("FONTNAME", (0, 2), (-1, 2), "Helvetica-Bold"),
+        ("TEXTCOLOR", (1, 2), (1, 2), colors.HexColor("#166534")),
+        # Reste
         ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
         ("ALIGN", (1, 0), (1, -1), "RIGHT"),
         ("LEFTPADDING", (0, 0), (-1, -1), 8),
@@ -1064,4 +1096,51 @@ def facture_pdf(request, id_facture):
 
     document.build(elements)
     return response
+# ============================================================
+# CONFIGURATION TVA
+# ============================================================
 
+@session_utilisateur_required
+def config_tva(request):
+    """Page de configuration du taux de TVA."""
+    utilisateur = request.utilisateur
+    permissions = _get_permissions(utilisateur.id_utilisateur)
+    
+    if "FACTURE_VIEW" not in permissions and "FACTURE_UPDATE" not in permissions:
+        messages.error(request, "Accès refusé.")
+        return redirect("accueil")
+    
+    config_active = ConfigTVA.objects.filter(actif=True).order_by('-date_debut').first()
+    historique = ConfigTVA.objects.all().order_by('-date_debut')[:20]
+    
+    if request.method == "POST":
+        form = ConfigTVAForm(request.POST)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    # Désactiver les anciennes
+                    ConfigTVA.objects.filter(actif=True).update(actif=False)
+                    
+                    # Créer la nouvelle
+                    nouvelle = form.save(commit=False)
+                    nouvelle.cree_par = utilisateur
+                    nouvelle.actif = True
+                    nouvelle.save()
+                    
+                    messages.success(
+                        request,
+                        f"Taux de TVA configuré à {nouvelle.taux}% à partir du {nouvelle.date_debut}."
+                    )
+                    return redirect("config_tva")
+            except Exception as e:
+                messages.error(request, f"Erreur : {e}")
+    else:
+        form = ConfigTVAForm()
+    
+    return render(request, "core/config_tva.html", {
+        "form": form,
+        "config_active": config_active,
+        "historique": historique,
+        "permissions": permissions,
+        "page": "factures",
+    })

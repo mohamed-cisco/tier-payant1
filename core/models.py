@@ -5,6 +5,8 @@
 #   * Make sure each ForeignKey and OneToOneField has `on_delete` set to the desired behavior
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
+from datetime import date
+
 from django.db import models
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -357,6 +359,19 @@ class Facture(models.Model):
     montant_total = models.DecimalField(max_digits=15, decimal_places=2)
     montant_valide = models.DecimalField(max_digits=15, decimal_places=2)
     montant_rejete = models.DecimalField(max_digits=15, decimal_places=2)
+        # ===== TVA (nouveau) =====
+    taux_tva = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0,
+        help_text="Taux de TVA appliqué à cette facture (snapshot)"
+    )
+    montant_tva = models.DecimalField(
+        max_digits=15, decimal_places=2, default=0,
+        help_text="Montant de la TVA"
+    )
+    montant_ttc = models.DecimalField(
+        max_digits=15, decimal_places=2, default=0,
+        help_text="Montant total TTC (total + TVA)"
+    )
     statut = models.CharField(max_length=30)
     date_validation = models.DateTimeField(blank=True, null=True)
     utilisateur_validation = models.CharField(max_length=100, blank=True, null=True)
@@ -943,3 +958,46 @@ class ConfigCNAS(models.Model):
         if not self.mots_cles:
             return []
         return [m.strip().lower() for m in self.mots_cles.split(',') if m.strip()]
+  # ============================================================
+# CONFIGURATION TVA
+# ============================================================
+
+class ConfigTVA(models.Model):
+    """
+    Configuration du taux de TVA applicable aux factures.
+    Un seul enregistrement actif à la fois.
+    """
+    taux = models.DecimalField(
+        max_digits=5, decimal_places=2, default=19.00,
+        help_text="Taux de TVA en % (ex: 19.00)"
+    )
+    actif = models.BooleanField(default=True)
+    date_debut = models.DateField(
+        default=date.today,
+        help_text="Date à partir de laquelle ce taux s'applique"
+    )
+    date_fin = models.DateField(
+        null=True, blank=True,
+        help_text="Laisser vide si toujours actif"
+    )
+    commentaire = models.CharField(
+        max_length=255, blank=True,
+        help_text="Ex: 'Taux normal 19%'"
+    )
+    cree_par = models.ForeignKey(
+        'Utilisateur', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='configs_tva_creees',
+        db_column='id_user_creation'
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = True
+        db_table = 'config_tva'
+        verbose_name = "Configuration TVA"
+        verbose_name_plural = "Configurations TVA"
+        ordering = ['-date_debut']
+
+    def __str__(self):
+        return f"TVA {self.taux}% ({self.date_debut})"  

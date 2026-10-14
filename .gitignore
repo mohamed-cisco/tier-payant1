@@ -48,3 +48,4 @@ tiers_payant_*.backup
 _imports/
 *.backup*
 nouvelle_fonction.py
+backup_avant_reset.json

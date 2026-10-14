@@ -1,0 +1,69 @@
+{# remboursement/templates/remboursement/piece_jointe_form.html #}
+{% extends "remboursement/base_remb.html" %}
+
+{% block remb_title %}{{ titre }}{% endblock %}
+{% block remb_header_title %}Pièce jointe{% endblock %}
+
+{% block remb_content %}
+
+<div class="page-title" style="margin-bottom:22px;">
+    <h1 style="margin:0; color:#123b65; font-size:22px;">📎 {{ titre }}</h1>
+    <p style="margin:6px 0 0; color:#64748b;">
+        Bulletin {{ bulletin.numero }} — {{ bulletin.patient.nom }} {{ bulletin.patient.prenom }}
+    </p>
+</div>
+
+<div class="card" style="max-width:750px;">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div style="margin-bottom:20px;">
+            <label style="display:block; font-weight:600; color:#123b65; margin-bottom:8px;">
+                Fichier <span style="color:#ef4444;">*</span>
+            </label>
+            <input type="file" name="fichier" required
+                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                   style="width:100%; padding:10px; border:2px dashed #cbd5e1; border-radius:8px; background:#f8fafc; font-size:14px;">
+            <p style="margin:6px 0 0; font-size:12px; color:#64748b;">
+                Formats acceptés : PDF, JPG, PNG, DOC, DOCX. Taille max : 10 Mo.
+            </p>
+        </div>
+        
+        <div style="margin-bottom:20px;">
+            <label style="display:block; font-weight:600; color:#123b65; margin-bottom:8px;">
+                Type de pièce <span style="color:#ef4444;">*</span>
+            </label>
+            <select name="type_piece" required
+                    style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px;">
+                <option value="ORDONNANCE">Ordonnance visée</option>
+                <option value="VIGNETTES">Vignettes originales</option>
+                <option value="FACTURE">Facture</option>
+                <option value="COMPTE_RENDU">Compte rendu médical</option>
+                <option value="PRESCRIPTION">Prescription médicale</option>
+                <option value="FICHE_DENTAIRE">Fiche dentaire</option>
+                <option value="PRISE_CHARGE_CNAS">Prise en charge CNAS</option>
+                <option value="AUTRE" selected>Autre</option>
+            </select>
+        </div>
+        
+        <div style="margin-bottom:25px;">
+            <label style="display:block; font-weight:600; color:#123b65; margin-bottom:8px;">
+                Description (optionnelle)
+            </label>
+            <textarea name="description" rows="3"
+                      placeholder="Notes internes sur cette pièce..."
+                      style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px; resize:vertical;"></textarea>
+        </div>
+        
+        <div style="display:flex; gap:10px; padding-top:18px; border-top:1px solid #e5ebf2;">
+            <button type="submit" class="btn btn-success" style="padding:11px 22px;">
+                📎 Ajouter la pièce jointe
+            </button>
+            <a href="{% url 'remb_bulletin_detail' bulletin.id %}" class="btn btn-secondary">
+                ← Annuler
+            </a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

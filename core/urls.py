@@ -99,6 +99,7 @@ from .views import (
     facture_create,
     facture_valider,
     facture_detail,
+    config_tva,
     facture_export_excel,
     facture_export_pdf,
     facture_pdf,
@@ -600,6 +601,8 @@ path(
     facture_detail,
     name="facture_detail",
 ),
+    # Configuration TVA
+path('factures/config-tva/', config_tva, name='config_tva'),
 path(
     "factures/<int:id_facture>/pdf/",
     facture_pdf,

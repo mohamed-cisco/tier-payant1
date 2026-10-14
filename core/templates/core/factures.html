@@ -56,6 +56,9 @@
         <div class="actions">
             {% if "FACTURE_CREATE" in permissions %}
                 <a class="btn" href="{% url 'facture_create' %}">+ Nouvelle facture</a>
+                <a href="{% url 'config_tva' %}" class="btn btn-secondary">
+    ⚙️ Configuration TVA
+</a> 
             {% endif %}
             {% if "FACTURE_VIEW" in permissions %}
                 <a href="{% url 'facture_export_excel' %}" class="btn btn-excel">📊 Exporter Excel</a>
