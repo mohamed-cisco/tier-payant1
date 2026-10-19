@@ -16,6 +16,10 @@ RUN pip install gunicorn
 
 COPY . .
 
+# Rendre le script d'entrée exécutable
+RUN chmod +x /app/entrypoint.sh
+
 EXPOSE 8000
 
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120"]
+# Utiliser le script d'entrée (migrations + gunicorn)
+CMD ["/app/entrypoint.sh"]
