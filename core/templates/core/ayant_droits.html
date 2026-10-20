@@ -63,9 +63,7 @@
     <div class="card-header">
         <h2>Liste des ayants droit</h2>
         <div class="actions">
-            {% if "AYANT_DROIT_CREATE" in permissions %}
-                <a class="btn" href="{% url 'ayant_droit_create' %}">+ Nouvel ayant droit</a>
-            {% endif %}
+            
             {% if "AYANT_DROIT_VIEW" in permissions %}
                 <a href="{% url 'ayant_droit_export_excel' %}" class="btn btn-secondary">📤 Exporter Excel</a>
             {% endif %}
