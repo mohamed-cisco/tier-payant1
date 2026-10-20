@@ -1,0 +1,172 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Recours - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des recours{% endblock %}
+{% block header_sub %}Traitement des recours enregistrés{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 25px;
+        border-radius: 14px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 4px 15px rgba(0,0,0,.05);
+    }
+
+    .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+
+    .toolbar strong { color: #123b65; font-size: 18px; }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 9px 14px;
+        border: none;
+        border-radius: 8px;
+        text-decoration: none;
+        color: white;
+        background: #123b65;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .btn:hover { background: #1d5d91; }
+    .btn-success { background: #15803d; }
+    .btn-secondary { background: #64748b; }
+
+    .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid #e5ebf2;
+        border-radius: 10px;
+    }
+
+    table {
+        width: 100%;
+        min-width: 1050px;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 13px 12px;
+        text-align: left;
+        border-bottom: 1px solid #edf1f5;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    th {
+        background: #f7f9fc;
+        color: #123b65;
+        font-weight: 700;
+        border-bottom: 2px solid #e3e9f0;
+    }
+
+    tbody tr:hover { background: #f8fbfe; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .numero { font-weight: 700; color: #123b65; }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .status-actif { color: #166534; background: #dcfce7; }
+    .status-inactif { color: #991b1b; background: #fee2e2; }
+
+    .row-actions { display: flex; gap: 6px; }
+    .row-actions .btn { min-height: 34px; padding: 7px 10px; font-size: 12px; }
+
+    .empty-message {
+        text-align: center;
+        color: #64748b;
+        padding: 35px !important;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <div class="toolbar">
+        <strong>Liste des recours</strong>
+
+        {% if "RECOURS_CREATE" in permissions %}
+            <a href="{% url 'recours_create' %}" class="btn btn-success">
+                ➕ Nouveau recours
+            </a>
+        {% endif %}
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>N° Recours</th>
+                    <th>Personne</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>Objet</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in recours %}
+                <tr>
+                    <td>{{ r.id_recours }}</td>
+                    <td class="numero">{{ r.numero_recours }}</td>
+                    <td>{{ r.id_personne.nom }} {{ r.id_personne.prenom }}</td>
+                    <td>{{ r.type_recours }}</td>
+                    <td>{{ r.date_recours|date:"d/m/Y" }}</td>
+                    <td>{{ r.objet }}</td>
+                    <td>
+                        {% if r.statut == "CLOTURE" %}
+                            <span class="status-badge status-inactif">{{ r.statut }}</span>
+                        {% else %}
+                            <span class="status-badge status-actif">{{ r.statut }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            {% if "RECOURS_VIEW" in permissions %}
+                                <a href="{% url 'recours_detail' r.id_recours %}" class="btn">Détails</a>
+                            {% endif %}
+                            {% if "RECOURS_VALIDATE" in permissions and r.statut == "EN_ATTENTE" %}
+                                <a href="{% url 'recours_traiter' r.id_recours %}"
+                                   class="btn btn-secondary">Traiter</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="empty-message">Aucun recours trouvé.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,150 @@
+﻿{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Ayants droit - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des ayants droit{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-title { margin-bottom: 22px; }
+    .page-title h2 { margin: 0; color: #123b65; font-size: 24px; }
+    .page-title p { margin: 6px 0 0; color: #6b7280; font-size: 14px; }
+    .card { background: white; padding: 24px; border-radius: 12px;
+            box-shadow: 0 3px 14px rgba(15,23,42,.07);
+            border: 1px solid #e5e7eb; }
+    .card-header { display: flex; justify-content: space-between; align-items: center;
+                   gap: 15px; margin-bottom: 20px; }
+    .card-header h2 { margin: 0; font-size: 20px; color: #123b65; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn { display: inline-block; padding: 10px 15px; background: #2563eb;
+           color: white; text-decoration: none; border-radius: 7px;
+           border: none; cursor: pointer; font-weight: bold; font-size: 13px; }
+    .btn:hover { opacity: .9; }
+    .btn-secondary { background: #64748b; }
+    .btn-danger { background: #dc2626; }
+    .search-panel { padding: 18px; background: #f8fafc;
+                    border: 1px solid #e5e7eb; border-radius: 9px; margin-bottom: 22px; }
+    .search-form { display: grid;
+                   grid-template-columns: minmax(250px, 2fr) minmax(220px, 1fr) auto auto;
+                   gap: 12px; align-items: end; }
+    .field { display: flex; flex-direction: column; }
+    .field label { font-weight: bold; margin-bottom: 7px;
+                   font-size: 13px; color: #374151; }
+    .field input, .field select { width: 100%; padding: 10px 11px;
+        border: 1px solid #d1d5db; border-radius: 7px;
+        background: white; font-size: 13px; outline: none; }
+    .table-wrapper { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+    th, td { padding: 13px 12px; border-bottom: 1px solid #e5e7eb;
+             text-align: left; vertical-align: middle; font-size: 13px; }
+    th { background: #f8fafc; color: #334155; font-weight: bold; white-space: nowrap; }
+    tbody tr:hover { background: #f8fbff; }
+    .personne { font-weight: bold; color: #374151; }
+    .numero { color: #123b65; font-weight: bold; }
+    .adherent { color: #2563eb; font-weight: bold; }
+    .statut { display: inline-block; padding: 5px 10px;
+              border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .actif { color: #166534; background: #dcfce7; }
+    .inactif { color: #991b1b; background: #fee2e2; }
+    .table-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+    .table-actions .btn { padding: 7px 10px; font-size: 12px; }
+    .empty { text-align: center; padding: 45px 20px; color: #64748b; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-title">
+    <h2>Gestion des ayants droit</h2>
+    <p>Gestion des bénéficiaires rattachés aux adhérents.</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Liste des ayants droit</h2>
+        <div class="actions">
+            {% if "AYANT_DROIT_CREATE" in permissions %}
+                <a class="btn" href="{% url 'ayant_droit_create' %}">+ Nouvel ayant droit</a>
+            {% endif %}
+            {% if "AYANT_DROIT_VIEW" in permissions %}
+                <a href="{% url 'ayant_droit_export_excel' %}" class="btn btn-secondary">📤 Exporter Excel</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="search-panel">
+        <form method="get" class="search-form">
+            <div class="field">
+                <label>Recherche</label>
+                <input type="text" name="recherche" value="{{ recherche }}"
+                       placeholder="Nom, prénom, personne ou adhérent">
+            </div>
+            <div class="field">
+                <label>Adhérent</label>
+                <select name="id_adherent">
+                    <option value="">Tous les adhérents</option>
+                    {% for a in adherents %}
+                        <option value="{{ a.id_adherent }}"
+                            {% if id_adherent|stringformat:"s" == a.id_adherent|stringformat:"s" %}selected{% endif %}>
+                            {{ a.numero_adherent }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div><button type="submit" class="btn">🔎 Rechercher</button></div>
+            <div><a href="{% url 'ayant_droits' %}" class="btn btn-secondary">↻ Réinitialiser</a></div>
+        </form>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th><th>Personne</th><th>N° Personne</th>
+                    <th>Adhérent</th><th>Type de lien</th>
+                    <th>Date début</th><th>Date fin</th>
+                    <th>Statut</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ad in ayant_droits %}
+                <tr>
+                    <td>{{ ad.id_ayant_droit }}</td>
+                    <td><span class="personne">{{ ad.id_personne.nom }} {{ ad.id_personne.prenom }}</span></td>
+                    <td><span class="numero">{{ ad.id_personne.numero_personne }}</span></td>
+                    <td><span class="adherent">{{ ad.id_adherent.numero_adherent }}</span></td>
+                    <td>{{ ad.type_lien }}</td>
+                    <td>{{ ad.date_debut|default:"-" }}</td>
+                    <td>{{ ad.date_fin|default:"-" }}</td>
+                    <td>
+                        {% if ad.statut == "ACTIF" %}
+                            <span class="statut actif">Actif</span>
+                        {% else %}
+                            <span class="statut inactif">{{ ad.statut }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            {% if "AYANT_DROIT_UPDATE" in permissions %}
+                                <a href="{% url 'ayant_droit_modifier' ad.id_ayant_droit %}"
+                                   class="btn btn-secondary">Modifier</a>
+                            {% endif %}
+                            {% if ad.statut == "ACTIF" and "AYANT_DROIT_DELETE" in permissions %}
+                                <form method="post" action="{% url 'ayant_droit_radier' ad.id_ayant_droit %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger"
+                                            onclick="return confirm('Radier cet ayant droit ?');">Radier</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9" class="empty">Aucun ayant droit trouvé.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

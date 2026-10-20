@@ -1,0 +1,151 @@
+﻿{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Garantie - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des garanties{% endblock %}
+{% block header_sub %}Création et modification de garantie{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 18px rgba(0,0,0,.07);
+        max-width: 850px;
+        margin: 0 auto;
+    }
+
+    .card h2 {
+        margin: 0 0 8px;
+        color: #123b65;
+        font-size: 22px;
+    }
+
+    .subtitle {
+        margin: 0 0 25px;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .info-box {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e40af;
+        padding: 14px 16px;
+        border-radius: 9px;
+        margin-bottom: 25px;
+        font-size: 14px;
+    }
+
+    .field { margin-bottom: 22px; }
+
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #374151;
+    }
+
+    input,
+    textarea,
+    select {
+        width: 100%;
+        padding: 12px 13px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        background: white;
+        font-size: 14px;
+        color: #1f2937;
+        transition: .2s;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+
+    textarea { resize: vertical; min-height: 110px; }
+
+    .errorlist {
+        color: #b91c1c;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 7px;
+        margin: 7px 0 0;
+        padding: 8px 12px 8px 28px;
+        font-size: 13px;
+        list-style: none;
+    }
+
+    .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 30px;
+        padding-top: 22px;
+        border-top: 1px solid #e5e7eb;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 20px;
+        border: none;
+        border-radius: 8px;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .btn:hover { background: #1d4ed8; }
+    .btn-secondary { background: #6b7280; }
+    .btn-secondary:hover { background: #4b5563; }
+
+    @media (max-width: 700px) {
+        .card { padding: 22px; }
+        .actions .btn { width: 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h2>{{ titre }}</h2>
+    <p class="subtitle">Renseignez les informations de la garantie.</p>
+
+    <div class="info-box">
+        🛡️ Les informations saisies seront utilisées pour gérer les garanties et leurs actes associés.
+    </div>
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        {% for field in form %}
+            <div class="field">
+                {{ field.label_tag }}
+                {{ field }}
+                {{ field.errors }}
+            </div>
+        {% endfor %}
+
+        <div class="actions">
+            <button type="submit" class="btn">💾 Enregistrer</button>
+            <a href="{% url 'garanties' %}" class="btn btn-secondary">Annuler</a>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,126 @@
+{# remboursement/templates/remboursement/bulletins_soins.html #}
+{% extends "remboursement/base_remb.html" %}
+
+{% block remb_title %}Bulletins de soins{% endblock %}
+{% block remb_header_title %}Bulletins de soins{% endblock %}
+
+{% block remb_content %}
+
+<div class="page-title" style="margin-bottom:22px;">
+    <h1 style="margin:0; color:#123b65; font-size:24px;">📄 Bulletins de soins</h1>
+    <p style="margin:6px 0 0; color:#64748b; font-size:14px;">Gestion des remboursements classiques</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card blue">
+        <div class="stat-label">Total bulletins</div>
+        <div class="stat-value">{{ stats.total }}</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-label">Montant remboursé</div>
+        <div class="stat-value small">{{ stats.montant_total|floatformat:2 }} DA</div>
+    </div>
+</div>
+
+<form method="get" class="filters-bar">
+    <div class="field">
+        <label>Recherche</label>
+        <input type="text" name="recherche" value="{{ recherche }}" placeholder="N° bulletin, bénéficiaire...">
+    </div>
+    <div class="field">
+        <label>Statut</label>
+        <select name="statut">
+            <option value="">Tous</option>
+            <option value="RECU" {% if statut == 'RECU' %}selected{% endif %}>Reçu</option>
+            <option value="EN_VERIFICATION" {% if statut == 'EN_VERIFICATION' %}selected{% endif %}>En élaboration</option>
+            <option value="VALIDE" {% if statut == 'VALIDE' %}selected{% endif %}>Validé</option>
+            <option value="TRANSMIS" {% if statut == 'TRANSMIS' %}selected{% endif %}>Transmis</option>
+            <option value="REMBOURSE" {% if statut == 'REMBOURSE' %}selected{% endif %}>Remboursé</option>
+            <option value="REVERSE" {% if statut == 'REVERSE' %}selected{% endif %}>Reversé</option>
+            <option value="REJETE" {% if statut == 'REJETE' %}selected{% endif %}>Rejeté</option>
+        </select>
+    </div>
+    <div class="field">
+        <label>Souscripteur</label>
+        <select name="souscripteur">
+            <option value="">Tous</option>
+            {% for s in souscripteurs %}
+                <option value="{{ s.id_souscripteur }}" {% if souscripteur_id == s.id_souscripteur|stringformat:"s" %}selected{% endif %}>{{ s.raison_sociale }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="field">
+        <button type="submit" class="btn btn-primary">🔍 Filtrer</button>
+    </div>
+    <div class="field">
+        <a href="{% url 'remb_bulletins' %}" class="btn btn-secondary">↻ Réinitialiser</a>
+    </div>
+    <div style="flex:1"></div>
+    {% if "REMBOURSEMENT_CREATE" in permissions %}
+    <div class="field">
+        <a href="{% url 'remb_bulletin_create' %}" class="btn btn-success">➕ Nouveau bulletin</a>
+    </div>
+    {% endif %}
+</form>
+
+<div class="table-wrap">
+    <div class="table-header">
+        <h2>Résultats ({{ bulletins|length }})</h2>
+    </div>
+
+    {% if bulletins %}
+    <table class="data">
+        <thead>
+            <tr>
+                <th>N° Bulletin</th>
+                <th>Adhérent</th>
+                <th>Bénéficiaire</th>
+                <th>Date soins</th>
+                <th>Souscripteur</th>
+                <th>Statut</th>
+                <th style="text-align:right;">Facturé</th>
+                <th style="text-align:right;">Remboursé</th>
+                <th style="text-align:center;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in bulletins %}
+            <tr>
+                <td>
+                    <a href="{% url 'remb_bulletin_detail' b.id %}" style="color:#123b65; font-weight:600; text-decoration:none;">
+                        {{ b.numero }}
+                    </a>
+                </td>
+                <td>{{ b.adhesion.id_adherent.numero_adherent }}</td>
+                <td>{{ b.patient.nom }} {{ b.patient.prenom }}</td>
+                <td>{{ b.date_soins|date:"d/m/Y" }}</td>
+                <td>{{ b.souscripteur.raison_sociale }}</td>
+                <td>
+                    {% if b.statut == 'RECU' %}<span class="badge orange">Reçu</span>
+                    {% elif b.statut == 'EN_VERIFICATION' %}<span class="badge blue">En élabor.</span>
+                    {% elif b.statut == 'VALIDE' %}<span class="badge blue">Validé</span>
+                    {% elif b.statut == 'TRANSMIS' %}<span class="badge purple">Transmis</span>
+                    {% elif b.statut == 'REMBOURSE' %}<span class="badge green">Remboursé</span>
+                    {% elif b.statut == 'REVERSE' %}<span class="badge green">Reversé</span>
+                    {% elif b.statut == 'REJETE' %}<span class="badge red">Rejeté</span>
+                    {% else %}<span class="badge gray">{{ b.statut }}</span>{% endif %}
+                </td>
+                <td style="text-align:right;">{{ b.montant_total_facture|floatformat:2 }} DA</td>
+                <td style="text-align:right; color:#059669; font-weight:600;">{{ b.montant_total_rembourse|floatformat:2 }} DA</td>
+                <td style="text-align:center;">
+                    <a href="{% url 'remb_bulletin_detail' b.id %}" class="btn btn-secondary btn-sm">👁️ Voir</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div class="icon">📄</div>
+        <h3>Aucun bulletin trouvé</h3>
+        <p>Commencez par créer un nouveau bulletin de soins.</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

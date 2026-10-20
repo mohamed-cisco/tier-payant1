@@ -1,0 +1,551 @@
+﻿{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Tableau de bord - Tiers Payant{% endblock %}
+{% block header_title %}Tableau de bord{% endblock %}
+{% block header_sub %}Vue d'ensemble de la plateforme{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== BANDEAU DE BIENVENUE ===== */
+    .welcome {
+        background: linear-gradient(135deg, #123b65, #1d5d91);
+        color: white;
+        border-radius: 18px;
+        padding: 22px 28px;
+        margin-bottom: 22px;
+        box-shadow: 0 8px 25px rgba(18,59,101,0.18);
+        position: relative;
+        overflow: hidden;
+    }
+    .welcome::after {
+        content: "";
+        position: absolute;
+        width: 220px; height: 220px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.07);
+        right: -70px; top: -80px;
+    }
+    .welcome h2 { margin: 0 0 6px; font-size: 24px; font-weight: 700; }
+    .welcome p { margin: 0; font-size: 14px; opacity: .9; }
+
+    /* ===== FILTRES PÉRIODE ===== */
+    .periode-bar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 22px;
+        padding: 10px 14px;
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e8edf3;
+        box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    }
+    .periode-bar strong {
+        color: #123b65;
+        margin-right: 8px;
+        font-size: 14px;
+    }
+    .periode-bar a {
+        padding: 7px 14px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+        background: #f1f5f9;
+        transition: .2s;
+    }
+    .periode-bar a:hover { background: #e2e8f0; }
+    .periode-bar a.active {
+        background: #123b65;
+        color: white;
+    }
+
+    /* ===== STATS (4 KPIs) ===== */
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+    .stat-card {
+        background: white;
+        border-radius: 14px;
+        padding: 18px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        border: 1px solid #e8edf3;
+        box-shadow: 0 4px 15px rgba(0,0,0,.06);
+        transition: transform .2s, box-shadow .2s;
+        text-decoration: none;
+        color: inherit;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 22px rgba(0,0,0,.09);
+        border-color: #2563eb;
+    }
+    .stat-icon { font-size: 30px; }
+    .stat-title { font-size: 12px; color: #6c757d; margin-bottom: 3px; }
+    .stat-value { font-size: 24px; font-weight: 700; color: #0d6efd; }
+    .stat-value.warning { color: #d97706; }
+
+    /* ===== SECTION TITRE ===== */
+    .section-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 26px 0 14px;
+    }
+    .section-title h2 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #123b65;
+    }
+    .section-title .link-all {
+        color: #2563eb;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    .section-title .link-all:hover { text-decoration: underline; }
+
+    /* ===== ACTIONS RAPIDES ===== */
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 22px;
+    }
+    .quick-action {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 18px;
+        background: white;
+        border: 1px solid #e8edf3;
+        border-radius: 12px;
+        text-decoration: none;
+        color: #123b65;
+        font-weight: 600;
+        font-size: 14px;
+        box-shadow: 0 3px 10px rgba(0,0,0,.04);
+        transition: .2s;
+    }
+    .quick-action:hover {
+        border-color: #2563eb;
+        background: #f8fbff;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(37,99,235,.12);
+    }
+    .quick-action .qa-icon {
+        font-size: 22px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #eff6ff;
+        border-radius: 10px;
+        flex-shrink: 0;
+    }
+
+    /* ===== ALERTES ===== */
+    .alert-card {
+        background: white;
+        border: 1px solid #fecaca;
+        border-left: 5px solid #dc2626;
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-bottom: 10px;
+        box-shadow: 0 3px 10px rgba(220,38,38,.06);
+    }
+    .alert-card.warning {
+        border-color: #fed7aa;
+        border-left-color: #d97706;
+        box-shadow: 0 3px 10px rgba(217,119,6,.06);
+    }
+    .alert-card h4 {
+        margin: 0 0 6px;
+        color: #991b1b;
+        font-size: 14px;
+    }
+    .alert-card.warning h4 { color: #92400e; }
+    .alert-card p {
+        margin: 3px 0;
+        font-size: 13px;
+        color: #475569;
+    }
+    .alert-card a {
+        color: #2563eb;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .alert-card a:hover { text-decoration: underline; }
+    .alert-empty {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-left: 5px solid #16a34a;
+        border-radius: 12px;
+        padding: 14px 18px;
+        color: #166534;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    /* ===== GRAPHIQUES ===== */
+    .charts-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+        margin-bottom: 20px;
+    }
+    .chart-card {
+        background: white;
+        border: 1px solid #e8edf3;
+        border-radius: 14px;
+        padding: 18px;
+        box-shadow: 0 4px 15px rgba(0,0,0,.05);
+    }
+    .chart-card h3 {
+        margin: 0 0 14px;
+        color: #123b65;
+        font-size: 15px;
+    }
+    .chart-container {
+        position: relative;
+        height: 240px;
+    }
+
+    /* ===== ACTIVITÉ RÉCENTE ===== */
+    .recent-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+    }
+    .recent-card {
+        background: white;
+        border-radius: 14px;
+        padding: 20px;
+        border: 1px solid #e8edf3;
+        box-shadow: 0 4px 15px rgba(0,0,0,.06);
+        overflow-x: auto;
+    }
+    .recent-card h3 {
+        margin: 0 0 14px;
+        font-size: 15px;
+        color: #123b65;
+    }
+    .recent-card table { width: 100%; border-collapse: collapse; }
+    .recent-card th {
+        text-align: left;
+        padding: 9px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #123b65;
+        border-bottom: 2px solid #e8edf3;
+        white-space: nowrap;
+        text-transform: uppercase;
+    }
+    .recent-card td {
+        padding: 10px 8px;
+        font-size: 13px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .recent-card tr:last-child td { border-bottom: none; }
+    .empty-message { color: #777; font-style: italic; font-size: 13px; }
+
+    /* ===== BADGES ===== */
+    .status-badge {
+        display: inline-block;
+        padding: 4px 9px;
+        border-radius: 20px;
+        font-size: 11.5px;
+        font-weight: 600;
+    }
+    .status-success { background: #d1e7dd; color: #0f5132; }
+    .status-warning { background: #fff3cd; color: #664d03; }
+    .status-danger  { background: #f8d7da; color: #842029; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+        .stats { grid-template-columns: repeat(2, 1fr); }
+        .quick-actions { grid-template-columns: repeat(2, 1fr); }
+        .charts-row { grid-template-columns: 1fr; }
+        .recent-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 500px) {
+        .stats { grid-template-columns: 1fr; }
+        .quick-actions { grid-template-columns: 1fr; }
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<!-- ========== BIENVENUE ========== -->
+<div class="welcome">
+    <h2>Bienvenue {{ utilisateur.prenom }} 👋</h2>
+    <p>Voici l'essentiel de votre activité.</p>
+</div>
+
+<!-- ========== FILTRES PÉRIODE ========== -->
+<div class="periode-bar">
+    <strong>📅 Période :</strong>
+    <a href="?periode=mois"      class="{% if periode == 'mois' %}active{% endif %}">Ce mois</a>
+    <a href="?periode=trimestre" class="{% if periode == 'trimestre' %}active{% endif %}">Ce trimestre</a>
+    <a href="?periode=annee"     class="{% if periode == 'annee' %}active{% endif %}">Cette année</a>
+</div>
+
+<!-- ========== 4 KPIs PRINCIPAUX ========== -->
+<div class="stats">
+    <a href="{% url 'adherents' %}" class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div>
+            <div class="stat-title">Adhérents</div>
+            <div class="stat-value">{{ nombre_adherents }}</div>
+        </div>
+    </a>
+    <a href="{% url 'contrats' %}" class="stat-card">
+        <div class="stat-icon">📄</div>
+        <div>
+            <div class="stat-title">Contrats actifs</div>
+            <div class="stat-value">{{ contrats_actifs }}</div>
+        </div>
+    </a>
+    <a href="{% url 'demandes_tp' %}?statut=EN_ATTENTE" class="stat-card">
+        <div class="stat-icon">📝</div>
+        <div>
+            <div class="stat-title">Demandes en attente</div>
+            <div class="stat-value warning">{{ demandes_en_attente }}</div>
+        </div>
+    </a>
+    <a href="{% url 'factures' %}?statut=EN_ATTENTE" class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div>
+            <div class="stat-title">Factures en attente</div>
+            <div class="stat-value warning">{{ factures_en_attente }}</div>
+        </div>
+    </a>
+</div>
+
+<!-- ========== ACTIONS RAPIDES ========== -->
+<div class="section-title"><h2>⚡ Actions rapides</h2></div>
+<div class="quick-actions">
+    {% if "ADHERENT_CREATE" in permissions %}
+    <a href="{% url 'adherent_create' %}" class="quick-action">
+        <span class="qa-icon">➕</span>
+        <span>Nouvel adhérent</span>
+    </a>
+    {% endif %}
+    {% if "DEMANDE_CREATE" in permissions %}
+    <a href="{% url 'demande_tp_create' %}" class="quick-action">
+        <span class="qa-icon">📝</span>
+        <span>Nouvelle demande TP</span>
+    </a>
+    {% endif %}
+    {% if "FACTURE_CREATE" in permissions %}
+    <a href="{% url 'facture_create' %}" class="quick-action">
+        <span class="qa-icon">💰</span>
+        <span>Nouvelle facture</span>
+    </a>
+    {% endif %}
+    {% if "REMBOURSEMENT_VIEW" in permissions %}
+    <a href="{% url 'remb_bulletins' %}" class="quick-action">
+        <span class="qa-icon">💸</span>
+        <span>Bulletins de soins</span>
+    </a>
+    {% endif %}
+</div>
+
+<!-- ========== ALERTES ========== -->
+{% if factures_en_retard or conventions_bientot_expirees %}
+<div class="section-title"><h2>🔔 Alertes</h2></div>
+
+{% if factures_en_retard %}
+    <div class="alert-card">
+        <h4>⚠️ {{ factures_en_retard|length }} facture(s) en retard de traitement</h4>
+        <p>Factures en attente depuis plus de 30 jours.</p>
+        <p>
+            <a href="{% url 'factures' %}?statut=EN_ATTENTE">Voir les factures →</a>
+        </p>
+    </div>
+{% endif %}
+
+{% if conventions_bientot_expirees %}
+    <div class="alert-card warning">
+        <h4>⏰ {{ conventions_bientot_expirees|length }} convention(s) expirent dans moins de 30 jours</h4>
+        <p>
+            <a href="{% url 'conventions' %}?statut=ACTIF">Voir les conventions →</a>
+        </p>
+    </div>
+{% endif %}
+{% endif %}
+
+<!-- ========== GRAPHIQUES ========== -->
+<div class="section-title"><h2>📊 Analyses</h2></div>
+
+<div class="charts-row">
+    <div class="chart-card">
+        <h3>Évolution des demandes TP</h3>
+        <div class="chart-container">
+            <canvas id="demandesChart"></canvas>
+        </div>
+    </div>
+    <div class="chart-card">
+        <h3>Top 5 prestataires (montant validé)</h3>
+        <div class="chart-container">
+            <canvas id="topPrestatairesChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ========== ACTIVITÉ RÉCENTE ========== -->
+<div class="section-title">
+    <h2>📋 Activité récente</h2>
+</div>
+
+<div class="recent-grid">
+    <div class="recent-card">
+        <h3>Dernières demandes TP</h3>
+        {% if dernieres_demandes %}
+        <table>
+            <thead>
+                <tr><th>N° Demande</th><th>Date</th><th>Montant</th><th>Statut</th></tr>
+            </thead>
+            <tbody>
+                {% for demande in dernieres_demandes %}
+                <tr>
+                    <td><strong>{{ demande.numero_demande }}</strong></td>
+                    <td>{{ demande.date_demande|date:"d/m/Y" }}</td>
+                    <td>{{ demande.montant_demande|floatformat:2 }} DA</td>
+                    <td>
+                        {% if demande.statut == "ACCEPTEE" %}
+                            <span class="status-badge status-success">Acceptée</span>
+                        {% elif demande.statut == "EN_ATTENTE" %}
+                            <span class="status-badge status-warning">En attente</span>
+                        {% elif demande.statut == "REJETEE" %}
+                            <span class="status-badge status-danger">Rejetée</span>
+                        {% else %}
+                            <span class="status-badge">{{ demande.statut }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p class="empty-message">Aucune demande TP.</p>
+        {% endif %}
+    </div>
+
+    <div class="recent-card">
+        <h3>Dernières factures</h3>
+        {% if dernieres_factures %}
+        <table>
+            <thead>
+                <tr><th>N° Facture</th><th>Date</th><th>Montant</th><th>Statut</th></tr>
+            </thead>
+            <tbody>
+                {% for facture in dernieres_factures %}
+                <tr>
+                    <td><strong>{{ facture.numero_facture }}</strong></td>
+                    <td>{{ facture.date_facture|date:"d/m/Y" }}</td>
+                    <td>{{ facture.montant_valide|floatformat:2 }} DA</td>
+                    <td>
+                        {% if facture.statut == "PAYEE" %}
+                            <span class="status-badge status-success">Payée</span>
+                        {% elif facture.statut == "VALIDEE" %}
+                            <span class="status-badge status-success">Validée</span>
+                        {% elif facture.statut == "EN_ATTENTE" %}
+                            <span class="status-badge status-warning">En attente</span>
+                        {% elif facture.statut == "REJETEE" %}
+                            <span class="status-badge status-danger">Rejetée</span>
+                        {% else %}
+                            <span class="status-badge">{{ facture.statut }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p class="empty-message">Aucune facture.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ===== GRAPHIQUE 1 : DEMANDES =====
+    new Chart(document.getElementById("demandesChart"), {
+        type: "line",
+        data: {
+            labels: {{ graphique_labels|safe }},
+            datasets: [{
+                label: "Nombre de demandes",
+                data: {{ graphique_demandes|safe }},
+                borderColor: "#123b65",
+                backgroundColor: "rgba(18, 59, 101, 0.1)",
+                borderWidth: 3,
+                tension: 0.3,
+                fill: true,
+                pointBackgroundColor: "#123b65",
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+
+    // ===== GRAPHIQUE 2 : TOP PRESTATAIRES =====
+    new Chart(document.getElementById('topPrestatairesChart'), {
+        type: 'bar',
+        data: {
+            labels: {{ top_prestataire_labels|safe }},
+            datasets: [{
+                label: "Montant validé (DA)",
+                data: {{ top_prestataire_totaux|safe }},
+                backgroundColor: "#123b65",
+                borderRadius: 6
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.raw.toLocaleString('fr-FR') + ' DA';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(v) {
+                            return v.toLocaleString('fr-FR');
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,270 @@
+﻿{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Garantie - Acte - Tiers Payant{% endblock %}
+{% block header_title %}Garantie ↔ Acte{% endblock %}
+{% block header_sub %}Association d'un acte à une garantie{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 14px;
+        box-shadow: 0 5px 18px rgba(0,0,0,.08);
+        border: 1px solid #e5e7eb;
+        max-width: 850px;
+        margin: 0 auto;
+    }
+
+    .card h2 {
+        margin: 0 0 8px;
+        color: #123b65;
+        font-size: 22px;
+    }
+
+    .subtitle {
+        margin: 0 0 25px;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .info-box {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e40af;
+        padding: 14px 16px;
+        border-radius: 9px;
+        margin-bottom: 25px;
+        font-size: 14px;
+    }
+
+    .field { margin-bottom: 22px; }
+
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #374151;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 12px 13px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        background: white;
+        font-size: 14px;
+        color: #1f2937;
+        transition: border-color .2s, box-shadow .2s;
+    }
+
+    input:focus, select:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+
+    input[readonly] {
+        background: #f8fafc;
+        color: #475569;
+    }
+
+    .help {
+        margin-top: 5px;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .errors {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        padding: 12px 14px;
+        border-radius: 8px;
+        margin-top: 8px;
+        font-size: 13px;
+    }
+
+    .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 30px;
+        padding-top: 22px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 20px;
+        border: none;
+        border-radius: 8px;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: .2s;
+    }
+
+    .btn:hover { transform: translateY(-1px); opacity: .92; }
+    .btn-secondary { background: #6b7280; }
+
+    @media (max-width: 700px) {
+        .card { padding: 22px; }
+        .actions { flex-direction: column; }
+        .btn { width: 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h2>{{ titre }}</h2>
+
+    <p class="subtitle">Associez un acte à une garantie.</p>
+
+    <div class="info-box">
+        🔗 Sélectionnez la garantie et l'acte à associer.
+    </div>
+
+    {% if form.errors %}
+        <div class="errors">
+            <strong>Veuillez corriger les erreurs :</strong>
+            {{ form.errors }}
+        </div>
+    {% endif %}
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        {# GARANTIE (verrouillée si présélectionnée) #}
+        {% if garantie_preselectionnee %}
+            <div class="field">
+                <label>Garantie :</label>
+                <input
+                    type="text"
+                    value="{{ garantie_preselectionnee.code_garantie }} - {{ garantie_preselectionnee.libelle }}"
+                    readonly
+                >
+                <input
+                    type="hidden"
+                    name="id_garantie"
+                    value="{{ garantie_preselectionnee.id_garantie }}"
+                >
+            </div>
+        {% else %}
+            <div class="field">
+                {{ form.id_garantie.label_tag }}
+                {{ form.id_garantie }}
+                {{ form.id_garantie.errors }}
+            </div>
+        {% endif %}
+
+        {# ACTE #}
+        <div class="field">
+            {{ form.id_acte.label_tag }}
+            {{ form.id_acte }}
+            {{ form.id_acte.errors }}
+        </div>
+
+        {# MODE DE CALCUL #}
+        <div class="field">
+            {{ form.mode_calcul.label_tag }}
+            {{ form.mode_calcul }}
+            <div class="help">
+                Pourcentage = calcul avec taux.
+                Forfait = montant fixe.
+                Frais réels = 100% du montant.
+            </div>
+        </div>
+
+        {# MONTANT FORFAIT (caché par défaut) #}
+        <div class="field" id="bloc_forfait" style="display: none;">
+            {{ form.montant_forfait.label_tag }}
+            {{ form.montant_forfait }}
+            {{ form.montant_forfait.errors }}
+        </div>
+
+        <div class="field" id="bloc_plafond_forfait" style="display: none;">
+            {{ form.plafond_forfait.label_tag }}
+            {{ form.plafond_forfait }}
+            {{ form.plafond_forfait.errors }}
+        </div>
+
+        {# TAUX #}
+        <div class="field">
+            {{ form.taux_prise_en_charge.label_tag }}
+            {{ form.taux_prise_en_charge }}
+            {{ form.taux_prise_en_charge.errors }}
+        </div>
+
+        {# FRANCHISE #}
+        <div class="field">
+            {{ form.franchise.label_tag }}
+            {{ form.franchise }}
+            {{ form.franchise.errors }}
+        </div>
+
+        {# DATES #}
+        <div class="field">
+            {{ form.date_debut.label_tag }}
+            {{ form.date_debut }}
+            {{ form.date_debut.errors }}
+        </div>
+
+        <div class="field">
+            {{ form.date_fin.label_tag }}
+            {{ form.date_fin }}
+            {{ form.date_fin.errors }}
+        </div>
+
+        {# STATUT #}
+        <div class="field">
+            {{ form.statut.label_tag }}
+            {{ form.statut }}
+            {{ form.statut.errors }}
+        </div>
+
+        <div class="actions">
+            <button type="submit" class="btn">🔗 Enregistrer</button>
+            <a href="{% url 'garantie_actes' %}" class="btn btn-secondary">← Annuler</a>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modeCalcul = document.getElementById("id_mode_calcul");
+    const blocForfait = document.getElementById("bloc_forfait");
+    const blocPlafondForfait = document.getElementById("bloc_plafond_forfait");
+
+    function toggleForfait() {
+        if (!modeCalcul) return;
+        if (modeCalcul.value === "FORFAIT") {
+            if (blocForfait) blocForfait.style.display = "block";
+            if (blocPlafondForfait) blocPlafondForfait.style.display = "block";
+        } else {
+            if (blocForfait) blocForfait.style.display = "none";
+            if (blocPlafondForfait) blocPlafondForfait.style.display = "none";
+        }
+    }
+
+    toggleForfait();
+    if (modeCalcul) {
+        modeCalcul.addEventListener("change", toggleForfait);
+    }
+});
+</script>
+{% endblock %}

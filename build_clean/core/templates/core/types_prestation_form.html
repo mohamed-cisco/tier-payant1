@@ -1,0 +1,101 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}{{ titre }} - Tiers Payant{% endblock %}
+{% block header_title %}Types de prestation{% endblock %}
+{% block header_sub %}Création et modification de type{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    h2 {
+        margin-top: 0;
+        color: #123b65;
+    }
+
+    .form-group { margin-bottom: 20px; }
+
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #374151;
+        font-size: 14px;
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16,185,129,.12);
+    }
+
+    textarea { resize: vertical; }
+
+    .btn {
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-primary { background: #10b981; color: white; }
+    .btn-primary:hover { background: #059669; }
+    .btn-secondary { background: #6b7280; color: white; margin-left: 10px; }
+    .btn-secondary:hover { background: #4b5563; }
+
+    .errorlist {
+        color: #dc2626;
+        font-size: 13px;
+        margin-top: 5px;
+        list-style: none;
+        padding: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <h2>{{ titre }}</h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <ul class="errorlist">
+                        {% for err in field.errors %}<li>{{ err }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+        <a href="{% url 'types_prestation' %}" class="btn btn-secondary">Annuler</a>
+    </form>
+</div>
+
+{% endblock %}

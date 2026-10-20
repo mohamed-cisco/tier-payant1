@@ -1,0 +1,105 @@
+{# remboursement/templates/remboursement/virements_a_payer.html #}
+{% extends "remboursement/base_remb.html" %}
+
+{% block remb_title %}Virements à payer{% endblock %}
+{% block remb_header_title %}Virements à payer{% endblock %}
+
+{% block remb_content %}
+
+<div style="margin-bottom:22px;">
+    <h1 style="margin:0; color:#123b65; font-size:24px;">🏦 Virements à payer</h1>
+    <p style="margin:6px 0 0; color:#64748b;">Liste des virements en attente de paiement aux adhérents</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card orange">
+        <div class="stat-label">Nb à payer</div>
+        <div class="stat-value">{{ totaux.nb_a_payer }}</div>
+    </div>
+    <div class="stat-card orange">
+        <div class="stat-label">Montant à payer</div>
+        <div class="stat-value small">{{ totaux.a_payer|floatformat:2 }} DA</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-label">Nb payés</div>
+        <div class="stat-value">{{ totaux.nb_payes }}</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-label">Montant payé</div>
+        <div class="stat-value small">{{ totaux.payes|floatformat:2 }} DA</div>
+    </div>
+</div>
+
+<form method="get" class="filters-bar">
+    <div class="field">
+        <label>Souscripteur</label>
+        <select name="souscripteur">
+            <option value="">Tous</option>
+            {% for s in souscripteurs %}
+                <option value="{{ s.id_souscripteur }}" {% if souscripteur_id == s.id_souscripteur|stringformat:"s" %}selected{% endif %}>{{ s.raison_sociale }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="field">
+        <button type="submit" class="btn btn-primary">🔍 Filtrer</button>
+    </div>
+    <div class="field">
+        <a href="{% url 'remb_virements_a_payer' %}" class="btn btn-secondary">↻ Réinitialiser</a>
+    </div>
+    <div style="flex:1"></div>
+    <div class="field">
+        <button type="button" onclick="window.print()" class="btn btn-secondary">🖨️ Imprimer</button>
+    </div>
+</form>
+
+<div class="table-wrap">
+    <div class="table-header">
+        <h2>Liste des virements à effectuer ({{ virements|length }})</h2>
+    </div>
+    
+    {% if virements %}
+    <table class="data">
+        <thead>
+            <tr>
+                <th>N° Virement</th>
+                <th>Adhérent</th>
+                <th>Nom complet</th>
+                <th>Banque</th>
+                <th>RIB</th>
+                <th style="text-align:right;">Montant</th>
+                <th style="text-align:center;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in virements %}
+            <tr>
+                <td><strong>{{ v.numero }}</strong></td>
+                <td>{{ v.adherent.numero_adherent }}</td>
+                <td>{{ v.adherent.id_personne.nom }} {{ v.adherent.id_personne.prenom }}</td>
+                <td>{{ v.banque|default:"—" }}</td>
+                <td style="font-family:monospace; font-size:11px;">{{ v.rib|default:"—" }}</td>
+                <td style="text-align:right; font-weight:700; color:#059669;">{{ v.montant|floatformat:2 }} DA</td>
+                <td style="text-align:center;">
+                    <a href="{% url 'remb_virement_detail' v.id %}" class="btn btn-primary btn-sm">💳 Payer</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr style="background:#f8fafc; font-weight:700;">
+                <td colspan="5" style="text-align:right; padding:14px;">TOTAL :</td>
+                <td style="text-align:right; color:#059669; padding:14px; font-size:14px;">{{ totaux.a_payer|floatformat:2 }} DA</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div class="icon">🏦</div>
+        <h3>Aucun virement à payer</h3>
+        <p>Tous les virements ont été effectués.</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

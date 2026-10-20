@@ -1,0 +1,124 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Actes - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des actes{% endblock %}
+{% block header_sub %}Actes médicaux de la plateforme{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-title { margin-bottom: 22px; }
+    .page-title h2 { margin: 0; color: #123b65; font-size: 24px; }
+    .page-title p { margin: 6px 0 0; color: #6b7280; font-size: 14px; }
+    .card { background: white; padding: 24px; border-radius: 14px;
+            border: 1px solid #e5ebf2; box-shadow: 0 4px 15px rgba(0,0,0,.05); }
+    .toolbar { display: flex; justify-content: space-between;
+               align-items: center; gap: 15px;
+               flex-wrap: wrap; margin-bottom: 20px; }
+    .filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .filters input, .filters select { height: 42px; padding: 0 12px;
+        border: 1px solid #d5dde7; border-radius: 8px;
+        background: white; font-size: 13px; }
+    .filters input { width: 330px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; justify-content: center;
+           min-height: 40px; padding: 9px 14px; background: #123b65;
+           color: white; text-decoration: none; border: none;
+           border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .btn:hover { background: #1d5d91; }
+    .btn-secondary { background: #6b7280; }
+    .btn-success { background: #15803d; }
+    .btn-danger { background: #dc2626; }
+    .table-wrapper { width: 100%; overflow-x: auto;
+                     border: 1px solid #e5ebf2; border-radius: 10px; }
+    table { width: 100%; border-collapse: collapse; min-width: 850px; }
+    th, td { padding: 13px 12px; text-align: left;
+             border-bottom: 1px solid #edf1f5; font-size: 13px; white-space: nowrap; }
+    th { background: #f7f9fc; color: #123b65; font-weight: 700; }
+    .status-badge { display: inline-flex; padding: 5px 10px;
+                    border-radius: 20px; font-size: 12px; font-weight: 700; }
+    .status-actif { color: #166534; background: #dcfce7; }
+    .status-inactif { color: #92400e; background: #fef3c7; }
+    .row-actions { display: flex; gap: 6px; }
+    .empty-message { text-align: center; color: #6b7280;
+                     padding: 35px !important; font-size: 14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-title">
+    <h2>Gestion des actes</h2>
+    <p>Consultez, recherchez et gérez les actes médicaux.</p>
+</div>
+
+<div class="card">
+    <div class="toolbar">
+        <form method="get" class="filters">
+            <input type="text" name="recherche" value="{{ recherche }}"
+                   placeholder="Code, libellé ou description">
+            <select name="statut">
+                <option value="">Tous les statuts</option>
+                <option value="ACTIF" {% if statut == "ACTIF" %}selected{% endif %}>Actifs</option>
+                <option value="INACTIF" {% if statut == "INACTIF" %}selected{% endif %}>Inactifs</option>
+            </select>
+            <button type="submit" class="btn">🔎 Rechercher</button>
+            <a href="{% url 'actes' %}" class="btn btn-secondary">Réinitialiser</a>
+        </form>
+
+        <div class="actions">
+            {% if "ACTE_CREATE" in permissions %}
+                <a class="btn btn-success" href="{% url 'acte_create' %}">➕ Nouvel acte</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th><th>Code acte</th><th>Libellé</th>
+                    <th>Unité</th><th>Statut</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in actes %}
+                <tr>
+                    <td>{{ a.id_acte }}</td>
+                    <td>{{ a.code_acte }}</td>
+                    <td>{{ a.libelle }}</td>
+                    <td>{{ a.unite|default:"-" }}</td>
+                    <td>
+                        {% if a.statut == "ACTIF" %}
+                            <span class="status-badge status-actif">Actif</span>
+                        {% else %}
+                            <span class="status-badge status-inactif">{{ a.statut }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            <a href="{% url 'acte_detail' a.id_acte %}" class="btn">Détail</a>
+                            {% if "ACTE_UPDATE" in permissions %}
+                                <a href="{% url 'acte_modifier' a.id_acte %}"
+                                   class="btn btn-secondary">Modifier</a>
+                            {% endif %}
+                            {% if "ACTE_DELETE" in permissions and a.statut == "ACTIF" %}
+                                <form method="post" action="{% url 'acte_radier' a.id_acte %}"
+                                      style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger"
+                                            onclick="return confirm('Radier cet acte ?');">Radier</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="empty-message">Aucun acte trouvé.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

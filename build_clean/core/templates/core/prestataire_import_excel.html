@@ -1,0 +1,167 @@
+﻿{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Importer des prestataires{% endblock %}
+{% block header_title %}Importation des prestataires{% endblock %}
+{% block header_sub %}Import depuis un fichier Excel{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 18px rgba(0,0,0,.07);
+        max-width: 850px;
+        margin: 0 auto;
+    }
+
+    .card h2 {
+        margin: 0 0 8px;
+        color: #123b65;
+        font-size: 22px;
+    }
+
+    .subtitle {
+        margin: 0 0 25px;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .info {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e40af;
+        padding: 18px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        line-height: 1.7;
+        font-size: 14px;
+    }
+
+    .columns {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px 18px;
+        margin-top: 12px;
+        padding: 15px;
+        background: white;
+        border: 1px solid #dbeafe;
+        border-radius: 8px;
+    }
+
+    .column {
+        font-family: Consolas, monospace;
+        font-size: 13px;
+        color: #374151;
+    }
+
+    .field {
+        margin-bottom: 25px;
+    }
+
+    .field label {
+        display: block;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 9px;
+    }
+
+    .field input[type="file"] {
+        width: 100%;
+        padding: 12px;
+        border: 1px dashed #93c5fd;
+        border-radius: 9px;
+        background: #f8fafc;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .field input[type="file"]:hover {
+        background: #eff6ff;
+        border-color: #2563eb;
+    }
+
+    .actions {
+        display: flex;
+        gap: 12px;
+        padding-top: 22px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 20px;
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: .2s;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        opacity: .92;
+    }
+
+    .btn-secondary {
+        background: #6b7280;
+        text-decoration: none;
+    }
+
+    @media (max-width: 700px) {
+        .card { padding: 22px; }
+        .columns { grid-template-columns: 1fr; }
+        .actions { flex-direction: column; }
+        .btn { width: 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h2>Importer un fichier Excel</h2>
+    <p class="subtitle">Importez plusieurs prestataires à partir d'un fichier Excel.</p>
+
+    <div class="info">
+        <strong>📋 Format attendu</strong>
+        <p>Le fichier Excel doit contenir les colonnes suivantes :</p>
+        <div class="columns">
+            <div class="column">code_prestataire</div>
+            <div class="column">raison_sociale</div>
+            <div class="column">type_prestataire</div>
+            <div class="column">nif</div>
+            <div class="column">registre_commerce</div>
+            <div class="column">adresse</div>
+            <div class="column">telephone</div>
+            <div class="column">email</div>
+            <div class="column">statut</div>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+
+        {% csrf_token %}
+
+        <div class="field">
+            <label for="fichier">Fichier Excel (.xlsx)</label>
+            <input type="file" id="fichier" name="fichier" accept=".xlsx" required>
+        </div>
+
+        <div class="actions">
+            <button type="submit" class="btn">📥 Importer les prestataires</button>
+            <a href="{% url 'prestataires' %}" class="btn btn-secondary">← Annuler</a>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,110 @@
+{# remboursement/templates/remboursement/ribs.html #}
+{% extends "remboursement/base_remb.html" %}
+
+{% block remb_title %}Coordonnées bancaires{% endblock %}
+{% block remb_header_title %}Coordonnées bancaires{% endblock %}
+
+{% block remb_content %}
+
+<h1 style="margin:0 0 6px; color:#123b65; font-size:24px;">🏦 Coordonnées bancaires</h1>
+<p style="margin:0 0 22px; color:#64748b;">
+    Gérez les RIB des adhérents pour les virements de remboursement
+</p>
+
+{# ============ STATS ============ #}
+<div class="stats-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:22px;">
+    <div class="stat-card red" style="background:white; border-radius:10px; padding:16px 18px; border-left:4px solid #ef4444; box-shadow:0 1px 6px rgba(0,0,0,.05);">
+        <div style="font-size:11.5px; text-transform:uppercase; color:#64748b; font-weight:600;">Sans RIB</div>
+        <div style="font-size:24px; font-weight:700; color:#ef4444; margin-top:4px;">{{ nb_sans_rib }}</div>
+        <div style="font-size:11px; color:#94a3b8; margin-top:3px;">⚠️ À compléter</div>
+    </div>
+    <div class="stat-card green" style="background:white; border-radius:10px; padding:16px 18px; border-left:4px solid #10b981; box-shadow:0 1px 6px rgba(0,0,0,.05);">
+        <div style="font-size:11.5px; text-transform:uppercase; color:#64748b; font-weight:600;">Avec RIB</div>
+        <div style="font-size:24px; font-weight:700; color:#10b981; margin-top:4px;">{{ nb_avec_rib }}</div>
+        <div style="font-size:11px; color:#94a3b8; margin-top:3px;">✅ Prêts à payer</div>
+    </div>
+</div>
+
+{# ============ ADHÉRENTS SANS RIB ============ #}
+{% if sans_rib %}
+<div class="table-wrap" style="background:white; border-radius:10px; overflow:hidden; box-shadow:0 1px 6px rgba(0,0,0,.05); margin-bottom:22px;">
+    <div class="table-header" style="padding:16px 20px; border-bottom:2px solid #fecaca; background:#fef2f2;">
+        <h2 style="margin:0; font-size:15px; color:#991b1b;">⚠️ Adhérents SANS coordonnées bancaires ({{ nb_sans_rib }})</h2>
+    </div>
+    <table class="data" style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead style="background:#f8fafc;">
+            <tr>
+                <th style="padding:12px 14px; text-align:left; font-size:11.5px; color:#475569; text-transform:uppercase;">N° Adhérent</th>
+                <th style="padding:12px 14px; text-align:left; font-size:11.5px; color:#475569; text-transform:uppercase;">Nom & Prénom</th>
+                <th style="padding:12px 14px; text-align:left; font-size:11.5px; color:#475569; text-transform:uppercase;">Téléphone</th>
+                <th style="padding:12px 14px; text-align:center; font-size:11.5px; color:#475569; text-transform:uppercase;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in sans_rib %}
+            <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:11px 14px; font-weight:600; color:#123b65;">{{ a.numero_adherent }}</td>
+                <td style="padding:11px 14px;">{{ a.id_personne.nom }} {{ a.id_personne.prenom }}</td>
+                <td style="padding:11px 14px;">{{ a.id_personne.telephone|default:"—" }}</td>
+                <td style="padding:11px 14px; text-align:center;">
+                    <a href="{% url 'remb_rib_ajouter' a.id_adherent %}" 
+                       class="btn btn-success btn-sm"
+                       style="display:inline-flex; align-items:center; gap:5px; padding:6px 12px; border-radius:6px; background:#10b981; color:white; text-decoration:none; font-size:12px; font-weight:600;">
+                        ➕ Ajouter RIB
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div style="background:#f0fdf4; border-left:4px solid #10b981; border-radius:10px; padding:16px 20px; margin-bottom:22px; color:#166534; font-size:14px;">
+    ✅ Tous les adhérents actifs ont un RIB enregistré.
+</div>
+{% endif %}
+
+{# ============ ADHÉRENTS AVEC RIB ============ #}
+{% if avec_rib %}
+<div class="table-wrap" style="background:white; border-radius:10px; overflow:hidden; box-shadow:0 1px 6px rgba(0,0,0,.05);">
+    <div class="table-header" style="padding:16px 20px; border-bottom:1px solid #e5e7eb;">
+        <h2 style="margin:0; font-size:15px; color:#123b65;">✅ Adhérents AVEC coordonnées bancaires ({{ nb_avec_rib }})</h2>
+    </div>
+    <table class="data" style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead style="background:#f8fafc;">
+            <tr>
+                <th style="padding:12px 14px; text-align:left; font-size:11.5px; color:#475569; text-transform:uppercase;">N° Adhérent</th>
+                <th style="padding:12px 14px; text-align:left; font-size:11.5px; color:#475569; text-transform:uppercase;">Nom</th>
+                <th style="padding:12px 14px; text-align:left; font-size:11.5px; color:#475569; text-transform:uppercase;">Type</th>
+                <th style="padding:12px 14px; text-align:left; font-size:11.5px; color:#475569; text-transform:uppercase;">Banque</th>
+                <th style="padding:12px 14px; text-align:left; font-size:11.5px; color:#475569; text-transform:uppercase;">RIB</th>
+                <th style="padding:12px 14px; text-align:center; font-size:11.5px; color:#475569; text-transform:uppercase;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in avec_rib %}
+            <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:11px 14px; font-weight:600; color:#123b65;">{{ c.adherent.numero_adherent }}</td>
+                <td style="padding:11px 14px;">{{ c.adherent.id_personne.nom }} {{ c.adherent.id_personne.prenom }}</td>
+                <td style="padding:11px 14px;">{{ c.get_type_compte_display }}</td>
+                <td style="padding:11px 14px;">{{ c.banque|default:"—" }}</td>
+                <td style="padding:11px 14px; font-family:monospace; font-size:11px;">{{ c.rib }}</td>
+                <td style="padding:11px 14px; text-align:center;">
+                    <a href="{% url 'remb_rib_modifier' c.id %}" 
+                       style="display:inline-block; padding:6px 10px; border-radius:6px; background:#e2e8f0; color:#334155; text-decoration:none; font-size:12px; font-weight:600; margin-right:4px;">
+                        ✏️
+                    </a>
+                    <a href="{% url 'remb_rib_supprimer' c.id %}" 
+                       onclick="return confirm('Supprimer ce RIB ?');"
+                       style="display:inline-block; padding:6px 10px; border-radius:6px; background:#fee2e2; color:#991b1b; text-decoration:none; font-size:12px; font-weight:600;">
+                        🗑️
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% endblock %}

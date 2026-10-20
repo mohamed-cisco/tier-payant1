@@ -1,0 +1,176 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}{{ titre }} - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des conventions{% endblock %}
+{% block header_sub %}Création et modification de convention{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 32px;
+        border-radius: 14px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 5px 20px rgba(15,23,42,.08);
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .card-title {
+        margin: 0 0 25px;
+        color: #123b65;
+        font-size: 23px;
+    }
+
+    .field { margin-bottom: 20px; }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        color: #374151;
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    input,
+    select,
+    textarea {
+        width: 100%;
+        padding: 12px 13px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: white;
+        color: #1f2937;
+        font-family: inherit;
+        font-size: 14px;
+        transition: .2s;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+        outline: none;
+        border-color: #123b65;
+        box-shadow: 0 0 0 3px rgba(18,59,101,.10);
+    }
+
+    textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 7px 0 0;
+        color: #b91c1c;
+        font-size: 13px;
+    }
+
+    .form-errors {
+        background: #fee2e2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 13px;
+    }
+
+    .actions {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 18px;
+        border: none;
+        border-radius: 8px;
+        background: #123b65;
+        color: white;
+        text-decoration: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .btn:hover { background: #0d2d4d; }
+
+    .btn-secondary { background: #64748b; }
+    .btn-secondary:hover { background: #475569; }
+
+    @media (max-width: 700px) {
+        .card { padding: 22px; }
+        .actions .btn { width: 100%; text-align: center; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h2 class="card-title">{{ titre }}</h2>
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="field">
+            {{ form.id_prestataire.label_tag }}
+            {{ form.id_prestataire }}
+            {{ form.id_prestataire.errors }}
+        </div>
+
+        <div class="field">
+            {{ form.numero_convention.label_tag }}
+            {{ form.numero_convention }}
+            {{ form.numero_convention.errors }}
+        </div>
+
+        <div class="field">
+            {{ form.date_debut.label_tag }}
+            {{ form.date_debut }}
+            {{ form.date_debut.errors }}
+        </div>
+
+        <div class="field">
+            {{ form.date_fin.label_tag }}
+            {{ form.date_fin }}
+            {{ form.date_fin.errors }}
+        </div>
+
+        <div class="field">
+            {{ form.statut.label_tag }}
+            {{ form.statut }}
+            {{ form.statut.errors }}
+        </div>
+
+        <div class="field">
+            {{ form.description.label_tag }}
+            {{ form.description }}
+            {{ form.description.errors }}
+        </div>
+
+        <div class="actions">
+            <button type="submit" class="btn">Enregistrer</button>
+            <a href="{% url 'conventions' %}" class="btn btn-secondary">Annuler</a>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

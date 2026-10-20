@@ -1,0 +1,2091 @@
+# core/views/rapports.py
+"""
+Module de rapports professionnels.
+
+Fonctions :
+- rapports : page principale
+- rapport_mensuel : vue du rapport mensuel
+- rapport_mensuel_pdf : export PDF
+- rapport_mensuel_excel : export Excel
+"""
+
+from datetime import date, datetime, timedelta
+from decimal import Decimal
+
+from django.contrib import messages
+from django.db.models import Q, Sum, Count, Avg
+from django.db.models.functions import TruncDay, TruncMonth
+from django.shortcuts import redirect, render
+from django.utils import timezone
+
+from core.models import (
+    Acte,
+    Adhesion, 
+    Consommation,
+    Contrat,
+    DemandeTp,
+    Facture,
+    Prestataire,
+    PriseEnCharge,
+    Reglement,
+    RolePermission,
+)
+
+
+def _get_permissions(request):
+    """Récupère les permissions de l'utilisateur connecté."""
+    if not request.session.get("id_utilisateur"):
+        return None
+
+    id_utilisateur = request.session["id_utilisateur"]
+
+    return set(
+        RolePermission.objects
+        .filter(
+            id_role__utilisateurrole__id_utilisateur=id_utilisateur,
+            id_role__utilisateurrole__statut="ACTIF",
+            id_permission__statut="ACTIF"
+        )
+        .values_list("id_permission__code_permission", flat=True)
+    )
+
+
+def rapports(request):
+    """Page principale des rapports."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "FACTURE_VIEW" not in permissions and "DEMANDE_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation de consulter les rapports.")
+        return redirect("accueil")
+
+    return render(
+        request,
+        "core/rapports.html",
+        {
+            "permissions": permissions,
+            "page": "rapports",
+        }
+    )
+
+
+def rapport_mensuel(request):
+    """Rapport mensuel global."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "FACTURE_VIEW" not in permissions and "DEMANDE_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("accueil")
+
+    # Récupérer le mois et l'année depuis les paramètres GET
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    # Bornes du mois
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    # ============================================================
+    # STATISTIQUES GÉNÉRALES
+    # ============================================================
+    demandes = DemandeTp.objects.filter(
+        date_demande__date__gte=date_debut,
+        date_demande__date__lte=date_fin,
+    )
+
+    pec = PriseEnCharge.objects.filter(
+        date_pec__date__gte=date_debut,
+        date_pec__date__lte=date_fin,
+    )
+
+    consommations = Consommation.objects.filter(
+        date_prestation__gte=date_debut,
+        date_prestation__lte=date_fin,
+    )
+
+    factures = Facture.objects.filter(
+        date_facture__gte=date_debut,
+        date_facture__lte=date_fin,
+    )
+
+    reglements = Reglement.objects.filter(
+        date_reglement__gte=date_debut,
+        date_reglement__lte=date_fin,
+    )
+
+    # KPIs
+    nb_demandes = demandes.count()
+    nb_pec = pec.count()
+    nb_consommations = consommations.count()
+    nb_factures = factures.count()
+    nb_reglements = reglements.count()
+
+    # Montants
+    montant_demandes = demandes.aggregate(total=Sum("montant_demande"))["total"] or Decimal("0.00")
+    montant_pec_accepte = pec.aggregate(total=Sum("montant_accepte"))["total"] or Decimal("0.00")
+    montant_pec_rejete = pec.aggregate(total=Sum("montant_rejete"))["total"] or Decimal("0.00")
+    montant_consommations = consommations.aggregate(
+        total=Sum("montant_prise_en_charge")
+    )["total"] or Decimal("0.00")
+    montant_factures_valide = factures.aggregate(
+        total=Sum("montant_valide")
+    )["total"] or Decimal("0.00")
+    montant_reglements = reglements.aggregate(
+        total=Sum("montant")
+    )["total"] or Decimal("0.00")
+
+    # Taux d'acceptation
+    demandes_acceptees = demandes.filter(statut="ACCEPTEE").count()
+    if nb_demandes > 0:
+        taux_acceptation = round((demandes_acceptees / nb_demandes) * 100, 1)
+    else:
+        taux_acceptation = 0
+
+    # ============================================================
+    # TOP 10 PRESTATAIRES
+    # ============================================================
+    top_prestataires = (
+        Facture.objects
+        .filter(
+            date_facture__gte=date_debut,
+            date_facture__lte=date_fin,
+        )
+        .values("id_prestataire__raison_sociale")
+        .annotate(
+            total=Sum("montant_valide"),
+            nb_factures=Count("id_facture"),
+        )
+        .order_by("-total")[:10]
+    )
+
+    # ============================================================
+    # TOP 10 ACTES
+    # ============================================================
+    top_actes = (
+        Consommation.objects
+        .filter(
+            date_prestation__gte=date_debut,
+            date_prestation__lte=date_fin,
+        )
+        .values("id_acte__code_acte", "id_acte__libelle")
+        .annotate(
+            total=Sum("montant_prise_en_charge"),
+            nb=Count("id_consommation"),
+        )
+        .order_by("-nb")[:10]
+    )
+
+    # ============================================================
+    # ÉVOLUTION JOURNALIÈRE
+    # ============================================================
+    evolution_demandes = (
+        demandes
+        .annotate(jour=TruncDay("date_demande"))
+        .values("jour")
+        .annotate(total=Count("id_demande"))
+        .order_by("jour")
+    )
+
+    graphique_labels = [item["jour"].strftime("%d/%m") for item in evolution_demandes]
+    graphique_demandes = [item["total"] for item in evolution_demandes]
+
+    # ============================================================
+    # COMPARAISON MOIS PRÉCÉDENT
+    # ============================================================
+    if mois == 1:
+        mois_precedent = 12
+        annee_precedente = annee - 1
+    else:
+        mois_precedent = mois - 1
+        annee_precedente = annee
+
+    date_debut_prec = date(annee_precedente, mois_precedent, 1)
+    if mois_precedent == 12:
+        date_fin_prec = date(annee_precedente + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin_prec = date(annee_precedente, mois_precedent + 1, 1) - timedelta(days=1)
+
+    demandes_prec = DemandeTp.objects.filter(
+        date_demande__date__gte=date_debut_prec,
+        date_demande__date__lte=date_fin_prec,
+    ).count()
+
+    if demandes_prec > 0:
+        evolution_demandes_pct = round(((nb_demandes - demandes_prec) / demandes_prec) * 100, 1)
+    else:
+        evolution_demandes_pct = 0
+
+    # Noms des mois
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    return render(
+        request,
+        "core/rapport_mensuel.html",
+        {
+            "permissions": permissions,
+            "page": "rapports",
+
+            # Paramètres
+            "mois": mois,
+            "annee": annee,
+            "nom_mois": noms_mois[mois - 1],
+            "date_debut": date_debut,
+            "date_fin": date_fin,
+
+            # KPIs
+            "nb_demandes": nb_demandes,
+            "nb_pec": nb_pec,
+            "nb_consommations": nb_consommations,
+            "nb_factures": nb_factures,
+            "nb_reglements": nb_reglements,
+
+            # Montants
+            "montant_demandes": montant_demandes,
+            "montant_pec_accepte": montant_pec_accepte,
+            "montant_pec_rejete": montant_pec_rejete,
+            "montant_consommations": montant_consommations,
+            "montant_factures_valide": montant_factures_valide,
+            "montant_reglements": montant_reglements,
+
+            # Taux
+            "taux_acceptation": taux_acceptation,
+            "evolution_demandes_pct": evolution_demandes_pct,
+            "demandes_prec": demandes_prec,
+
+            # Top
+            "top_prestataires": top_prestataires,
+            "top_actes": top_actes,
+
+            # Graphique
+            "graphique_labels": graphique_labels,
+            "graphique_demandes": graphique_demandes,
+        }
+    )
+
+
+def rapport_mensuel_pdf(request):
+    """Export PDF du rapport mensuel."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "FACTURE_VIEW" not in permissions and "DEMANDE_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("accueil")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    # Bornes du mois
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    # Stats (mêmes calculs que rapport_mensuel)
+    demandes = DemandeTp.objects.filter(
+        date_demande__date__gte=date_debut,
+        date_demande__date__lte=date_fin,
+    )
+    pec = PriseEnCharge.objects.filter(
+        date_pec__date__gte=date_debut,
+        date_pec__date__lte=date_fin,
+    )
+    consommations = Consommation.objects.filter(
+        date_prestation__gte=date_debut,
+        date_prestation__lte=date_fin,
+    )
+    factures = Facture.objects.filter(
+        date_facture__gte=date_debut,
+        date_facture__lte=date_fin,
+    )
+    reglements = Reglement.objects.filter(
+        date_reglement__gte=date_debut,
+        date_reglement__lte=date_fin,
+    )
+
+    nb_demandes = demandes.count()
+    nb_pec = pec.count()
+    nb_consommations = consommations.count()
+    nb_factures = factures.count()
+    nb_reglements = reglements.count()
+
+    montant_demandes = demandes.aggregate(total=Sum("montant_demande"))["total"] or Decimal("0.00")
+    montant_pec_accepte = pec.aggregate(total=Sum("montant_accepte"))["total"] or Decimal("0.00")
+    montant_pec_rejete = pec.aggregate(total=Sum("montant_rejete"))["total"] or Decimal("0.00")
+    montant_consommations = consommations.aggregate(
+        total=Sum("montant_prise_en_charge")
+    )["total"] or Decimal("0.00")
+    montant_factures_valide = factures.aggregate(
+        total=Sum("montant_valide")
+    )["total"] or Decimal("0.00")
+    montant_reglements = reglements.aggregate(
+        total=Sum("montant")
+    )["total"] or Decimal("0.00")
+
+    demandes_acceptees = demandes.filter(statut="ACCEPTEE").count()
+    taux_acceptation = round((demandes_acceptees / nb_demandes) * 100, 1) if nb_demandes > 0 else 0
+
+    top_prestataires = (
+        Facture.objects
+        .filter(date_facture__gte=date_debut, date_facture__lte=date_fin)
+        .values("id_prestataire__raison_sociale")
+        .annotate(total=Sum("montant_valide"), nb_factures=Count("id_facture"))
+        .order_by("-total")[:10]
+    )
+
+    top_actes = (
+        Consommation.objects
+        .filter(date_prestation__gte=date_debut, date_prestation__lte=date_fin)
+        .values("id_acte__code_acte", "id_acte__libelle")
+        .annotate(total=Sum("montant_prise_en_charge"), nb=Count("id_consommation"))
+        .order_by("-nb")[:10]
+    )
+
+    # Noms des mois
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    # Génération PDF
+    from django.http import HttpResponse
+    from django.conf import settings
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="rapport_{mois:02d}_{annee}.pdf"'
+    )
+
+    document = SimpleDocTemplate(
+        response,
+        pagesize=A4,
+        rightMargin=2*cm,
+        leftMargin=2*cm,
+        topMargin=2*cm,
+        bottomMargin=2*cm,
+    )
+
+    elements = []
+    styles = getSampleStyleSheet()
+
+    # Titre
+    style_titre = ParagraphStyle(
+        "Titre", parent=styles["Title"], fontSize=18,
+        textColor=colors.HexColor("#123b65"), alignment=1,
+    )
+    elements.append(Paragraph(
+        f"RAPPORT MENSUEL — {noms_mois[mois-1]} {annee}", style_titre
+    ))
+    elements.append(Spacer(1, 0.5*cm))
+
+    # Période
+    style_normal = ParagraphStyle("Normal", parent=styles["Normal"], fontSize=11)
+    elements.append(Paragraph(
+        f"Période : du {date_debut.strftime('%d/%m/%Y')} au {date_fin.strftime('%d/%m/%Y')}",
+        style_normal
+    ))
+    elements.append(Spacer(1, 0.8*cm))
+
+    # KPIs
+    elements.append(Paragraph("<b>STATISTIQUES GÉNÉRALES</b>", styles["Heading2"]))
+    kpi_data = [
+        ["Indicateur", "Valeur"],
+        ["Demandes TP", str(nb_demandes)],
+        ["PEC", str(nb_pec)],
+        ["Consommations", str(nb_consommations)],
+        ["Factures", str(nb_factures)],
+        ["Règlements", str(nb_reglements)],
+        ["Taux d'acceptation", f"{taux_acceptation}%"],
+    ]
+    kpi_table = Table(kpi_data, colWidths=[8*cm, 8*cm])
+    kpi_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123b65")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+    ]))
+    elements.append(kpi_table)
+    elements.append(Spacer(1, 0.8*cm))
+
+    # Situation financière
+    elements.append(Paragraph("<b>SITUATION FINANCIÈRE</b>", styles["Heading2"]))
+    fin_data = [
+        ["Indicateur", "Montant"],
+        ["Montant total demandé", f"{montant_demandes:,.2f} DA"],
+        ["Montant accordé (PEC)", f"{montant_pec_accepte:,.2f} DA"],
+        ["Montant rejeté (PEC)", f"{montant_pec_rejete:,.2f} DA"],
+        ["Montant consommations", f"{montant_consommations:,.2f} DA"],
+        ["Montant facturé validé", f"{montant_factures_valide:,.2f} DA"],
+        ["Montant réglé", f"{montant_reglements:,.2f} DA"],
+    ]
+    fin_table = Table(fin_data, colWidths=[8*cm, 8*cm])
+    fin_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123b65")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+    ]))
+    elements.append(fin_table)
+    elements.append(Spacer(1, 0.8*cm))
+
+    # Top prestataires
+    if top_prestataires:
+        elements.append(Paragraph("<b>TOP 10 PRESTATAIRES</b>", styles["Heading2"]))
+        prest_data = [["#", "Prestataire", "Nb factures", "Montant validé"]]
+        for i, p in enumerate(top_prestataires, 1):
+            prest_data.append([
+                str(i),
+                p["id_prestataire__raison_sociale"][:40],
+                str(p["nb_factures"]),
+                f"{p['total']:,.2f} DA",
+            ])
+        prest_table = Table(prest_data, colWidths=[1*cm, 8*cm, 3*cm, 4*cm])
+        prest_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123b65")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("ALIGN", (0, 0), (0, -1), "CENTER"),
+            ("ALIGN", (2, 0), (-1, -1), "RIGHT"),
+        ]))
+        elements.append(prest_table)
+
+    document.build(elements)
+    return response
+
+
+def rapport_mensuel_excel(request):
+    """Export Excel du rapport mensuel."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "FACTURE_VIEW" not in permissions and "DEMANDE_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("accueil")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    # Stats
+    demandes = DemandeTp.objects.filter(
+        date_demande__date__gte=date_debut,
+        date_demande__date__lte=date_fin,
+    )
+    pec = PriseEnCharge.objects.filter(
+        date_pec__date__gte=date_debut,
+        date_pec__date__lte=date_fin,
+    )
+    consommations = Consommation.objects.filter(
+        date_prestation__gte=date_debut,
+        date_prestation__lte=date_fin,
+    )
+    factures = Facture.objects.filter(
+        date_facture__gte=date_debut,
+        date_facture__lte=date_fin,
+    )
+    reglements = Reglement.objects.filter(
+        date_reglement__gte=date_debut,
+        date_reglement__lte=date_fin,
+    )
+
+    nb_demandes = demandes.count()
+    nb_pec = pec.count()
+    nb_consommations = consommations.count()
+    nb_factures = factures.count()
+    nb_reglements = reglements.count()
+
+    montant_demandes = demandes.aggregate(total=Sum("montant_demande"))["total"] or Decimal("0.00")
+    montant_pec_accepte = pec.aggregate(total=Sum("montant_accepte"))["total"] or Decimal("0.00")
+    montant_pec_rejete = pec.aggregate(total=Sum("montant_rejete"))["total"] or Decimal("0.00")
+    montant_consommations = consommations.aggregate(
+        total=Sum("montant_prise_en_charge")
+    )["total"] or Decimal("0.00")
+    montant_factures_valide = factures.aggregate(
+        total=Sum("montant_valide")
+    )["total"] or Decimal("0.00")
+    montant_reglements = reglements.aggregate(
+        total=Sum("montant")
+    )["total"] or Decimal("0.00")
+
+    demandes_acceptees = demandes.filter(statut="ACCEPTEE").count()
+    taux_acceptation = round((demandes_acceptees / nb_demandes) * 100, 1) if nb_demandes > 0 else 0
+
+    top_prestataires = (
+        Facture.objects
+        .filter(date_facture__gte=date_debut, date_facture__lte=date_fin)
+        .values("id_prestataire__raison_sociale")
+        .annotate(total=Sum("montant_valide"), nb_factures=Count("id_facture"))
+        .order_by("-total")[:10]
+    )
+
+    # Génération Excel
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from django.http import HttpResponse
+
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    workbook = openpyxl.Workbook()
+    feuille = workbook.active
+    feuille.title = "Rapport mensuel"
+
+    # Styles
+    font_titre = Font(bold=True, size=16, color="123B65")
+    font_entete = Font(bold=True, color="FFFFFF", size=11)
+    font_total = Font(bold=True, size=11, color="123B65")
+    fill_entete = PatternFill(start_color="123B65", end_color="123B65", fill_type="solid")
+    fill_total = PatternFill(start_color="EAF2FB", end_color="EAF2FB", fill_type="solid")
+
+    # Titre
+    feuille["A1"] = f"RAPPORT MENSUEL — {noms_mois[mois-1]} {annee}"
+    feuille["A1"].font = font_titre
+    feuille.merge_cells("A1:B1")
+
+    feuille["A2"] = f"Du {date_debut.strftime('%d/%m/%Y')} au {date_fin.strftime('%d/%m/%Y')}"
+    feuille.merge_cells("A2:B2")
+
+    # KPIs
+    feuille["A4"] = "STATISTIQUES GÉNÉRALES"
+    feuille["A4"].font = font_entete
+    feuille["A4"].fill = fill_entete
+    feuille["B4"].fill = fill_entete
+    feuille.merge_cells("A4:B4")
+
+    kpis = [
+        ("Demandes TP", nb_demandes),
+        ("PEC", nb_pec),
+        ("Consommations", nb_consommations),
+        ("Factures", nb_factures),
+        ("Règlements", nb_reglements),
+        ("Taux d'acceptation", f"{taux_acceptation}%"),
+    ]
+
+    ligne = 5
+    for label, valeur in kpis:
+        feuille.cell(row=ligne, column=1, value=label)
+        feuille.cell(row=ligne, column=2, value=valeur)
+        ligne += 1
+
+    # Situation financière
+    ligne += 1
+    feuille.cell(row=ligne, column=1, value="SITUATION FINANCIÈRE")
+    feuille.cell(row=ligne, column=1).font = font_entete
+    feuille.cell(row=ligne, column=1).fill = fill_entete
+    feuille.cell(row=ligne, column=2).fill = fill_entete
+    ligne += 1
+
+    finances = [
+        ("Montant demandé", montant_demandes),
+        ("Montant accordé (PEC)", montant_pec_accepte),
+        ("Montant rejeté (PEC)", montant_pec_rejete),
+        ("Montant consommations", montant_consommations),
+        ("Montant facturé validé", montant_factures_valide),
+        ("Montant réglé", montant_reglements),
+    ]
+
+    for label, montant in finances:
+        feuille.cell(row=ligne, column=1, value=label)
+        feuille.cell(row=ligne, column=2, value=float(montant))
+        feuille.cell(row=ligne, column=2).number_format = '#,##0.00" DA"'
+        ligne += 1
+
+    # Top prestataires
+    ligne += 1
+    feuille.cell(row=ligne, column=1, value="TOP 10 PRESTATAIRES")
+    feuille.cell(row=ligne, column=1).font = font_entete
+    feuille.cell(row=ligne, column=1).fill = fill_entete
+    for col in range(2, 5):
+        feuille.cell(row=ligne, column=col).fill = fill_entete
+    ligne += 1
+
+    # En-têtes
+    headers = ["#", "Prestataire", "Nb factures", "Montant validé"]
+    for col, h in enumerate(headers, 1):
+        feuille.cell(row=ligne, column=col, value=h)
+        feuille.cell(row=ligne, column=col).font = font_total
+    ligne += 1
+
+    for i, p in enumerate(top_prestataires, 1):
+        feuille.cell(row=ligne, column=1, value=i)
+        feuille.cell(row=ligne, column=2, value=p["id_prestataire__raison_sociale"])
+        feuille.cell(row=ligne, column=3, value=p["nb_factures"])
+        feuille.cell(row=ligne, column=4, value=float(p["total"]))
+        feuille.cell(row=ligne, column=4).number_format = '#,##0.00" DA"'
+        ligne += 1
+
+    # Ajuster largeurs
+    feuille.column_dimensions["A"].width = 30
+    feuille.column_dimensions["B"].width = 30
+    feuille.column_dimensions["C"].width = 15
+    feuille.column_dimensions["D"].width = 20
+
+    # Réponse
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = (
+        f'attachment; filename="rapport_{mois:02d}_{annee}.xlsx"'
+    )
+    workbook.save(response)
+    return response
+
+
+
+def rapport_prestataire(request):
+    """Rapport d'activité par prestataire."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "FACTURE_VIEW" not in permissions and "DEMANDE_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("accueil")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    # Bornes du mois
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    # Prestataire sélectionné
+    id_prestataire = request.GET.get("id_prestataire", "").strip()
+
+    # Récupérer tous les prestataires pour le filtre
+    prestataires = Prestataire.objects.filter(statut="ACTIF").order_by("raison_sociale")
+
+    rapport_data = None
+    prestataire_selectionne = None
+
+    if id_prestataire:
+        try:
+            prestataire_selectionne = Prestataire.objects.get(
+                id_prestataire=id_prestataire
+            )
+        except Prestataire.DoesNotExist:
+            messages.error(request, "Prestataire introuvable.")
+
+        if prestataire_selectionne:
+            # Factures du prestataire
+            factures = Facture.objects.filter(
+                id_prestataire=prestataire_selectionne,
+                date_facture__gte=date_debut,
+                date_facture__lte=date_fin,
+            )
+
+            # Règlements liés
+            reglements = Reglement.objects.filter(
+                id_facture__id_prestataire=prestataire_selectionne,
+                date_reglement__gte=date_debut,
+                date_reglement__lte=date_fin,
+            )
+
+            # Demandes TP liées
+            demandes = DemandeTp.objects.filter(
+                id_prestataire=prestataire_selectionne,
+                date_demande__date__gte=date_debut,
+                date_demande__date__lte=date_fin,
+            )
+
+            # PEC liées
+            pec = PriseEnCharge.objects.filter(
+                id_demande__id_prestataire=prestataire_selectionne,
+                date_pec__date__gte=date_debut,
+                date_pec__date__lte=date_fin,
+            )
+
+            # Consommations liées
+            consommations = Consommation.objects.filter(
+                id_prestataire=prestataire_selectionne,
+                date_prestation__gte=date_debut,
+                date_prestation__lte=date_fin,
+            )
+
+            # Calculs
+            nb_demandes = demandes.count()
+            nb_pec = pec.count()
+            nb_consommations = consommations.count()
+            nb_factures = factures.count()
+            nb_reglements = reglements.count()
+
+            montant_demandes = demandes.aggregate(
+                total=Sum("montant_demande")
+            )["total"] or Decimal("0.00")
+
+            montant_pec_accepte = pec.aggregate(
+                total=Sum("montant_accepte")
+            )["total"] or Decimal("0.00")
+
+            montant_consommations = consommations.aggregate(
+                total=Sum("montant_prise_en_charge")
+            )["total"] or Decimal("0.00")
+
+            montant_factures = factures.aggregate(
+                total=Sum("montant_valide")
+            )["total"] or Decimal("0.00")
+
+            montant_reglements = reglements.aggregate(
+                total=Sum("montant")
+            )["total"] or Decimal("0.00")
+
+            # Top actes du prestataire
+            top_actes = (
+                Consommation.objects
+                .filter(
+                    id_prestataire=prestataire_selectionne,
+                    date_prestation__gte=date_debut,
+                    date_prestation__lte=date_fin,
+                )
+                .values("id_acte__code_acte", "id_acte__libelle")
+                .annotate(
+                    total=Sum("montant_prise_en_charge"),
+                    nb=Count("id_consommation"),
+                )
+                .order_by("-nb")[:10]
+            )
+
+            rapport_data = {
+                "nb_demandes": nb_demandes,
+                "nb_pec": nb_pec,
+                "nb_consommations": nb_consommations,
+                "nb_factures": nb_factures,
+                "nb_reglements": nb_reglements,
+                "montant_demandes": montant_demandes,
+                "montant_pec_accepte": montant_pec_accepte,
+                "montant_consommations": montant_consommations,
+                "montant_factures": montant_factures,
+                "montant_reglements": montant_reglements,
+                "top_actes": top_actes,
+            }
+
+    # Noms des mois
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    return render(
+        request,
+        "core/rapport_prestataire.html",
+        {
+            "permissions": permissions,
+            "page": "rapports",
+            "prestataires": prestataires,
+            "prestataire_selectionne": prestataire_selectionne,
+            "id_prestataire": id_prestataire,
+            "rapport_data": rapport_data,
+            "mois": mois,
+            "annee": annee,
+            "nom_mois": noms_mois[mois - 1],
+            "date_debut": date_debut,
+            "date_fin": date_fin,
+        }
+    )
+
+
+def rapport_prestataire(request):
+    """Rapport d'activité par prestataire."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "FACTURE_VIEW" not in permissions and "DEMANDE_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("accueil")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    # Bornes du mois
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    # Prestataire sélectionné
+    id_prestataire = request.GET.get("id_prestataire", "").strip()
+
+    # Récupérer tous les prestataires pour le filtre
+    prestataires = Prestataire.objects.filter(statut="ACTIF").order_by("raison_sociale")
+
+    rapport_data = None
+    prestataire_selectionne = None
+
+    if id_prestataire:
+        try:
+            prestataire_selectionne = Prestataire.objects.get(
+                id_prestataire=id_prestataire
+            )
+        except Prestataire.DoesNotExist:
+            messages.error(request, "Prestataire introuvable.")
+
+        if prestataire_selectionne:
+            # Factures du prestataire
+            factures = Facture.objects.filter(
+                id_prestataire=prestataire_selectionne,
+                date_facture__gte=date_debut,
+                date_facture__lte=date_fin,
+            )
+
+            # Règlements liés
+            reglements = Reglement.objects.filter(
+                id_facture__id_prestataire=prestataire_selectionne,
+                date_reglement__gte=date_debut,
+                date_reglement__lte=date_fin,
+            )
+
+            # Demandes TP liées
+            demandes = DemandeTp.objects.filter(
+                id_prestataire=prestataire_selectionne,
+                date_demande__date__gte=date_debut,
+                date_demande__date__lte=date_fin,
+            )
+
+            # PEC liées
+            pec = PriseEnCharge.objects.filter(
+                id_demande__id_prestataire=prestataire_selectionne,
+                date_pec__date__gte=date_debut,
+                date_pec__date__lte=date_fin,
+            )
+
+            # Consommations liées
+            consommations = Consommation.objects.filter(
+                id_prestataire=prestataire_selectionne,
+                date_prestation__gte=date_debut,
+                date_prestation__lte=date_fin,
+            )
+
+            # Calculs
+            nb_demandes = demandes.count()
+            nb_pec = pec.count()
+            nb_consommations = consommations.count()
+            nb_factures = factures.count()
+            nb_reglements = reglements.count()
+
+            montant_demandes = demandes.aggregate(
+                total=Sum("montant_demande")
+            )["total"] or Decimal("0.00")
+
+            montant_pec_accepte = pec.aggregate(
+                total=Sum("montant_accepte")
+            )["total"] or Decimal("0.00")
+
+            montant_consommations = consommations.aggregate(
+                total=Sum("montant_prise_en_charge")
+            )["total"] or Decimal("0.00")
+
+            montant_factures = factures.aggregate(
+                total=Sum("montant_valide")
+            )["total"] or Decimal("0.00")
+
+            montant_reglements = reglements.aggregate(
+                total=Sum("montant")
+            )["total"] or Decimal("0.00")
+
+            # Top actes du prestataire
+            top_actes = (
+                Consommation.objects
+                .filter(
+                    id_prestataire=prestataire_selectionne,
+                    date_prestation__gte=date_debut,
+                    date_prestation__lte=date_fin,
+                )
+                .values("id_acte__code_acte", "id_acte__libelle")
+                .annotate(
+                    total=Sum("montant_prise_en_charge"),
+                    nb=Count("id_consommation"),
+                )
+                .order_by("-nb")[:10]
+            )
+
+            rapport_data = {
+                "nb_demandes": nb_demandes,
+                "nb_pec": nb_pec,
+                "nb_consommations": nb_consommations,
+                "nb_factures": nb_factures,
+                "nb_reglements": nb_reglements,
+                "montant_demandes": montant_demandes,
+                "montant_pec_accepte": montant_pec_accepte,
+                "montant_consommations": montant_consommations,
+                "montant_factures": montant_factures,
+                "montant_reglements": montant_reglements,
+                "top_actes": top_actes,
+            }
+
+    # Noms des mois
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    return render(
+        request,
+        "core/rapport_prestataire.html",
+        {
+            "permissions": permissions,
+            "page": "rapports",
+            "prestataires": prestataires,
+            "prestataire_selectionne": prestataire_selectionne,
+            "id_prestataire": id_prestataire,
+            "rapport_data": rapport_data,
+            "mois": mois,
+            "annee": annee,
+            "nom_mois": noms_mois[mois - 1],
+            "date_debut": date_debut,
+            "date_fin": date_fin,
+        }
+    )
+
+
+def rapport_financier(request):
+    """Rapport financier global."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "FACTURE_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("accueil")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    # Bornes du mois
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    # ============================================================
+    # FACTURES
+    # ============================================================
+    factures = Facture.objects.filter(
+        date_facture__gte=date_debut,
+        date_facture__lte=date_fin,
+    )
+
+    nb_factures = factures.count()
+    montant_facture = factures.aggregate(total=Sum("montant_total"))["total"] or Decimal("0.00")
+    montant_valide = factures.aggregate(total=Sum("montant_valide"))["total"] or Decimal("0.00")
+    montant_rejete = factures.aggregate(total=Sum("montant_rejete"))["total"] or Decimal("0.00")
+
+    # ============================================================
+    # RÈGLEMENTS
+    # ============================================================
+    reglements = Reglement.objects.filter(
+        date_reglement__gte=date_debut,
+        date_reglement__lte=date_fin,
+        statut="VALIDEE",
+    )
+
+    nb_reglements = reglements.count()
+    montant_paye = reglements.aggregate(total=Sum("montant"))["total"] or Decimal("0.00")
+
+    # ============================================================
+    # RESTE À PAYER
+    # ============================================================
+    reste_a_payer = montant_valide - montant_paye
+
+    # ============================================================
+    # FACTURES NON PAYÉES
+    # ============================================================
+    factures_non_payees = factures.filter(
+        statut__in=["VALIDEE", "EN_ATTENTE"]
+    ).order_by("-date_facture")
+
+    # ============================================================
+    # TOP DÉBITEURS (prestataires avec reste à payer)
+    # ============================================================
+    top_debiteurs = []
+    prestataires = Prestataire.objects.filter(statut="ACTIF")
+
+    for prest in prestataires:
+        factures_prest = Facture.objects.filter(
+            id_prestataire=prest,
+            statut__in=["VALIDEE", "EN_ATTENTE"],
+        )
+        montant_du = factures_prest.aggregate(total=Sum("montant_valide"))["total"] or Decimal("0.00")
+
+        if montant_du > 0:
+            # Règlements liés
+            reglements_prest = Reglement.objects.filter(
+                id_facture__id_prestataire=prest,
+                statut="VALIDEE",
+            )
+            montant_regle = reglements_prest.aggregate(total=Sum("montant"))["total"] or Decimal("0.00")
+
+            reste = montant_du - montant_regle
+
+            if reste > 0:
+                top_debiteurs.append({
+                    "prestataire": prest,
+                    "montant_du": montant_du,
+                    "montant_regle": montant_regle,
+                    "reste": reste,
+                })
+
+    # Trier par reste décroissant
+    top_debiteurs.sort(key=lambda x: x["reste"], reverse=True)
+    top_debiteurs = top_debiteurs[:10]
+
+    # ============================================================
+    # ÉVOLUTION JOURNALIÈRE
+    # ============================================================
+    evolution_factures = (
+        factures
+        .annotate(jour=TruncDay("date_facture"))
+        .values("jour")
+        .annotate(total=Sum("montant_valide"))
+        .order_by("jour")
+    )
+
+    graphique_labels = [item["jour"].strftime("%d/%m") for item in evolution_factures]
+    graphique_montants = [float(item["total"] or 0) for item in evolution_factures]
+
+    # Noms des mois
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    return render(
+        request,
+        "core/rapport_financier.html",
+        {
+            "permissions": permissions,
+            "page": "rapports",
+
+            # Paramètres
+            "mois": mois,
+            "annee": annee,
+            "nom_mois": noms_mois[mois - 1],
+            "date_debut": date_debut,
+            "date_fin": date_fin,
+
+            # Factures
+            "nb_factures": nb_factures,
+            "montant_facture": montant_facture,
+            "montant_valide": montant_valide,
+            "montant_rejete": montant_rejete,
+
+            # Règlements
+            "nb_reglements": nb_reglements,
+            "montant_paye": montant_paye,
+
+            # Reste
+            "reste_a_payer": reste_a_payer,
+            "factures_non_payees": factures_non_payees,
+            "top_debiteurs": top_debiteurs,
+
+            # Graphique
+            "graphique_labels": graphique_labels,
+            "graphique_montants": graphique_montants,
+        }
+    )
+
+
+
+def rapport_contrat(request):
+    """Rapport d'activité par contrat."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "CONTRAT_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("accueil")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    # Bornes du mois
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    # Contrat sélectionné
+    id_contrat = request.GET.get("id_contrat", "").strip()
+
+    # Récupérer tous les contrats actifs
+    contrats = Contrat.objects.filter(statut="ACTIF").order_by("numero_contrat")
+
+    rapport_data = None
+    contrat_selectionne = None
+
+    if id_contrat:
+        try:
+            contrat_selectionne = Contrat.objects.get(id_contrat=id_contrat)
+        except Contrat.DoesNotExist:
+            messages.error(request, "Contrat introuvable.")
+
+        if contrat_selectionne:
+            # Adhésions liées
+            adhesions = Adhesion.objects.filter(
+                id_contrat=contrat_selectionne,
+                statut="ACTIF",
+            )
+
+            # Adhérents
+            adherents = []
+            for a in adhesions:
+                adherents.append(a.id_adherent)
+
+            # Demandes TP liées
+            demandes = DemandeTp.objects.filter(
+                id_contrat=contrat_selectionne,
+                date_demande__date__gte=date_debut,
+                date_demande__date__lte=date_fin,
+            )
+
+            # PEC liées
+            pec = PriseEnCharge.objects.filter(
+                id_demande__id_contrat=contrat_selectionne,
+                date_pec__date__gte=date_debut,
+                date_pec__date__lte=date_fin,
+            )
+
+            # Consommations liées
+            consommations = Consommation.objects.filter(
+                id_adhesion__id_contrat=contrat_selectionne,
+                date_prestation__gte=date_debut,
+                date_prestation__lte=date_fin,
+            )
+
+            # Calculs
+            nb_adherents = len(adherents)
+            nb_demandes = demandes.count()
+            nb_pec = pec.count()
+            nb_consommations = consommations.count()
+
+            montant_demandes = demandes.aggregate(
+                total=Sum("montant_demande")
+            )["total"] or Decimal("0.00")
+
+            montant_pec_accepte = pec.aggregate(
+                total=Sum("montant_accepte")
+            )["total"] or Decimal("0.00")
+
+            montant_consommations = consommations.aggregate(
+                total=Sum("montant_prise_en_charge")
+            )["total"] or Decimal("0.00")
+
+            # Top actes du contrat
+            top_actes = (
+                Consommation.objects
+                .filter(
+                    id_adhesion__id_contrat=contrat_selectionne,
+                    date_prestation__gte=date_debut,
+                    date_prestation__lte=date_fin,
+                )
+                .values("id_acte__code_acte", "id_acte__libelle")
+                .annotate(
+                    total=Sum("montant_prise_en_charge"),
+                    nb=Count("id_consommation"),
+                )
+                .order_by("-nb")[:10]
+            )
+
+            rapport_data = {
+                "nb_adherents": nb_adherents,
+                "nb_demandes": nb_demandes,
+                "nb_pec": nb_pec,
+                "nb_consommations": nb_consommations,
+                "montant_demandes": montant_demandes,
+                "montant_pec_accepte": montant_pec_accepte,
+                "montant_consommations": montant_consommations,
+                "top_actes": top_actes,
+                "adherents": adherents,
+            }
+
+    # Noms des mois
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    return render(
+        request,
+        "core/rapport_contrat.html",
+        {
+            "permissions": permissions,
+            "page": "rapports",
+            "contrats": contrats,
+            "contrat_selectionne": contrat_selectionne,
+            "id_contrat": id_contrat,
+            "rapport_data": rapport_data,
+            "mois": mois,
+            "annee": annee,
+            "nom_mois": noms_mois[mois - 1],
+            "date_debut": date_debut,
+            "date_fin": date_fin,
+        }
+    )
+
+
+def top_prestataires(request):
+    """Top 10 prestataires (détaillé)."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "FACTURE_VIEW" not in permissions and "DEMANDE_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("accueil")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    # Bornes du mois
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    # ============================================================
+    # TOP 10 PAR MONTANT VALIDÉ
+    # ============================================================
+    top_montant = (
+        Facture.objects
+        .filter(date_facture__gte=date_debut, date_facture__lte=date_fin)
+        .values("id_prestataire__code_prestataire", "id_prestataire__raison_sociale")
+        .annotate(
+            total=Sum("montant_valide"),
+            nb_factures=Count("id_facture"),
+        )
+        .order_by("-total")[:10]
+    )
+
+    # ============================================================
+    # TOP 10 PAR NOMBRE DE FACTURES
+    # ============================================================
+    top_nb_factures = (
+        Facture.objects
+        .filter(date_facture__gte=date_debut, date_facture__lte=date_fin)
+        .values("id_prestataire__code_prestataire", "id_prestataire__raison_sociale")
+        .annotate(
+            nb_factures=Count("id_facture"),
+            total=Sum("montant_valide"),
+        )
+        .order_by("-nb_factures")[:10]
+    )
+
+    # ============================================================
+    # TOP 10 PAR NOMBRE DE DEMANDES TP
+    # ============================================================
+    top_nb_demandes = (
+        DemandeTp.objects
+        .filter(date_demande__date__gte=date_debut, date_demande__date__lte=date_fin)
+        .values("id_prestataire__code_prestataire", "id_prestataire__raison_sociale")
+        .annotate(
+            nb_demandes=Count("id_demande"),
+            montant=Sum("montant_demande"),
+        )
+        .order_by("-nb_demandes")[:10]
+    )
+
+    # ============================================================
+    # TABLEAU COMPLET
+    # ============================================================
+    prestataires = Prestataire.objects.filter(statut="ACTIF").order_by("raison_sociale")
+    tableau_complet = []
+
+    for p in prestataires:
+        factures = Facture.objects.filter(
+            id_prestataire=p,
+            date_facture__gte=date_debut,
+            date_facture__lte=date_fin,
+        )
+        demandes = DemandeTp.objects.filter(
+            id_prestataire=p,
+            date_demande__date__gte=date_debut,
+            date_demande__date__lte=date_fin,
+        )
+        consommations = Consommation.objects.filter(
+            id_prestataire=p,
+            date_prestation__gte=date_debut,
+            date_prestation__lte=date_fin,
+        )
+
+        nb_factures = factures.count()
+        nb_demandes = demandes.count()
+        nb_consommations = consommations.count()
+
+        montant_facture = factures.aggregate(
+            total=Sum("montant_valide")
+        )["total"] or Decimal("0.00")
+
+        montant_conso = consommations.aggregate(
+            total=Sum("montant_prise_en_charge")
+        )["total"] or Decimal("0.00")
+
+        if nb_factures > 0 or nb_demandes > 0 or nb_consommations > 0:
+            tableau_complet.append({
+                "prestataire": p,
+                "nb_demandes": nb_demandes,
+                "nb_factures": nb_factures,
+                "nb_consommations": nb_consommations,
+                "montant_facture": montant_facture,
+                "montant_conso": montant_conso,
+            })
+
+    # Trier par montant décroissant
+    tableau_complet.sort(key=lambda x: x["montant_facture"], reverse=True)
+
+    # Noms des mois
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    return render(
+        request,
+        "core/top_prestataires.html",
+        {
+            "permissions": permissions,
+            "page": "rapports",
+            "mois": mois,
+            "annee": annee,
+            "nom_mois": noms_mois[mois - 1],
+            "date_debut": date_debut,
+            "date_fin": date_fin,
+            "top_montant": top_montant,
+            "top_nb_factures": top_nb_factures,
+            "top_nb_demandes": top_nb_demandes,
+            "tableau_complet": tableau_complet,
+        }
+    )
+
+
+def top_actes(request):
+    """Top 10 actes (détaillé)."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "CONSOMMATION_VIEW" not in permissions and "DEMANDE_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("accueil")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    # Bornes du mois
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    # ============================================================
+    # TOP 10 PAR FRÉQUENCE (nb consommations)
+    # ============================================================
+    top_frequence = (
+        Consommation.objects
+        .filter(date_prestation__gte=date_debut, date_prestation__lte=date_fin)
+        .values("id_acte__code_acte", "id_acte__libelle")
+        .annotate(
+            nb=Count("id_consommation"),
+            total=Sum("montant_prise_en_charge"),
+        )
+        .order_by("-nb")[:10]
+    )
+
+    # ============================================================
+    # TOP 10 PAR MONTANT
+    # ============================================================
+    top_montant = (
+        Consommation.objects
+        .filter(date_prestation__gte=date_debut, date_prestation__lte=date_fin)
+        .values("id_acte__code_acte", "id_acte__libelle")
+        .annotate(
+            total=Sum("montant_prise_en_charge"),
+            nb=Count("id_consommation"),
+        )
+        .order_by("-total")[:10]
+    )
+
+    # ============================================================
+    # TABLEAU COMPLET
+    # ============================================================
+    actes = Acte.objects.filter(statut="ACTIF").order_by("libelle")
+    tableau_complet = []
+
+    for a in actes:
+        consommations = Consommation.objects.filter(
+            id_acte=a,
+            date_prestation__gte=date_debut,
+            date_prestation__lte=date_fin,
+        )
+
+        nb_consommations = consommations.count()
+
+        montant_conso = consommations.aggregate(
+            total=Sum("montant_prise_en_charge")
+        )["total"] or Decimal("0.00")
+
+        if nb_consommations > 0:
+            tableau_complet.append({
+                "acte": a,
+                "nb_consommations": nb_consommations,
+                "montant_conso": montant_conso,
+            })
+
+    # Trier par nombre décroissant
+    tableau_complet.sort(key=lambda x: x["nb_consommations"], reverse=True)
+
+    # Noms des mois
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    return render(
+        request,
+        "core/top_actes.html",
+        {
+            "permissions": permissions,
+            "page": "rapports",
+            "mois": mois,
+            "annee": annee,
+            "nom_mois": noms_mois[mois - 1],
+            "date_debut": date_debut,
+            "date_fin": date_fin,
+            "top_frequence": top_frequence,
+            "top_montant": top_montant,
+            "tableau_complet": tableau_complet,
+        }
+    )
+
+
+def rapport_utilisateurs(request):
+    """Rapport d'activité par utilisateur."""
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    if "USER_VIEW" not in permissions:
+        messages.error(request, "Vous n'avez pas l'autorisation.")
+        return redirect("accueil")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    # Récupérer tous les utilisateurs
+    from core.models import Utilisateur, AuditLog
+
+    utilisateurs = Utilisateur.objects.filter(statut="ACTIF").order_by("nom_utilisateur")
+
+    tableau_complet = []
+
+    for u in utilisateurs:
+        # Nombre d'audits par type d'action
+        audits = AuditLog.objects.filter(
+            id_utilisateur=u,
+            date_action__date__gte=date_debut,
+            date_action__date__lte=date_fin,
+        )
+
+        nb_creations = audits.filter(type_action="CREATION").count()
+        nb_modifications = audits.filter(type_action="MODIFICATION").count()
+        nb_validations = audits.filter(type_action="VALIDATION").count()
+        nb_radiations = audits.filter(type_action="RADIATION").count()
+        nb_total = audits.count()
+
+        if nb_total > 0:
+            tableau_complet.append({
+                "utilisateur": u,
+                "nb_creations": nb_creations,
+                "nb_modifications": nb_modifications,
+                "nb_validations": nb_validations,
+                "nb_radiations": nb_radiations,
+                "nb_total": nb_total,
+            })
+
+    # Trier par activité décroissante
+    tableau_complet.sort(key=lambda x: x["nb_total"], reverse=True)
+
+    # Top 10 des utilisateurs les plus actifs
+    top_utilisateurs = tableau_complet[:10]
+
+    # Répartition par type d'action
+    total_creations = sum(u["nb_creations"] for u in tableau_complet)
+    total_modifications = sum(u["nb_modifications"] for u in tableau_complet)
+    total_validations = sum(u["nb_validations"] for u in tableau_complet)
+    total_radiations = sum(u["nb_radiations"] for u in tableau_complet)
+
+    # Noms des mois
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    return render(
+        request,
+        "core/rapport_utilisateurs.html",
+        {
+            "permissions": permissions,
+            "page": "rapports",
+            "mois": mois,
+            "annee": annee,
+            "nom_mois": noms_mois[mois - 1],
+            "date_debut": date_debut,
+            "date_fin": date_fin,
+            "tableau_complet": tableau_complet,
+            "top_utilisateurs": top_utilisateurs,
+            "total_creations": total_creations,
+            "total_modifications": total_modifications,
+            "total_validations": total_validations,
+            "total_radiations": total_radiations,
+        }
+    )
+
+
+def rapport_pdf_generique(request, type_rapport):
+    """
+    Export PDF générique pour tous les rapports.
+    
+    Types : 'prestataire', 'financier', 'contrat', 'utilisateurs'
+    """
+    from django.http import HttpResponse
+    from django.conf import settings
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.platypus import (
+        SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    )
+
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    # Créer le PDF
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="rapport_{type_rapport}_{mois:02d}_{annee}.pdf"'
+    )
+
+    document = SimpleDocTemplate(
+        response,
+        pagesize=landscape(A4),
+        rightMargin=1.5*cm,
+        leftMargin=1.5*cm,
+        topMargin=1.5*cm,
+        bottomMargin=1.5*cm,
+    )
+
+    elements = []
+    styles = getSampleStyleSheet()
+
+    # Titre
+    titre_rapport = {
+        "prestataire": "RAPPORT PAR PRESTATAIRE",
+        "financier": "RAPPORT FINANCIER",
+        "contrat": "RAPPORT PAR CONTRAT",
+        "utilisateurs": "RAPPORT UTILISATEURS",
+    }.get(type_rapport, "RAPPORT")
+
+    style_titre = ParagraphStyle(
+        "Titre", parent=styles["Title"], fontSize=18,
+        textColor=colors.HexColor("#123b65"), alignment=1,
+    )
+    elements.append(Paragraph(
+        f"{titre_rapport} — {noms_mois[mois-1]} {annee}", style_titre
+    ))
+    elements.append(Spacer(1, 0.3*cm))
+
+    style_normal = ParagraphStyle("Normal", parent=styles["Normal"], fontSize=10)
+    elements.append(Paragraph(
+        f"Du {date_debut.strftime('%d/%m/%Y')} au {date_fin.strftime('%d/%m/%Y')}",
+        style_normal
+    ))
+    elements.append(Spacer(1, 0.5*cm))
+
+    # Contenu selon le type
+    if type_rapport == "utilisateurs":
+        from core.models import Utilisateur, AuditLog
+
+        utilisateurs = Utilisateur.objects.filter(statut="ACTIF")
+
+        data = [["Utilisateur", "Nom complet", "Créations", "Modifications", "Validations", "Radiations", "Total"]]
+
+        for u in utilisateurs:
+            audits = AuditLog.objects.filter(
+                id_utilisateur=u,
+                date_action__date__gte=date_debut,
+                date_action__date__lte=date_fin,
+            )
+            nb_crea = audits.filter(type_action="CREATION").count()
+            nb_modif = audits.filter(type_action="MODIFICATION").count()
+            nb_valid = audits.filter(type_action="VALIDATION").count()
+            nb_rad = audits.filter(type_action="RADIATION").count()
+            nb_total = audits.count()
+
+            if nb_total > 0:
+                data.append([
+                    u.nom_utilisateur,
+                    f"{u.nom} {u.prenom}",
+                    str(nb_crea),
+                    str(nb_modif),
+                    str(nb_valid),
+                    str(nb_rad),
+                    str(nb_total),
+                ])
+
+    elif type_rapport == "financier":
+        factures = Facture.objects.filter(
+            date_facture__gte=date_debut, date_facture__lte=date_fin
+        )
+        reglements = Reglement.objects.filter(
+            date_reglement__gte=date_debut, date_reglement__lte=date_fin,
+            statut="VALIDEE"
+        )
+
+        nb_factures = factures.count()
+        montant_valide = factures.aggregate(total=Sum("montant_valide"))["total"] or Decimal("0.00")
+        montant_paye = reglements.aggregate(total=Sum("montant"))["total"] or Decimal("0.00")
+
+        data = [
+            ["Indicateur", "Valeur"],
+            ["Nombre de factures", str(nb_factures)],
+            ["Montant validé", f"{montant_valide:,.2f} DA"],
+            ["Montant payé", f"{montant_paye:,.2f} DA"],
+            ["Reste à payer", f"{montant_valide - montant_paye:,.2f} DA"],
+        ]
+
+    elif type_rapport == "contrat":
+        id_contrat = request.GET.get("id_contrat", "").strip()
+
+        if id_contrat:
+            try:
+                contrat = Contrat.objects.get(id_contrat=id_contrat)
+                demandes = DemandeTp.objects.filter(
+                    id_contrat=contrat,
+                    date_demande__date__gte=date_debut,
+                    date_demande__date__lte=date_fin,
+                )
+                consommations = Consommation.objects.filter(
+                    id_adhesion__id_contrat=contrat,
+                    date_prestation__gte=date_debut,
+                    date_prestation__lte=date_fin,
+                )
+
+                data = [
+                    ["Indicateur", "Valeur"],
+                    ["Contrat", contrat.numero_contrat],
+                    ["Souscripteur", contrat.id_souscripteur.raison_sociale],
+                    ["Nombre de demandes", str(demandes.count())],
+                    ["Montant demandé", f"{demandes.aggregate(total=Sum('montant_demande'))['total'] or 0:,.2f} DA"],
+                    ["Nombre de consommations", str(consommations.count())],
+                    ["Montant consommations", f"{consommations.aggregate(total=Sum('montant_prise_en_charge'))['total'] or 0:,.2f} DA"],
+                ]
+            except Contrat.DoesNotExist:
+                data = [["Erreur", "Contrat introuvable"]]
+        else:
+            data = [["Info", "Aucun contrat sélectionné"]]
+
+    else:  # prestataire par défaut
+        id_prestataire = request.GET.get("id_prestataire", "").strip()
+
+        if id_prestataire:
+            try:
+                prestataire = Prestataire.objects.get(id_prestataire=id_prestataire)
+                factures = Facture.objects.filter(
+                    id_prestataire=prestataire,
+                    date_facture__gte=date_debut,
+                    date_facture__lte=date_fin,
+                )
+
+                data = [
+                    ["Indicateur", "Valeur"],
+                    ["Prestataire", prestataire.raison_sociale],
+                    ["Type", prestataire.type_prestataire],
+                    ["Nombre de factures", str(factures.count())],
+                    ["Montant validé", f"{factures.aggregate(total=Sum('montant_valide'))['total'] or 0:,.2f} DA"],
+                ]
+            except Prestataire.DoesNotExist:
+                data = [["Erreur", "Prestataire introuvable"]]
+        else:
+            data = [["Info", "Aucun prestataire sélectionné"]]
+
+    # Créer le tableau
+    if data:
+        table = Table(data, repeatRows=1)
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123b65")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ]))
+        elements.append(table)
+
+    document.build(elements)
+    return response
+
+
+def rapport_excel_generique(request, type_rapport):
+    """
+    Export Excel générique pour tous les rapports.
+    
+    Types : 'prestataire', 'financier', 'contrat', 'utilisateurs'
+    """
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from django.http import HttpResponse
+
+    permissions = _get_permissions(request)
+    if permissions is None:
+        return redirect("connexion")
+
+    # Récupérer les paramètres
+    aujourd_hui = timezone.now().date()
+
+    try:
+        mois = int(request.GET.get("mois", aujourd_hui.month))
+        annee = int(request.GET.get("annee", aujourd_hui.year))
+    except (ValueError, TypeError):
+        mois = aujourd_hui.month
+        annee = aujourd_hui.year
+
+    date_debut = date(annee, mois, 1)
+    if mois == 12:
+        date_fin = date(annee + 1, 1, 1) - timedelta(days=1)
+    else:
+        date_fin = date(annee, mois + 1, 1) - timedelta(days=1)
+
+    noms_mois = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+
+    # Styles
+    font_titre = Font(bold=True, size=14, color="123B65")
+    font_entete = Font(bold=True, color="FFFFFF", size=10)
+    fill_entete = PatternFill(start_color="123B65", end_color="123B65", fill_type="solid")
+    align_center = Alignment(horizontal="center", vertical="center")
+
+    workbook = openpyxl.Workbook()
+    feuille = workbook.active
+    feuille.title = "Rapport"
+
+    titre_rapport = {
+        "prestataire": "RAPPORT PAR PRESTATAIRE",
+        "financier": "RAPPORT FINANCIER",
+        "contrat": "RAPPORT PAR CONTRAT",
+        "utilisateurs": "RAPPORT UTILISATEURS",
+    }.get(type_rapport, "RAPPORT")
+
+    # Titre
+    feuille["A1"] = f"{titre_rapport} — {noms_mois[mois-1]} {annee}"
+    feuille["A1"].font = font_titre
+    feuille.merge_cells("A1:G1")
+
+    feuille["A2"] = f"Du {date_debut.strftime('%d/%m/%Y')} au {date_fin.strftime('%d/%m/%Y')}"
+    feuille.merge_cells("A2:G2")
+
+    # Contenu selon le type
+    ligne_debut = 4
+
+    if type_rapport == "utilisateurs":
+        from core.models import Utilisateur, AuditLog
+
+        headers = ["Utilisateur", "Nom complet", "Créations", "Modifications", "Validations", "Radiations", "Total"]
+        for col, h in enumerate(headers, 1):
+            c = feuille.cell(row=ligne_debut, column=col, value=h)
+            c.font = font_entete
+            c.fill = fill_entete
+            c.alignment = align_center
+
+        utilisateurs = Utilisateur.objects.filter(statut="ACTIF")
+        ligne = ligne_debut + 1
+
+        for u in utilisateurs:
+            audits = AuditLog.objects.filter(
+                id_utilisateur=u,
+                date_action__date__gte=date_debut,
+                date_action__date__lte=date_fin,
+            )
+            nb_crea = audits.filter(type_action="CREATION").count()
+            nb_modif = audits.filter(type_action="MODIFICATION").count()
+            nb_valid = audits.filter(type_action="VALIDATION").count()
+            nb_rad = audits.filter(type_action="RADIATION").count()
+            nb_total = audits.count()
+
+            if nb_total > 0:
+                feuille.cell(row=ligne, column=1, value=u.nom_utilisateur)
+                feuille.cell(row=ligne, column=2, value=f"{u.nom} {u.prenom}")
+                feuille.cell(row=ligne, column=3, value=nb_crea)
+                feuille.cell(row=ligne, column=4, value=nb_modif)
+                feuille.cell(row=ligne, column=5, value=nb_valid)
+                feuille.cell(row=ligne, column=6, value=nb_rad)
+                feuille.cell(row=ligne, column=7, value=nb_total)
+                ligne += 1
+
+    elif type_rapport == "financier":
+        factures = Facture.objects.filter(
+            date_facture__gte=date_debut, date_facture__lte=date_fin
+        )
+        reglements = Reglement.objects.filter(
+            date_reglement__gte=date_debut, date_reglement__lte=date_fin,
+            statut="VALIDEE"
+        )
+
+        nb_factures = factures.count()
+        montant_valide = factures.aggregate(total=Sum("montant_valide"))["total"] or Decimal("0.00")
+        montant_paye = reglements.aggregate(total=Sum("montant"))["total"] or Decimal("0.00")
+        reste = montant_valide - montant_paye
+
+        headers = ["Indicateur", "Valeur"]
+        for col, h in enumerate(headers, 1):
+            c = feuille.cell(row=ligne_debut, column=col, value=h)
+            c.font = font_entete
+            c.fill = fill_entete
+            c.alignment = align_center
+
+        data = [
+            ("Nombre de factures", nb_factures),
+            ("Montant validé", float(montant_valide)),
+            ("Montant payé", float(montant_paye)),
+            ("Reste à payer", float(reste)),
+        ]
+
+        ligne = ligne_debut + 1
+        for label, valeur in data:
+            feuille.cell(row=ligne, column=1, value=label)
+            c = feuille.cell(row=ligne, column=2, value=valeur)
+            if isinstance(valeur, float):
+                c.number_format = '#,##0.00" DA"'
+            ligne += 1
+
+    elif type_rapport == "contrat":
+        id_contrat = request.GET.get("id_contrat", "").strip()
+
+        headers = ["Indicateur", "Valeur"]
+        for col, h in enumerate(headers, 1):
+            c = feuille.cell(row=ligne_debut, column=col, value=h)
+            c.font = font_entete
+            c.fill = fill_entete
+            c.alignment = align_center
+
+        ligne = ligne_debut + 1
+
+        if id_contrat:
+            try:
+                contrat = Contrat.objects.get(id_contrat=id_contrat)
+                demandes = DemandeTp.objects.filter(
+                    id_contrat=contrat,
+                    date_demande__date__gte=date_debut,
+                    date_demande__date__lte=date_fin,
+                )
+                consommations = Consommation.objects.filter(
+                    id_adhesion__id_contrat=contrat,
+                    date_prestation__gte=date_debut,
+                    date_prestation__lte=date_fin,
+                )
+
+                data = [
+                    ("Contrat", contrat.numero_contrat),
+                    ("Souscripteur", contrat.id_souscripteur.raison_sociale),
+                    ("Nombre de demandes", demandes.count()),
+                    ("Montant demandé", float(demandes.aggregate(total=Sum('montant_demande'))['total'] or 0)),
+                    ("Nombre de consommations", consommations.count()),
+                    ("Montant consommations", float(consommations.aggregate(total=Sum('montant_prise_en_charge'))['total'] or 0)),
+                ]
+
+                for label, valeur in data:
+                    feuille.cell(row=ligne, column=1, value=label)
+                    c = feuille.cell(row=ligne, column=2, value=valeur)
+                    if isinstance(valeur, float):
+                        c.number_format = '#,##0.00" DA"'
+                    ligne += 1
+            except Contrat.DoesNotExist:
+                feuille.cell(row=ligne, column=1, value="Contrat introuvable")
+
+    else:  # prestataire
+        id_prestataire = request.GET.get("id_prestataire", "").strip()
+
+        headers = ["Indicateur", "Valeur"]
+        for col, h in enumerate(headers, 1):
+            c = feuille.cell(row=ligne_debut, column=col, value=h)
+            c.font = font_entete
+            c.fill = fill_entete
+            c.alignment = align_center
+
+        ligne = ligne_debut + 1
+
+        if id_prestataire:
+            try:
+                prestataire = Prestataire.objects.get(id_prestataire=id_prestataire)
+                factures = Facture.objects.filter(
+                    id_prestataire=prestataire,
+                    date_facture__gte=date_debut,
+                    date_facture__lte=date_fin,
+                )
+
+                data = [
+                    ("Prestataire", prestataire.raison_sociale),
+                    ("Type", prestataire.type_prestataire),
+                    ("Nombre de factures", factures.count()),
+                    ("Montant validé", float(factures.aggregate(total=Sum('montant_valide'))['total'] or 0)),
+                ]
+
+                for label, valeur in data:
+                    feuille.cell(row=ligne, column=1, value=label)
+                    c = feuille.cell(row=ligne, column=2, value=valeur)
+                    if isinstance(valeur, float):
+                        c.number_format = '#,##0.00" DA"'
+                    ligne += 1
+            except Prestataire.DoesNotExist:
+                feuille.cell(row=ligne, column=1, value="Prestataire introuvable")
+
+    # Ajuster les largeurs
+    for col in range(1, 8):
+        feuille.column_dimensions[chr(64 + col)].width = 22
+
+    # Réponse
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = (
+        f'attachment; filename="rapport_{type_rapport}_{mois:02d}_{annee}.xlsx"'
+    )
+    workbook.save(response)
+    return response

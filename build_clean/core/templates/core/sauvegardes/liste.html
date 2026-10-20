@@ -1,0 +1,257 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Sauvegardes - Tiers Payant{% endblock %}
+{% block header_title %}Sauvegardes de la base{% endblock %}
+{% block header_sub %}Gestion des sauvegardes de données{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-title { margin-bottom: 22px; }
+    .page-title h2 { margin: 0; color: #123b65; font-size: 24px; }
+    .page-title p { margin: 6px 0 0; color: #6b7280; font-size: 14px; }
+
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 18px 20px;
+        border-radius: 12px;
+        border: 1px solid #e5ebf2;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 3px 10px rgba(0,0,0,.05);
+    }
+
+    .stat-icon { font-size: 28px; }
+    .stat-title { color: #6b7280; font-size: 13px; margin-bottom: 3px; }
+    .stat-value { color: #123b65; font-size: 22px; font-weight: 700; }
+
+    .card {
+        background: white;
+        padding: 24px;
+        border-radius: 14px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 4px 15px rgba(0,0,0,.05);
+    }
+
+    .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+
+    .info-box {
+        background: #eff6ff;
+        border-left: 4px solid #2563eb;
+        padding: 15px 18px;
+        border-radius: 8px;
+        color: #1e40af;
+        font-size: 14px;
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 9px 16px;
+        background: #123b65;
+        color: white;
+        text-decoration: none;
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: .2s;
+    }
+
+    .btn:hover { background: #1d5d91; }
+    .btn-success { background: #15803d; }
+    .btn-success:hover { background: #166534; }
+    .btn-danger { background: #dc2626; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-warning { background: #d97706; }
+    .btn-warning:hover { background: #b45309; }
+    .btn-secondary { background: #64748b; }
+    .btn-sm { min-height: 34px; padding: 7px 12px; font-size: 12px; }
+
+    .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid #e5ebf2;
+        border-radius: 10px;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    th, td {
+        padding: 13px 14px;
+        text-align: left;
+        border-bottom: 1px solid #edf1f5;
+        font-size: 13px;
+    }
+
+    th {
+        background: #f7f9fc;
+        color: #123b65;
+        font-weight: 700;
+    }
+
+    tbody tr:hover { background: #f8fbfe; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .fichier-nom {
+        font-family: Consolas, monospace;
+        color: #123b65;
+        font-size: 12px;
+    }
+
+    .actions-cell {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .empty {
+        text-align: center;
+        padding: 40px;
+        color: #6b7280;
+    }
+
+    @media (max-width: 700px) {
+        .stats { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-title">
+    <h2>Sauvegardes de la base</h2>
+    <p>Gérez les sauvegardes de vos données</p>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+    <div class="stat-card">
+        <div class="stat-icon">💾</div>
+        <div>
+            <div class="stat-title">Nombre de sauvegardes</div>
+            <div class="stat-value">{{ nombre_sauvegardes }}</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📦</div>
+        <div>
+            <div class="stat-title">Espace utilisé</div>
+            <div class="stat-value">{{ taille_totale_ko }} Ko</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div>
+            <div class="stat-title">Dernière sauvegarde</div>
+            <div class="stat-value" style="font-size: 14px;">
+                {% if fichiers %}
+                    {{ fichiers.0.date|date:"d/m/Y H:i" }}
+                {% else %}
+                    Aucune
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="info-box">
+    💡 <strong>Conseil :</strong> téléchargez régulièrement vos sauvegardes
+    et conservez-les sur un autre support (clé USB, cloud...) pour plus de sécurité.
+</div>
+
+<div class="card">
+
+    <div class="toolbar">
+        <h3 style="margin: 0; color: #123b65;">Liste des sauvegardes</h3>
+
+        <form method="post" action="{% url 'sauvegarde_creer' %}" style="margin: 0;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">
+                ➕ Sauvegarder maintenant
+            </button>
+        </form>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fichier</th>
+                    <th>Date</th>
+                    <th>Taille</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in fichiers %}
+                <tr>
+                    <td>
+                        <span class="fichier-nom">{{ f.nom }}</span>
+                    </td>
+                    <td>{{ f.date|date:"d/m/Y H:i:s" }}</td>
+                    <td>{{ f.taille_ko }} Ko</td>
+                    <td>
+                        <div class="actions-cell">
+                            <a href="{% url 'sauvegarde_telecharger' f.nom %}"
+                               class="btn btn-sm">
+                                📥 Télécharger
+                            </a>
+
+                            <form method="post"
+                                  action="{% url 'sauvegarde_restaurer' f.nom %}"
+                                  style="display:inline;"
+                                  onsubmit="return confirm('⚠️ ATTENTION : La restauration ÉCRASERA vos données actuelles.\n\nVoulez-vous vraiment continuer ?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-warning">
+                                    ♻️ Restaurer
+                                </button>
+                            </form>
+
+                            <form method="post"
+                                  action="{% url 'sauvegarde_supprimer' f.nom %}"
+                                  style="display:inline;"
+                                  onsubmit="return confirm('Supprimer cette sauvegarde ?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    🗑️
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="empty">
+                        Aucune sauvegarde disponible.<br>
+                        Cliquez sur « ➕ Sauvegarder maintenant » pour en créer une.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}

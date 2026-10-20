@@ -1,0 +1,214 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}{{ titre }} - Tiers Payant{% endblock %}
+{% block header_title %}Champ personnalisé{% endblock %}
+{% block header_sub %}Configuration d'un champ dynamique{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 14px;
+        box-shadow: 0 4px 18px rgba(0,0,0,.07);
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .card h2 {
+        margin: 0 0 25px;
+        color: #123b65;
+        font-size: 22px;
+        border-bottom: 2px solid #e5e7eb;
+        padding-bottom: 15px;
+    }
+
+    .field { margin-bottom: 22px; }
+
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #374151;
+        font-size: 14px;
+    }
+
+    label .required {
+        color: #dc2626;
+        margin-left: 3px;
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 12px 13px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        background: white;
+        font-size: 14px;
+        color: #1f2937;
+        transition: .2s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+
+    textarea { resize: vertical; min-height: 110px; font-family: Consolas, monospace; }
+
+    input[type="checkbox"] {
+        width: auto;
+        margin-right: 8px;
+        cursor: pointer;
+    }
+
+    .help {
+        margin-top: 6px;
+        color: #6b7280;
+        font-size: 12px;
+        font-style: italic;
+    }
+
+    .errorlist {
+        color: #b91c1c;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 7px;
+        margin: 7px 0 0;
+        padding: 8px 12px 8px 28px;
+        font-size: 13px;
+        list-style: none;
+    }
+
+    .form-errors {
+        background: #fee2e2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+        padding: 15px;
+        border-radius: 9px;
+        margin-bottom: 22px;
+        font-size: 14px;
+    }
+
+    .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 30px;
+        padding-top: 22px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 20px;
+        border: none;
+        border-radius: 8px;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: .2s;
+    }
+
+    .btn:hover { transform: translateY(-1px); opacity: .92; }
+    .btn-secondary { background: #6b7280; }
+
+    @media (max-width: 700px) {
+        .card { padding: 22px; }
+        .actions { flex-direction: column; }
+        .btn { width: 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h2>{{ titre }}</h2>
+
+    {% if form.non_field_errors %}
+        <div class="form-errors">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        <div class="field">
+            {{ form.entite.label_tag }} <span class="required">*</span>
+            {{ form.entite }}
+            {{ form.entite.errors }}
+            <div class="help">Choisissez à quelle entité ajouter ce champ.</div>
+        </div>
+
+        <div class="field">
+            {{ form.libelle.label_tag }} <span class="required">*</span>
+            {{ form.libelle }}
+            {{ form.libelle.errors }}
+            <div class="help">{{ form.libelle.help_text }}</div>
+        </div>
+
+        <div class="field">
+            {{ form.nom_technique.label_tag }} <span class="required">*</span>
+            {{ form.nom_technique }}
+            {{ form.nom_technique.errors }}
+            <div class="help">{{ form.nom_technique.help_text }}</div>
+        </div>
+
+        <div class="field">
+            {{ form.type_champ.label_tag }} <span class="required">*</span>
+            {{ form.type_champ }}
+            {{ form.type_champ.errors }}
+        </div>
+
+        <div class="field">
+            {{ form.choix_possibles.label_tag }}
+            {{ form.choix_possibles }}
+            {{ form.choix_possibles.errors }}
+            <div class="help">
+                À remplir uniquement si le type est « Liste de choix ».
+            </div>
+        </div>
+
+        <div class="field">
+            {{ form.valeur_defaut.label_tag }}
+            {{ form.valeur_defaut }}
+            {{ form.valeur_defaut.errors }}
+        </div>
+
+        <div class="field">
+            <label>
+                {{ form.obligatoire }} {{ form.obligatoire.label }}
+            </label>
+        </div>
+
+        <div class="field">
+            {{ form.ordre_affichage.label_tag }}
+            {{ form.ordre_affichage }}
+            {{ form.ordre_affichage.errors }}
+            <div class="help">{{ form.ordre_affichage.help_text }}</div>
+        </div>
+
+        <div class="field">
+            {{ form.statut.label_tag }}
+            {{ form.statut }}
+            {{ form.statut.errors }}
+        </div>
+
+        <div class="actions">
+            <button type="submit" class="btn">💾 Enregistrer</button>
+            <a href="{% url 'champs_personnalises' %}" class="btn btn-secondary">Annuler</a>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

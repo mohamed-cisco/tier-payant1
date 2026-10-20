@@ -1,0 +1,155 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Ajouter une garantie au contrat{% endblock %}
+{% block header_title %}Gestion des contrats{% endblock %}
+{% block header_sub %}Association garantie ↔ contrat{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 18px rgba(0,0,0,.07);
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .card-title {
+        margin: 0 0 8px;
+        color: #123b65;
+        font-size: 23px;
+    }
+
+    .contract-info {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        padding: 14px 16px;
+        border-radius: 9px;
+        margin-bottom: 25px;
+        color: #475569;
+    }
+
+    .contract-info strong { color: #123b65; }
+
+    .field { margin-bottom: 20px; }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        color: #374151;
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    input,
+    select {
+        width: 100%;
+        padding: 12px 13px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: white;
+        color: #1f2937;
+        font-size: 14px;
+        transition: .2s;
+    }
+
+    input:focus,
+    select:focus {
+        outline: none;
+        border-color: #123b65;
+        box-shadow: 0 0 0 3px rgba(18,59,101,.10);
+    }
+
+    .errors {
+        background: #fee2e2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 13px;
+    }
+
+    .field .errors {
+        margin-top: 7px;
+        margin-bottom: 0;
+    }
+
+    .actions {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 18px;
+        background: #123b65;
+        color: white;
+        text-decoration: none;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .btn:hover { background: #0d2d4d; }
+    .btn-secondary { background: #64748b; }
+    .btn-secondary:hover { background: #475569; }
+
+    @media (max-width: 700px) {
+        .card { padding: 22px; }
+        .actions .btn { width: 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h2 class="card-title">Ajouter une garantie</h2>
+
+    <div class="contract-info">
+        <strong>Contrat :</strong> {{ contrat.numero_contrat }}
+    </div>
+
+    {% if form.errors %}
+        <div class="errors">
+            <strong>Veuillez corriger les erreurs :</strong>
+            {{ form.errors }}
+        </div>
+    {% endif %}
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        {% for field in form %}
+            <div class="field">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.errors %}
+                    <div class="errors">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="actions">
+            <button type="submit" class="btn">Enregistrer</button>
+            <a href="{% url 'contrat_detail' contrat.id_contrat %}" class="btn btn-secondary">Annuler</a>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

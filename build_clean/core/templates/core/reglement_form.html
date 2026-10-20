@@ -1,0 +1,229 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Nouveau règlement - Tiers Payant{% endblock %}
+{% block header_title %}Nouveau règlement{% endblock %}
+{% block header_sub %}Création d'un règlement de facture{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 25px;
+        border-radius: 14px;
+        box-shadow: 0 3px 14px rgba(0,0,0,.07);
+        margin-bottom: 22px;
+        border: 1px solid #e5e7eb;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .card h2 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #123b65;
+        font-size: 21px;
+    }
+
+    .info {
+        background: #eff6ff;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+        padding: 15px 18px;
+        border-radius: 9px;
+        margin-bottom: 22px;
+        line-height: 1.5;
+        font-size: 14px;
+    }
+
+    .errors {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-top: 7px;
+        margin-bottom: 15px;
+    }
+
+    .field { margin-bottom: 19px; }
+
+    .field label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 7px;
+        color: #334155;
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 11px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 15px;
+        font-family: inherit;
+        background: white;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+
+    textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 25px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 10px 17px;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: bold;
+        transition: .2s;
+    }
+
+    .btn:hover { background: #1d4ed8; }
+    .btn-secondary { background: #64748b; }
+    .btn-secondary:hover { background: #475569; }
+
+    .table-wrapper {
+        overflow-x: auto;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+    }
+
+    table {
+        width: 100%;
+        min-width: 700px;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 13px 12px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+    }
+
+    th {
+        background: #f1f5f9;
+        color: #334155;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    td { font-size: 14px; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .amount {
+        font-weight: bold;
+        color: #123b65;
+    }
+
+    .empty {
+        text-align: center;
+        padding: 25px;
+        color: #64748b;
+    }
+
+    @media (max-width: 800px) {
+        .card { padding: 18px; }
+        .actions { flex-direction: column; }
+        .actions .btn { width: 100%; text-align: center; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h2>Créer un règlement</h2>
+
+    <div class="info">
+        Seules les factures validées sont disponibles pour règlement.
+        Le montant ne peut pas dépasser le montant validé de la facture.
+    </div>
+
+    {% if form.errors %}
+        <div class="errors">
+            <strong>Veuillez corriger les erreurs :</strong>
+            {{ form.errors }}
+        </div>
+    {% endif %}
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        {% for field in form %}
+            {% if field.name != "numero_reglement" %}
+                <div class="field">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="errors">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        <div class="actions">
+            <button type="submit" class="btn">Créer le règlement</button>
+            <a href="{% url 'factures' %}" class="btn btn-secondary">Annuler</a>
+        </div>
+
+    </form>
+
+</div>
+
+<div class="card">
+
+    <h2>Factures validées disponibles</h2>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>N° facture</th>
+                    <th>Prestataire</th>
+                    <th>Date facture</th>
+                    <th>Montant validé</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in factures %}
+                <tr>
+                    <td>{{ f.id_facture }}</td>
+                    <td><strong>{{ f.numero_facture }}</strong></td>
+                    <td>{{ f.id_prestataire.raison_sociale }}</td>
+                    <td>{{ f.date_facture|date:"d/m/Y" }}</td>
+                    <td class="amount">{{ f.montant_valide }} DA</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="empty">Aucune facture validée disponible.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}

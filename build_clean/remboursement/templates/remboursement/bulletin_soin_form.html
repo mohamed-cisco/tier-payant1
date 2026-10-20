@@ -1,0 +1,138 @@
+{# remboursement/templates/remboursement/bulletin_soin_form.html #}
+{% extends "remboursement/base_remb.html" %}
+
+{% block remb_title %}{{ titre }}{% endblock %}
+{% block remb_header_title %}{{ titre }}{% endblock %}
+
+{% block remb_content %}
+
+<div style="margin-bottom:22px;">
+    <h1 style="margin:0; color:#123b65; font-size:24px;">📄 {{ titre }}</h1>
+    <p style="margin:6px 0 0; color:#64748b;">Sélectionnez l'adhésion du bénéficiaire</p>
+</div>
+
+<form method="post" action="">
+    {% csrf_token %}
+    
+    <div class="card">
+        <h3>👤 Bénéficiaire</h3>
+        <div class="form-grid">
+            <div class="form-field full">
+                <label>Adhésion *</label>
+                <select name="id_adhesion" required>
+                    <option value="">-- Sélectionner l'adhérent --</option>
+                    {% for a in adhesions %}
+                        <option value="{{ a.id_adhesion }}">
+                            {{ a.id_adherent.numero_adherent }} - 
+                            {{ a.id_adherent.id_personne.nom }} {{ a.id_adherent.id_personne.prenom }}
+                            (Contrat : {{ a.id_contrat.numero_contrat }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-field">
+                <label>Bénéficiaire (patient) *</label>
+                <select name="id_patient" id="id_patient" required>
+                    <option value="">-- Sélectionner --</option>
+                </select>
+                <span style="font-size:11px; color:#94a3b8;">Adhérent ou ayant droit</span>
+            </div>
+            
+            <div class="form-field">
+                <label>Lien patient *</label>
+                <select name="lien_patient" id="lien_patient" required>
+                    <option value="ASSURE">Assuré principal</option>
+                    <option value="CONJOINT">Conjoint(e)</option>
+                    <option value="ENFANT">Enfant</option>
+                    <option value="ASCENDANT">Ascendant</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h3>📅 Dates</h3>
+        <div class="form-grid">
+            <div class="form-field">
+                <label>Date des soins *</label>
+                <input type="date" name="date_soins" required value="{{ today|date:'Y-m-d' }}">
+            </div>
+            
+            <div class="form-field">
+                <label>Type de déposant *</label>
+                <select name="deposant_type" required>
+                    <option value="ADHERENT">Adhérent</option>
+                    <option value="PRESTATAIRE">Prestataire</option>
+                    <option value="AGENT">Agent SAGPS</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-actions">
+        <a href="{% url 'remb_bulletins' %}" class="btn btn-secondary">← Annuler</a>
+        <button type="submit" class="btn btn-success">✅ Créer le bulletin</button>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const selectAdhesion = document.querySelector('select[name="id_adhesion"]');
+    const selectPatient = document.getElementById('id_patient');
+    const selectLien = document.getElementById('lien_patient');
+    
+    // Données du serveur
+    const patientsParAdhesion = {
+        {% for id_adhesion, patients in patients_par_adhesion.items %}
+            "{{ id_adhesion }}": [
+                {% for pid, nom, lien in patients %}
+                    {"id": "{{ pid }}", "nom": "{{ nom|escapejs }}", "lien": "{{ lien }}"}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ]{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+    
+    console.log("Données reçues :", patientsParAdhesion);
+    
+    function chargerPatients() {
+        const idAdhesion = selectAdhesion.value;
+        console.log("Adhésion sélectionnée :", idAdhesion);
+        
+        selectPatient.innerHTML = '<option value="">-- Sélectionner --</option>';
+        
+        if (!idAdhesion || !patientsParAdhesion[idAdhesion]) {
+            console.log("Aucune donnée pour cette adhésion");
+            return;
+        }
+        
+        patientsParAdhesion[idAdhesion].forEach(function(p) {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.nom;
+            opt.dataset.lien = p.lien;
+            selectPatient.appendChild(opt);
+        });
+        
+        console.log("Patients chargés :", patientsParAdhesion[idAdhesion].length);
+    }
+    
+    selectAdhesion.addEventListener("change", chargerPatients);
+    
+    selectPatient.addEventListener("change", function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const lien = selectedOption.dataset.lien;
+        if (lien) {
+            selectLien.value = lien;
+        }
+    });
+    
+    if (selectAdhesion.value) {
+        chargerPatients();
+    }
+});
+</script>
+{% endblock %}

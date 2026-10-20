@@ -1,0 +1,117 @@
+﻿{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Radier un adhérent - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des adhérents{% endblock %}
+{% block header_sub %}Confirmation de radiation{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        border-radius: 14px;
+        padding: 32px;
+        box-shadow: 0 5px 20px rgba(15, 23, 42, .08);
+        border: 1px solid #e5e7eb;
+        max-width: 720px;
+        margin: 0 auto;
+    }
+
+    .card h2 {
+        margin-top: 0;
+        margin-bottom: 25px;
+        color: #123b65;
+        font-size: 24px;
+    }
+
+    .warning {
+        background: #fff7ed;
+        border: 1px solid #fdba74;
+        border-left: 5px solid #f97316;
+        padding: 18px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        line-height: 1.6;
+    }
+
+    .warning strong:first-child { color: #c2410c; }
+
+    .info {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 20px;
+        line-height: 2;
+        margin-bottom: 25px;
+    }
+
+    .info strong { color: #123b65; }
+
+    .buttons {
+        margin-top: 25px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 8px;
+        text-decoration: none;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: bold;
+        transition: .2s;
+    }
+
+    .btn-danger { background: #dc2626; color: white; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-secondary { background: #64748b; color: white; }
+    .btn-secondary:hover { background: #475569; }
+
+    @media (max-width: 700px) {
+        .card { padding: 22px; }
+        .buttons { flex-direction: column; }
+        .btn { width: 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h2>⚠️ Confirmer la radiation</h2>
+
+    <div class="warning">
+        <strong>Attention :</strong>
+        cette opération va passer l'adhérent au statut
+        <strong>RADIE</strong> et enregistrer la date de radiation.
+        L'adhérent ne sera pas supprimé de la base de données.
+    </div>
+
+    <div class="info">
+        <strong>N° adhérent :</strong> {{ adherent.numero_adherent }}
+        <br>
+        <strong>Nom :</strong> {{ adherent.id_personne.nom }}
+        <br>
+        <strong>Prénom :</strong> {{ adherent.id_personne.prenom }}
+        <br>
+        <strong>Statut actuel :</strong> {{ adherent.statut }}
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="buttons">
+            <button type="submit" class="btn btn-danger">🗑️ Confirmer la radiation</button>
+            <a href="{% url 'adherents' %}" class="btn btn-secondary">↩ Annuler</a>
+        </div>
+    </form>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,132 @@
+{# remboursement/templates/remboursement/rapport_ecarts.html #}
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Écarts récaps{% endblock %}
+{% block header_title %}Écarts récaps{% endblock %}
+{% block header_sub %}Contrôle des paiements souscripteurs{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filters-bar {
+        background: white; border-radius: 12px; padding: 18px 20px;
+        margin-bottom: 22px; border: 1px solid #e5ebf2;
+        display: flex; gap: 15px; align-items: end; flex-wrap: wrap;
+    }
+    .filters-bar .field { display: flex; flex-direction: column; gap: 6px; }
+    .filters-bar label { font-size: 13px; font-weight: 600; color: #475569; }
+    .filters-bar select {
+        padding: 10px 12px; border: 1px solid #cbd5e1;
+        border-radius: 7px; font-size: 14px;
+    }
+    .btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        padding: 10px 18px; border: none; border-radius: 8px;
+        font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
+    }
+    .btn-primary { background: #123b65; color: white; }
+    .btn-secondary { background: #64748b; color: white; }
+    .btn-danger { background: #dc2626; color: white; }
+    
+    .stats-grid {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px; margin-bottom: 22px;
+    }
+    .stat-card {
+        background: white; border-radius: 12px; padding: 20px;
+        border: 1px solid #e5ebf2;
+    }
+    .stat-label { font-size: 12px; color: #6b7280; font-weight: 600; text-transform: uppercase; }
+    .stat-value { font-size: 22px; font-weight: 700; color: #123b65; margin-top: 5px; }
+    .stat-value.green { color: #16a34a; }
+    .stat-value.red { color: #dc2626; }
+    
+    .card {
+        background: white; border-radius: 14px; padding: 25px;
+        border: 1px solid #e5ebf2;
+    }
+    .card h2 {
+        margin: 0 0 20px; font-size: 18px; color: #123b65;
+        padding-bottom: 12px; border-bottom: 1px solid #e5ebf2;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 11px 12px; text-align: left; border-bottom: 1px solid #edf1f5; font-size: 13px; }
+    th { background: #f7f9fc; color: #123b65; font-weight: 700; }
+    .montant { text-align: right; font-weight: 600; }
+    .empty { text-align: center; padding: 35px; color: #6b7280; }
+    tr.avec-ecart { background: #fef2f2; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<form method="get" class="filters-bar">
+    <div class="field">
+        <label>Filtre</label>
+        <select name="filtre">
+            <option value="tous" {% if filtre == 'tous' %}selected{% endif %}>Tous les récaps</option>
+            <option value="ecarts" {% if filtre == 'ecarts' %}selected{% endif %}>Uniquement avec écart</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">🔍 Filtrer</button>
+    <a href="{% url 'rapport_remb_ecarts_pdf' %}?filtre={{ filtre }}" 
+       target="_blank" class="btn btn-danger">
+        📄 Export PDF
+    </a>
+    <a href="{% url 'rapports' %}" class="btn btn-secondary">← Retour</a>
+</form>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Récaps payés</div>
+        <div class="stat-value">{{ stats.total_recaps }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Montant demandé</div>
+        <div class="stat-value">{{ stats.total_demande|floatformat:2 }} DA</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Montant reçu</div>
+        <div class="stat-value green">{{ stats.total_recu|floatformat:2 }} DA</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Écart total</div>
+        <div class="stat-value {% if stats.total_ecart != 0 %}red{% else %}green{% endif %}">
+            {{ stats.total_ecart|floatformat:2 }} DA
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>⚠️ Écarts entre montants demandés et reçus</h2>
+    {% if lignes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>N° Récap</th>
+                    <th>Souscripteur</th>
+                    <th>Période</th>
+                    <th class="montant">Demandé (DA)</th>
+                    <th class="montant">Reçu (DA)</th>
+                    <th class="montant">Écart (DA)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in lignes %}
+                <tr {% if l.a_ecart %}class="avec-ecart"{% endif %}>
+                    <td><strong>{{ l.recap.numero }}</strong></td>
+                    <td>{{ l.recap.souscripteur.raison_sociale }}</td>
+                    <td>{{ l.recap.periode_debut|date:"d/m/Y" }} → {{ l.recap.periode_fin|date:"d/m/Y" }}</td>
+                    <td class="montant">{{ l.recap.montant_total|floatformat:2 }}</td>
+                    <td class="montant">{{ l.recap.montant_recu|floatformat:2 }}</td>
+                    <td class="montant {% if l.a_ecart %}red{% endif %}">{{ l.ecart|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="empty">Aucun récap payé trouvé.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

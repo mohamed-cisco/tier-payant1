@@ -1,0 +1,223 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}À propos - Tiers Payant{% endblock %}
+{% block header_title %}À propos{% endblock %}
+{% block header_sub %}Informations sur la plateforme et historique des versions{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        border-radius: 14px;
+        padding: 30px;
+        margin-bottom: 22px;
+        border: 1px solid #e5ebf2;
+        box-shadow: 0 4px 15px rgba(0,0,0,.05);
+        max-width: 1000px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .card h2 {
+        margin: 0 0 20px;
+        font-size: 22px;
+        color: #123b65;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #e5ebf2;
+    }
+
+    .version-actuelle {
+        background: linear-gradient(135deg, #123b65, #1d5d91);
+        color: white;
+        padding: 25px;
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .version-actuelle h3 {
+        margin: 0 0 10px;
+        font-size: 16px;
+        opacity: .9;
+    }
+
+    .version-actuelle .numero {
+        font-size: 42px;
+        font-weight: 700;
+        margin: 10px 0;
+    }
+
+    .version-actuelle .nom {
+        font-size: 18px;
+        opacity: .95;
+    }
+
+    .version-actuelle .date {
+        font-size: 13px;
+        opacity: .8;
+        margin-top: 8px;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+
+    .info-item {
+        background: #f8fafc;
+        padding: 15px;
+        border-radius: 9px;
+        border: 1px solid #e5ebf2;
+    }
+
+    .info-item strong {
+        display: block;
+        font-size: 12px;
+        color: #6b7280;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+    }
+
+    .info-item span {
+        font-size: 15px;
+        color: #123b65;
+        font-weight: 600;
+    }
+
+    .historique-item {
+        padding: 20px;
+        border-left: 4px solid #123b65;
+        background: #f8fafc;
+        margin-bottom: 15px;
+        border-radius: 0 8px 8px 0;
+    }
+
+    .historique-item.actuelle {
+        border-left-color: #16a34a;
+        background: #f0fdf4;
+    }
+
+    .historique-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .historique-version {
+        font-size: 18px;
+        font-weight: 700;
+        color: #123b65;
+    }
+
+    .historique-date {
+        font-size: 13px;
+        color: #6b7280;
+    }
+
+    .historique-nom {
+        font-size: 14px;
+        color: #475569;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .historique-changements {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .historique-changements li {
+        padding: 5px 0 5px 25px;
+        font-size: 13px;
+        color: #475569;
+        position: relative;
+    }
+
+    .historique-changements li::before {
+        content: "•";
+        position: absolute;
+        left: 8px;
+        color: #2563eb;
+        font-weight: 700;
+    }
+
+    .badge-actuelle {
+        background: #16a34a;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        margin-left: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <h2>📊 Version actuelle</h2>
+
+    <div class="version-actuelle">
+        <h3>Version actuelle de la plateforme</h3>
+        <div class="numero">v{{ VERSION }}</div>
+        <div class="nom">{{ NOM_VERSION }}</div>
+        <div class="date">Publiée le {{ DATE_VERSION }}</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>ℹ️ Informations</h2>
+
+    <div class="info-grid">
+        <div class="info-item">
+            <strong>Nom du projet</strong>
+            <span>Plateforme Tiers Payant SAGPS</span>
+        </div>
+        <div class="info-item">
+            <strong>Technologie</strong>
+            <span>Django 6.1 + Python 3.14</span>
+        </div>
+        <div class="info-item">
+            <strong>Base de données</strong>
+            <span>PostgreSQL 16</span>
+        </div>
+        <div class="info-item">
+            <strong>Organisation</strong>
+            <span>Djazair Med</span>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>📅 Historique des versions</h2>
+
+    {% for v in historique %}
+        <div class="historique-item {% if v.version == VERSION %}actuelle{% endif %}">
+            <div class="historique-header">
+                <div>
+                    <span class="historique-version">v{{ v.version }}</span>
+                    {% if v.version == VERSION %}
+                        <span class="badge-actuelle">ACTUELLE</span>
+                    {% endif %}
+                </div>
+                <span class="historique-date">{{ v.date }}</span>
+            </div>
+
+            <div class="historique-nom">{{ v.nom }}</div>
+
+            <ul class="historique-changements">
+                {% for changement in v.changements %}
+                    <li>{{ changement }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

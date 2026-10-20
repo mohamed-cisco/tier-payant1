@@ -1,0 +1,57 @@
+{# remboursement/templates/remboursement/rib_form.html #}
+{% extends "remboursement/base_remb.html" %}
+
+{% block remb_title %}RIB - {{ adherent.numero_adherent }}{% endblock %}
+{% block remb_header_title %}Coordonnées bancaires{% endblock %}
+
+{% block remb_content %}
+
+<h1 style="margin:0 0 6px; color:#123b65; font-size:24px;">🏦 Coordonnées bancaires</h1>
+<p style="margin:0 0 22px; color:#64748b;">
+    {{ adherent.numero_adherent }} — {{ adherent.id_personne.nom }} {{ adherent.id_personne.prenom }}
+</p>
+
+<div style="background:white; border-radius:10px; padding:22px 26px; box-shadow:0 1px 6px rgba(0,0,0,.05); max-width:700px;">
+    <form method="post" action="">
+        {% csrf_token %}
+        
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px;">
+            <div style="display:flex; flex-direction:column; gap:5px;">
+                <label style="font-size:12px; font-weight:600; color:#475569;">Type de compte *</label>
+                <select name="type_compte" required style="padding:9px 12px; border:1px solid #cbd5e1; border-radius:7px; font-size:14px;">
+                    <option value="CCP" {% if coordonnees.type_compte == 'CCP' %}selected{% endif %}>Compte CCP (Algérie Poste)</option>
+                    <option value="BANCAIRE" {% if coordonnees.type_compte == 'BANCAIRE' %}selected{% endif %}>Compte bancaire</option>
+                </select>
+            </div>
+            
+            <div style="display:flex; flex-direction:column; gap:5px;">
+                <label style="font-size:12px; font-weight:600; color:#475569;">Banque</label>
+                <input type="text" name="banque" value="{{ coordonnees.banque|default:'' }}"
+                       placeholder="Ex: Algérie Poste, BNA, BEA..."
+                       style="padding:9px 12px; border:1px solid #cbd5e1; border-radius:7px; font-size:14px;">
+            </div>
+        </div>
+        
+        <div style="display:flex; flex-direction:column; gap:5px; margin-bottom:18px;">
+            <label style="font-size:12px; font-weight:600; color:#475569;">RIB complet *</label>
+            <input type="text" name="rib" value="{{ coordonnees.rib|default:'' }}" required
+                   placeholder="Ex: 002 00123 4567890123 45"
+                   style="padding:9px 12px; border:1px solid #cbd5e1; border-radius:7px; font-size:14px; font-family:monospace;">
+            <span style="font-size:11px; color:#94a3b8;">Numéro de compte complet (20-24 chiffres)</span>
+        </div>
+        
+        <div style="display:flex; flex-direction:column; gap:5px; margin-bottom:18px;">
+            <label style="font-size:12px; font-weight:600; color:#475569;">Titulaire du compte</label>
+            <input type="text" name="titulaire" value="{{ coordonnees.titulaire|default:'' }}"
+                   placeholder="Nom du titulaire (si différent)"
+                   style="padding:9px 12px; border:1px solid #cbd5e1; border-radius:7px; font-size:14px;">
+        </div>
+        
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:22px; padding-top:18px; border-top:1px solid #e5e7eb;">
+            <a href="{% url 'remb_ribs_manquants' %}" class="btn btn-secondary">← Annuler</a>
+            <button type="submit" class="btn btn-success">💾 Enregistrer</button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

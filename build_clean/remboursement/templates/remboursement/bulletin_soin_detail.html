@@ -1,0 +1,204 @@
+{# remboursement/templates/remboursement/bulletin_soin_detail.html #}
+{% extends "remboursement/base_remb.html" %}
+
+{% block remb_title %}Bulletin {{ bulletin.numero }}{% endblock %}
+{% block remb_header_title %}Bulletin de soins{% endblock %}
+
+{% block remb_content %}
+
+<div class="page-title" style="margin-bottom:22px; display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:15px;">
+    <div>
+        <h1 style="margin:0; color:#123b65; font-size:24px;">📄 Bulletin {{ bulletin.numero }}</h1>
+        <p style="margin:6px 0 0; color:#64748b;">
+            {{ bulletin.patient.nom }} {{ bulletin.patient.prenom }} ({{ bulletin.get_lien_patient_display }})
+        </p>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <a href="{% url 'remb_bulletins' %}" class="btn btn-secondary">← Retour</a>
+        
+        {% if bulletin.statut == 'RECU' and "REMBOURSEMENT_VALIDATE" in permissions %}
+            <a href="{% url 'remb_bulletin_valider' bulletin.id %}" class="btn btn-primary"
+               onclick="return confirm('Élaborer et calculer ce bulletin ?');">✅ Élaborer</a>
+        {% endif %}
+        
+        {% if bulletin.statut == 'EN_VERIFICATION' and "REMBOURSEMENT_VALIDATE" in permissions %}
+            <a href="{% url 'remb_bulletin_controler' bulletin.id %}" class="btn btn-success"
+               onclick="return confirm('Contrôler et valider ce bulletin ?');">✅ Contrôler</a>
+            <a href="{% url 'remb_bulletin_recalculer' bulletin.id %}" class="btn btn-secondary">🔄 Recalculer</a>
+        {% endif %}
+        
+        {% if bulletin.statut != 'REJETE' and bulletin.statut != 'REVERSE' and "REMBOURSEMENT_REJECT" in permissions %}
+            <form method="post" action="{% url 'remb_bulletin_rejeter' bulletin.id %}" style="display:inline;">
+                {% csrf_token %}
+                <input type="text" name="motif" placeholder="Motif du rejet..." required
+                       style="padding:7px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Rejeter ce bulletin ?');">❌ Rejeter</button>
+            </form>
+        {% endif %}
+        
+        {% if bulletin.statut == 'REJETE' and "REMBOURSEMENT_VALIDATE" in permissions %}
+            <a href="{% url 'remb_bulletin_reactiver' bulletin.id %}" class="btn btn-warning">🔄 Réactiver</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card" style="padding:14px 20px;">
+    <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;">
+        <div>
+            <span style="font-size:12px; color:#64748b; font-weight:600;">STATUT :</span>
+            {% if bulletin.statut == 'RECU' %}<span class="badge orange" style="margin-left:6px;">Reçu</span>
+            {% elif bulletin.statut == 'EN_VERIFICATION' %}<span class="badge blue" style="margin-left:6px;">En élaboration</span>
+            {% elif bulletin.statut == 'VALIDE' %}<span class="badge blue" style="margin-left:6px;">Validé</span>
+            {% elif bulletin.statut == 'TRANSMIS' %}<span class="badge purple" style="margin-left:6px;">Transmis</span>
+            {% elif bulletin.statut == 'REMBOURSE' %}<span class="badge green" style="margin-left:6px;">Remboursé</span>
+            {% elif bulletin.statut == 'REVERSE' %}<span class="badge green" style="margin-left:6px;">Reversé</span>
+            {% elif bulletin.statut == 'REJETE' %}<span class="badge red" style="margin-left:6px;">Rejeté</span>
+            {% endif %}
+        </div>
+        <div><span style="font-size:12px; color:#64748b; font-weight:600;">DATE SOINS :</span> {{ bulletin.date_soins|date:"d/m/Y" }}</div>
+        <div><span style="font-size:12px; color:#64748b; font-weight:600;">CONTRAT :</span> {{ bulletin.contrat.numero_contrat }}</div>
+        <div><span style="font-size:12px; color:#64748b; font-weight:600;">SOUSCRIPTEUR :</span> {{ bulletin.souscripteur.raison_sociale }}</div>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card blue">
+        <div class="stat-label">Montant facturé</div>
+        <div class="stat-value small">{{ bulletin.montant_total_facture|floatformat:2 }} DA</div>
+    </div>
+    <div class="stat-card orange">
+        <div class="stat-label">Part CNAS</div>
+        <div class="stat-value small">{{ bulletin.montant_total_cnas|floatformat:2 }} DA</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-label">Remboursé</div>
+        <div class="stat-value small">{{ bulletin.montant_total_rembourse|floatformat:2 }} DA</div>
+    </div>
+    <div class="stat-card red">
+        <div class="stat-label">À charge adhérent</div>
+        <div class="stat-value small">{{ bulletin.montant_a_charge|floatformat:2 }} DA</div>
+    </div>
+</div>
+
+<div class="table-wrap" style="margin-bottom:20px;">
+    <div class="table-header">
+        <h2>📋 Lignes de soins ({{ lignes|length }})</h2>
+        {% if bulletin.statut in "RECU,EN_VERIFICATION,VALIDE" and "REMBOURSEMENT_CREATE" in permissions %}
+            <a href="{% url 'remb_ligne_create' bulletin.id %}" class="btn btn-success btn-sm">➕ Ajouter une ligne</a>
+        {% endif %}
+    </div>
+    
+    {% if lignes %}
+    <table class="data">
+        <thead>
+            <tr>
+                <th>Section</th>
+                <th>Date</th>
+                <th>Acte</th>
+                <th>Prestataire</th>
+                <th style="text-align:right;">Montant</th>
+                <th style="text-align:right;">CNAS</th>
+                <th style="text-align:right;">Remboursé</th>
+                <th style="text-align:center;">Statut</th>
+                {% if bulletin.statut in "RECU,EN_VERIFICATION,VALIDE" %}
+                    <th style="text-align:center;">Actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for l in lignes %}
+            <tr>
+                <td><span class="badge gray">{{ l.section }}</span></td>
+                <td>{{ l.date_acte|date:"d/m/Y" }}</td>
+                <td>{{ l.acte.code_acte }} - {{ l.acte.libelle }}</td>
+                <td>{{ l.prestataire.raison_sociale }}</td>
+                <td style="text-align:right;">{{ l.montant_total|floatformat:2 }} DA</td>
+                <td style="text-align:right; color:#d97706;">{{ l.montant_cnas|floatformat:2 }} DA</td>
+                <td style="text-align:right; color:#059669; font-weight:600;">{{ l.montant_rembourse|floatformat:2 }} DA</td>
+                <td style="text-align:center;">
+                    {% if l.statut_calcul == 'CALCULE' %}<span class="badge green">OK</span>
+                    {% elif l.statut_calcul == 'MANUEL' %}<span class="badge orange">Manuel</span>
+                    {% elif l.statut_calcul == 'REJETE' %}<span class="badge red">Rejeté</span>
+                    {% else %}<span class="badge gray">Attente</span>{% endif %}
+                </td>
+                {% if bulletin.statut in "RECU,EN_VERIFICATION" %}
+                <td style="text-align:center;">
+                    <a href="{% url 'remb_ligne_delete' l.id %}" class="btn btn-danger btn-sm"
+                       onclick="return confirm('Supprimer cette ligne ?');">🗑️</a>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div class="icon">📋</div>
+        <h3>Aucune ligne pour l'instant</h3>
+        <p>Ajoutez les actes de soins de ce bulletin.</p>
+    </div>
+    {% endif %}
+</div>
+
+{% if bulletin.motif_rejet %}
+<div class="card" style="border-left:4px solid #ef4444;">
+    <h3 style="color:#991b1b;">Motif de rejet</h3>
+    <p>{{ bulletin.motif_rejet }}</p>
+</div>
+{% endif %}
+<!-- ============ PIÈCES JOINTES ============ -->
+<div class="table-wrap" style="margin-top:20px;">
+    <div class="table-header">
+        <h2>📎 Pièces jointes ({{ pieces|length }})</h2>
+        {% if "REMBOURSEMENT_CREATE" in permissions or "REMBOURSEMENT_UPDATE" in permissions %}
+            <a href="{% url 'remb_piece_jointe_create' bulletin.id %}" class="btn btn-success btn-sm">
+                ➕ Ajouter une pièce jointe
+            </a>
+        {% endif %}
+    </div>
+    
+    {% if pieces %}
+    <table class="data">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Fichier</th>
+                <th>Description</th>
+                <th>Date</th>
+                <th style="text-align:center;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in pieces %}
+            <tr>
+                <td><span class="badge blue">{{ p.get_type_piece_display }}</span></td>
+                <td>
+                    <a href="{{ p.fichier.url }}" target="_blank" style="color:#2563eb; text-decoration:none; font-weight:600;">
+                        📄 {{ p.fichier.name|slice:"30:" }}
+                    </a>
+                </td>
+                <td>{{ p.description|default:"—" }}</td>
+                <td>{{ p.date_ajout|date:"d/m/Y H:i" }}</td>
+                <td style="text-align:center;">
+                    <a href="{{ p.fichier.url }}" target="_blank" class="btn btn-secondary btn-sm" title="Télécharger">📥</a>
+                    {% if "REMBOURSEMENT_UPDATE" in permissions or "REMBOURSEMENT_CREATE" in permissions %}
+                    <form method="post" action="{% url 'remb_piece_jointe_delete' p.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm" 
+                                onclick="return confirm('Supprimer cette pièce jointe ?');" title="Supprimer">🗑️</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div class="icon">📎</div>
+        <h3>Aucune pièce jointe</h3>
+        <p>Ajoutez les ordonnances, factures ou vignettes liées à ce bulletin.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

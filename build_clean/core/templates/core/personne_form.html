@@ -1,0 +1,172 @@
+﻿{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Personne - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des personnes{% endblock %}
+{% block header_sub %}Création et modification de personne{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 14px;
+        box-shadow: 0 5px 18px rgba(0,0,0,.08);
+        border: 1px solid #e5e7eb;
+        max-width: 850px;
+        margin: 0 auto;
+    }
+
+    .card h2 {
+        margin: 0 0 8px;
+        color: #123b65;
+        font-size: 22px;
+    }
+
+    .subtitle {
+        margin: 0 0 25px;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .info-box {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e40af;
+        padding: 14px 16px;
+        border-radius: 9px;
+        margin-bottom: 25px;
+        font-size: 14px;
+    }
+
+    .field { margin-bottom: 22px; }
+
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #374151;
+    }
+
+    input,
+    select,
+    textarea {
+        width: 100%;
+        padding: 12px 13px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        background: white;
+        font-size: 14px;
+        color: #1f2937;
+        transition: border-color .2s, box-shadow .2s;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .errors {
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+        padding: 10px 13px;
+        border-radius: 8px;
+        margin-top: 8px;
+        font-size: 13px;
+    }
+
+    .errors ul {
+        margin: 5px 0 0;
+        padding-left: 20px;
+    }
+
+    .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 30px;
+        padding-top: 22px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 20px;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: .2s;
+    }
+
+    .btn:hover { transform: translateY(-1px); opacity: .92; }
+    .btn-secondary { background: #6b7280; }
+
+    @media (max-width: 700px) {
+        .card { padding: 22px; }
+        .actions { flex-direction: column; }
+        .btn { width: 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h2>{{ titre }}</h2>
+
+    <p class="subtitle">
+        Renseignez les informations de la personne.
+    </p>
+
+    <div class="info-box">
+        👤 Les informations saisies seront utilisées dans la gestion
+        des adhésions et des bénéficiaires.
+    </div>
+
+    {% if form.errors %}
+        <div class="errors">
+            <strong>Veuillez corriger les erreurs :</strong>
+            {{ form.non_field_errors }}
+        </div>
+    {% endif %}
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        {% for field in form %}
+            <div class="field">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.errors %}
+                    <div class="errors">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="actions">
+            <button type="submit" class="btn">💾 Enregistrer</button>
+            <a href="{% url 'adhesions' %}" class="btn btn-secondary">← Annuler</a>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

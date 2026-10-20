@@ -1,0 +1,210 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Nouvelle demande TP - Tiers Payant{% endblock %}
+{% block header_title %}Demande de Tiers Payant{% endblock %}
+{% block header_sub %}Création d'une demande de prise en charge{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 14px;
+        box-shadow: 0 3px 14px rgba(15,23,42,.07);
+        border: 1px solid #e5eaf0;
+        max-width: 950px;
+        margin: 0 auto;
+    }
+
+    .card h2 {
+        margin: 0 0 22px;
+        color: #123b65;
+        font-size: 22px;
+    }
+
+    .info {
+        background: #eff6ff;
+        color: #1e40af;
+        padding: 17px 20px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        border: 1px solid #dbeafe;
+        line-height: 1.6;
+        font-size: 14px;
+    }
+
+    .info strong { color: #123b65; }
+
+    .field { margin-bottom: 20px; }
+
+    label {
+        display: block;
+        font-weight: 700;
+        margin-bottom: 7px;
+        color: #334155;
+        font-size: 14px;
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 12px 13px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+        color: #1f2937;
+        outline: none;
+        transition: .2s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .errors {
+        background: #fef2f2;
+        color: #b91c1c;
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #fecaca;
+    }
+
+    .form-errors {
+        margin-bottom: 22px;
+        margin-top: 0;
+    }
+
+    .field .errors {
+        margin-top: 8px;
+        margin-bottom: 0;
+        font-size: 13px;
+    }
+
+    .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 11px 18px;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: .2s;
+    }
+
+    .btn:hover { background: #1d4ed8; }
+    .btn-secondary { background: #64748b; }
+    .btn-secondary:hover { background: #475569; }
+
+    @media (max-width: 700px) {
+        .card { padding: 20px; }
+        .actions { flex-direction: column; }
+        .btn { text-align: center; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h2>{{ titre }}</h2>
+        {% if messages %}
+            {% for message in messages %}
+                <div style="
+                    padding: 15px 18px;
+                    margin-bottom: 20px;
+                    border-radius: 9px;
+                    font-size: 14px;
+                    {% if message.tags == 'error' %}
+                        background: #fee2e2; color: #991b1b; border-left: 5px solid #dc2626;
+                    {% elif message.tags == 'warning' %}
+                        background: #fef3c7; color: #92400e; border-left: 5px solid #d97706;
+                    {% elif message.tags == 'success' %}
+                        background: #dcfce7; color: #166534; border-left: 5px solid #16a34a;
+                    {% else %}
+                        background: #eff6ff; color: #1e40af; border-left: 5px solid #2563eb;
+                    {% endif %}
+                ">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    <div class="info">
+        Les listes ci-dessous affichent uniquement les <strong>éléments actifs</strong>.
+    </div>
+
+    {% if form.errors %}
+        <div class="errors form-errors">
+            <strong>Veuillez corriger les erreurs :</strong>
+            {{ form.errors }}
+        </div>
+    {% endif %}
+
+    <form method="post">
+
+        {% csrf_token %}
+        
+            {% if doublon_detecte %}
+                <input type="hidden" name="confirmer_doublon" value="1">
+            {% endif %}
+
+        {% for field in form %}
+            {% if field.name != "numero_demande" %}
+                <div class="field">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="errors">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        <div class="actions">
+            <button type="submit" class="btn">Enregistrer</button>
+            <a href="{% url 'demandes_tp' %}" class="btn btn-secondary">Annuler</a>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const contrat = document.getElementById("id_id_contrat");
+
+    if (!contrat) return;
+
+    contrat.addEventListener("change", function () {
+        const idContrat = this.value;
+
+        if (idContrat) {
+            window.location.href = "{% url 'demande_tp_create' %}?id_contrat=" + idContrat;
+        }
+    });
+});
+</script>
+{% endblock %}

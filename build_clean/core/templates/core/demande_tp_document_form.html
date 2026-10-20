@@ -1,0 +1,186 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}{{ titre }}{% endblock %}
+{% block header_title %}Pièces jointes de la demande TP{% endblock %}
+{% block header_sub %}Ajout d'un document{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 14px;
+        box-shadow: 0 3px 14px rgba(15,23,42,.07);
+        border: 1px solid #e5eaf0;
+        max-width: 850px;
+        margin: 0 auto;
+    }
+
+    .card h2 {
+        margin: 0 0 22px;
+        color: #123b65;
+        font-size: 22px;
+    }
+
+    .info {
+        background: #eff6ff;
+        color: #1e40af;
+        padding: 17px 20px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        border: 1px solid #dbeafe;
+        line-height: 1.7;
+        font-size: 14px;
+    }
+
+    .info strong { color: #123b65; }
+
+    .field { margin-bottom: 21px; }
+
+    label {
+        display: block;
+        font-weight: 700;
+        margin-bottom: 7px;
+        color: #334155;
+        font-size: 14px;
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 12px 13px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+        color: #1f2937;
+        outline: none;
+        transition: .2s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+    }
+
+    input[type="file"] {
+        padding: 10px;
+        background: #f8fafc;
+    }
+
+    .help {
+        color: #64748b;
+        font-size: 12px;
+        margin-top: 7px;
+        line-height: 1.5;
+    }
+
+    .errorlist {
+        color: #b91c1c;
+        margin: 7px 0 0;
+        padding: 10px 14px 10px 30px;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        font-size: 13px;
+        list-style: none;
+    }
+
+    .non-field-errors {
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        padding: 13px 16px;
+        margin-bottom: 20px;
+    }
+
+    .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 11px 18px;
+        border: none;
+        border-radius: 8px;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: .2s;
+    }
+
+    .btn:hover { background: #1d4ed8; transform: translateY(-1px); }
+    .btn-secondary { background: #64748b; }
+    .btn-secondary:hover { background: #475569; }
+
+    @media (max-width: 700px) {
+        .card { padding: 20px; }
+        .actions { flex-direction: column; }
+        .btn { text-align: center; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h2>Ajouter une pièce jointe</h2>
+
+    <div class="info">
+        <strong>Demande :</strong> {{ demande.numero_demande }}
+        <br>
+        <strong>Statut :</strong> {{ demande.statut }}
+    </div>
+
+    {% if form.non_field_errors %}
+        <div class="non-field-errors">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
+
+        {% csrf_token %}
+
+        <div class="field">
+            {{ form.fichier.label_tag }}
+            {{ form.fichier }}
+            {{ form.fichier.errors }}
+            <div class="help">
+                Exemple : ordonnance.pdf, justificatif.pdf, document.jpg
+            </div>
+        </div>
+
+        <div class="field">
+            {{ form.type_document.label_tag }}
+            {{ form.type_document }}
+            {{ form.type_document.errors }}
+            <div class="help">
+                Exemple : Ordonnance médicale, Justificatif, Analyse...
+            </div>
+        </div>
+
+        <div class="field">
+            {{ form.statut.label_tag }}
+            {{ form.statut }}
+            {{ form.statut.errors }}
+        </div>
+
+        <div class="actions">
+            <button type="submit" class="btn">Ajouter la pièce jointe</button>
+            <a href="{% url 'demande_tp_details' demande.id_demande %}" class="btn btn-secondary">Annuler</a>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

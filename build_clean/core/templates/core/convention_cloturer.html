@@ -1,0 +1,140 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Clôturer la convention - Tiers Payant{% endblock %}
+{% block header_title %}Clôturer la convention{% endblock %}
+{% block header_sub %}Confirmation de clôture{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 32px;
+        border-radius: 14px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 5px 20px rgba(15,23,42,.08);
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .card h2 {
+        margin: 0 0 20px;
+        color: #123b65;
+        font-size: 23px;
+    }
+
+    .warning {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #9a3412;
+        padding: 15px 18px;
+        border-radius: 9px;
+        margin: 20px 0;
+        line-height: 1.5;
+    }
+
+    .info {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0 25px;
+    }
+
+    .info-row {
+        padding: 10px 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .info-row:last-child { border-bottom: none; }
+
+    .info strong {
+        display: inline-block;
+        min-width: 150px;
+        color: #475569;
+    }
+
+    .actions {
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 18px;
+        border: none;
+        border-radius: 8px;
+        text-decoration: none;
+        cursor: pointer;
+        color: white;
+        background: #dc2626;
+        font-size: 14px;
+        font-weight: bold;
+        transition: .2s;
+    }
+
+    .btn:hover { background: #b91c1c; }
+
+    .btn-secondary { background: #64748b; }
+    .btn-secondary:hover { background: #475569; }
+
+    @media (max-width: 700px) {
+        .card { padding: 22px; }
+        .info strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .actions .btn { width: 100%; text-align: center; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h2>Clôturer la convention</h2>
+
+    <div class="warning">
+        ⚠ Voulez-vous vraiment clôturer cette convention ?
+    </div>
+
+    <div class="info">
+
+        <div class="info-row">
+            <strong>Numéro :</strong>
+            {{ convention.numero_convention }}
+        </div>
+
+        <div class="info-row">
+            <strong>Prestataire :</strong>
+            {{ convention.id_prestataire.raison_sociale }}
+        </div>
+
+        <div class="info-row">
+            <strong>Statut actuel :</strong>
+            {{ convention.statut }}
+        </div>
+
+    </div>
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        <div class="actions">
+            <button type="submit" class="btn">Confirmer la clôture</button>
+            <a href="{% url 'conventions' %}" class="btn btn-secondary">Annuler</a>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

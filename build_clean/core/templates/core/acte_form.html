@@ -1,0 +1,172 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Acte - Tiers Payant{% endblock %}
+{% block header_title %}Gestion des actes{% endblock %}
+{% block header_sub %}Création et modification d'acte{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 18px rgba(0,0,0,.07);
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 18px;
+        margin-bottom: 25px;
+    }
+
+    .card-header h2 {
+        margin: 0;
+        color: #123b65;
+        font-size: 24px;
+    }
+
+    .card-header p {
+        margin: 7px 0 0;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .field { margin-bottom: 20px; }
+
+    label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 7px;
+        color: #374151;
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 11px 13px;
+        border: 1px solid #d1d5db;
+        border-radius: 7px;
+        font-size: 15px;
+        background: white;
+        color: #1f2937;
+        transition: .2s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+
+    textarea { min-height: 100px; resize: vertical; }
+
+    .helptext {
+        display: block;
+        margin-top: 5px;
+        color: #6b7280;
+        font-size: 12px;
+    }
+
+    .errors {
+        background: #fee2e2;
+        color: #b91c1c;
+        padding: 11px 14px;
+        border-radius: 7px;
+        margin-bottom: 18px;
+        font-size: 14px;
+    }
+
+    .field .errors {
+        margin-top: 7px;
+        margin-bottom: 0;
+    }
+
+    .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 28px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 11px 19px;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        border-radius: 7px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        transition: .2s;
+    }
+
+    .btn:hover { background: #1d4ed8; }
+    .btn-secondary { background: #6b7280; }
+    .btn-secondary:hover { background: #4b5563; }
+
+    @media (max-width: 700px) {
+        .card { padding: 22px; }
+        .actions .btn { width: 100%; text-align: center; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <div class="card-header">
+        <h2>{{ titre }}</h2>
+        <p>Renseignez les informations de l'acte.</p>
+    </div>
+{% if messages %}
+    {% for message in messages %}
+        <div style="padding:14px 18px; margin-bottom:18px; border-radius:8px; 
+                    {% if message.tags == 'error' %}background:#fee2e2; color:#991b1b; border-left:5px solid #dc2626;
+                    {% else %}background:#dcfce7; color:#166534; border-left:5px solid #16a34a;{% endif %}">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+    {% if form.errors %}
+    <div class="errors">
+        <strong>Veuillez corriger les erreurs :</strong>
+        <ul style="margin:8px 0 0 20px; padding:0;">
+        {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+                <li><strong>{{ field }}</strong> : {{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        {% for field in form %}
+            <div class="field">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}<span class="helptext">{{ field.help_text }}</span>{% endif %}
+                {% if field.errors %}<div class="errors">{{ field.errors }}</div>{% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="actions">
+            <button type="submit" class="btn">✓ Enregistrer</button>
+            <a href="{% url 'actes' %}" class="btn btn-secondary">Annuler</a>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

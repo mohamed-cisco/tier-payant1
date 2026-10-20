@@ -1,0 +1,66 @@
+{# remboursement/templates/remboursement/recap_form.html #}
+{% extends "remboursement/base_remb.html" %}
+
+{% block remb_title %}Nouveau récap{% endblock %}
+{% block remb_header_title %}Nouveau récap souscripteur{% endblock %}
+
+{% block remb_content %}
+
+<div style="margin-bottom:22px;">
+    <h1 style="margin:0; color:#123b65; font-size:24px;">📊 Nouveau récap mensuel</h1>
+    <p style="margin:6px 0 0; color:#64748b;">Génère un récap regroupant tous les bulletins validés du mois</p>
+</div>
+
+<form method="post" action="">
+    {% csrf_token %}
+    
+    <div class="card">
+        <h3>📋 Paramètres du récap</h3>
+        <div class="form-grid">
+            <div class="form-field full">
+                <label>Souscripteur *</label>
+                <select name="souscripteur" required>
+                    <option value="">-- Sélectionner --</option>
+                    {% for s in souscripteurs %}
+                        <option value="{{ s.id_souscripteur }}">{{ s.code_souscripteur }} - {{ s.raison_sociale }}</option>
+                    {% endfor %}
+                </select>
+                <span style="font-size:11px; color:#94a3b8;">TALA, AMANA, etc.</span>
+            </div>
+            
+            <div class="form-field">
+                <label>Année *</label>
+                <input type="number" name="annee" value="{{ annee_courante }}" min="2020" max="2100" required>
+            </div>
+            
+            <div class="form-field">
+                <label>Mois *</label>
+                <select name="mois" required>
+                    <option value="1" {% if mois_courant == 1 %}selected{% endif %}>Janvier</option>
+                    <option value="2" {% if mois_courant == 2 %}selected{% endif %}>Février</option>
+                    <option value="3" {% if mois_courant == 3 %}selected{% endif %}>Mars</option>
+                    <option value="4" {% if mois_courant == 4 %}selected{% endif %}>Avril</option>
+                    <option value="5" {% if mois_courant == 5 %}selected{% endif %}>Mai</option>
+                    <option value="6" {% if mois_courant == 6 %}selected{% endif %}>Juin</option>
+                    <option value="7" {% if mois_courant == 7 %}selected{% endif %}>Juillet</option>
+                    <option value="8" {% if mois_courant == 8 %}selected{% endif %}>Août</option>
+                    <option value="9" {% if mois_courant == 9 %}selected{% endif %}>Septembre</option>
+                    <option value="10" {% if mois_courant == 10 %}selected{% endif %}>Octobre</option>
+                    <option value="11" {% if mois_courant == 11 %}selected{% endif %}>Novembre</option>
+                    <option value="12" {% if mois_courant == 12 %}selected{% endif %}>Décembre</option>
+                </select>
+            </div>
+        </div>
+        
+        <div style="margin-top:20px; padding:14px 18px; background:#eff6ff; border-left:4px solid #3b82f6; border-radius:8px; color:#1e40af; font-size:13px;">
+            <strong>ℹ️ Info :</strong> Le récap regroupera tous les bulletins <strong>VALIDÉS</strong> du souscripteur sur la période choisie.
+        </div>
+    </div>
+    
+    <div class="form-actions">
+        <a href="{% url 'remb_recaps' %}" class="btn btn-secondary">← Annuler</a>
+        <button type="submit" class="btn btn-success">📊 Créer le récap</button>
+    </div>
+</form>
+
+{% endblock %}

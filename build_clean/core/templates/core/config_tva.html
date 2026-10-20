@@ -1,0 +1,158 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Configuration TVA{% endblock %}
+{% block header_title %}Configuration TVA{% endblock %}
+{% block header_sub %}Paramétrage du taux de TVA sur les factures{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card { background: white; padding: 24px; border-radius: 14px;
+            border: 1px solid #e5ebf2; box-shadow: 0 4px 15px rgba(0,0,0,.05);
+            margin-bottom: 20px; max-width: 900px; margin-left: auto; margin-right: auto; }
+    .card h2 { margin: 0 0 20px; color: #123b65; font-size: 20px; }
+    
+    .info-box { background: #eff6ff; border-left: 4px solid #3b82f6;
+                padding: 14px 18px; border-radius: 8px; margin-bottom: 20px;
+                color: #1e40af; font-size: 14px; max-width: 900px;
+                margin-left: auto; margin-right: auto; }
+    .info-box strong { color: #123b65; }
+    
+    .current-tva { background: linear-gradient(135deg, #10b981, #059669);
+                   color: white; padding: 25px; border-radius: 12px;
+                   text-align: center; margin-bottom: 20px; max-width: 900px;
+                   margin-left: auto; margin-right: auto; }
+    .current-tva .label { font-size: 13px; opacity: .9; text-transform: uppercase; }
+    .current-tva .value { font-size: 42px; font-weight: 700; margin: 10px 0; }
+    .current-tva .sub { font-size: 13px; opacity: .9; }
+    
+    .field { margin-bottom: 18px; }
+    label { display: block; font-weight: 600; color: #123b65; margin-bottom: 7px; font-size: 14px; }
+    input, select, textarea { width: 100%; padding: 11px 13px; border: 1px solid #cbd5e1;
+                              border-radius: 8px; font-size: 14px; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+    .help { color: #64748b; font-size: 12px; margin-top: 5px; }
+    .errors { color: #b91c1c; background: #fef2f2; padding: 10px;
+              border-radius: 7px; font-size: 13px; margin-top: 5px; }
+    
+    .actions { display: flex; gap: 10px; margin-top: 25px; padding-top: 20px;
+               border-top: 1px solid #e5ebf2; }
+    .btn { display: inline-flex; align-items: center; padding: 11px 20px;
+           border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+           cursor: pointer; text-decoration: none; }
+    .btn-primary { background: #123b65; color: white; }
+    .btn-primary:hover { background: #1d5d91; }
+    .btn-secondary { background: #64748b; color: white; }
+    
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 11px 12px; text-align: left; border-bottom: 1px solid #edf1f5; }
+    th { background: #f7f9fc; color: #123b65; font-weight: 700; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 20px;
+             font-size: 12px; font-weight: 700; }
+    .badge-actif { background: #dcfce7; color: #166534; }
+    .badge-inactif { background: #f1f5f9; color: #64748b; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="info-box">
+    ⚙️ <strong>Configuration TVA</strong> — Le taux actif s'applique automatiquement à toutes les <strong>nouvelles factures</strong>.<br>
+    Les factures déjà créées conservent leur taux d'origine (snapshot).
+</div>
+
+{% if config_active %}
+<div class="current-tva">
+    <div class="label">Taux de TVA actuellement appliqué</div>
+    <div class="value">{{ config_active.taux }}%</div>
+    <div class="sub">
+        Depuis le {{ config_active.date_debut|date:"d/m/Y" }}
+        {% if config_active.commentaire %} — {{ config_active.commentaire }}{% endif %}
+    </div>
+</div>
+{% else %}
+<div class="info-box" style="background:#fef3c7; border-left-color:#f59e0b; color:#92400e;">
+    ⚠️ Aucun taux de TVA n'est actuellement configuré. Le taux par défaut (19%) sera utilisé.
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>➕ Configurer un nouveau taux</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="field">
+            <label for="{{ form.taux.id_for_label }}">Taux de TVA (%)</label>
+            {{ form.taux }}
+            {% if form.taux.errors %}<div class="errors">{{ form.taux.errors }}</div>{% endif %}
+        </div>
+        
+        <div class="field">
+            <label for="{{ form.date_debut.id_for_label }}">Date de début d'application</label>
+            {{ form.date_debut }}
+            {% if form.date_debut.errors %}<div class="errors">{{ form.date_debut.errors }}</div>{% endif %}
+        </div>
+        
+        <div class="field">
+            <label for="{{ form.date_fin.id_for_label }}">Date de fin (optionnel)</label>
+            {{ form.date_fin }}
+            <div class="help">Laisser vide si ce taux reste actif indéfiniment.</div>
+        </div>
+        
+        <div class="field">
+            <label for="{{ form.commentaire.id_for_label }}">Commentaire</label>
+            {{ form.commentaire }}
+        </div>
+        
+        <div class="field">
+            <label style="display:flex; align-items:center; gap:8px; font-weight:normal;">
+                {{ form.actif }} <span>Activer immédiatement ce taux</span>
+            </label>
+        </div>
+        
+        <div class="actions">
+            <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+            <a href="{% url 'factures' %}" class="btn btn-secondary">← Retour aux factures</a>
+        </div>
+    </form>
+</div>
+
+{% if historique %}
+<div class="card">
+    <h2>📅 Historique des taux</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Taux</th>
+                <th>Début</th>
+                <th>Fin</th>
+                <th>Statut</th>
+                <th>Commentaire</th>
+                <th>Créé le</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in historique %}
+            <tr>
+                <td><strong>{{ c.taux }}%</strong></td>
+                <td>{{ c.date_debut|date:"d/m/Y" }}</td>
+                <td>{% if c.date_fin %}{{ c.date_fin|date:"d/m/Y" }}{% else %}—{% endif %}</td>
+                <td>
+                    {% if c.actif %}
+                        <span class="badge badge-actif">ACTIF</span>
+                    {% else %}
+                        <span class="badge badge-inactif">Inactif</span>
+                    {% endif %}
+                </td>
+                <td>{{ c.commentaire|default:"—" }}</td>
+                <td>{{ c.date_creation|date:"d/m/Y H:i" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% endblock %}

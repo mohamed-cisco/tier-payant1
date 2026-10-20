@@ -1,0 +1,211 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Détail du rôle - Tiers Payant{% endblock %}
+{% block header_title %}Détail du rôle{% endblock %}
+{% block header_sub %}Informations et permissions associées{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 28px;
+        border-radius: 14px;
+        box-shadow: 0 3px 14px rgba(0,0,0,.07);
+        border: 1px solid #e5e7eb;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .role-header {
+        padding-bottom: 20px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .role-header h2 {
+        margin: 0 0 18px;
+        color: #123b65;
+        font-size: 25px;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 15px;
+    }
+
+    .info-item {
+        padding: 14px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 9px;
+    }
+
+    .info-item strong {
+        display: block;
+        margin-bottom: 6px;
+        color: #475569;
+        font-size: 13px;
+        text-transform: uppercase;
+    }
+
+    .value { font-size: 15px; }
+
+    .description { grid-column: 1 / -1; }
+
+    .statut {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 13px;
+    }
+
+    .actif {
+        color: #166534;
+        background: #dcfce7;
+    }
+
+    .autre {
+        color: #475569;
+        background: #e2e8f0;
+    }
+
+    .permissions-title {
+        margin: 0 0 15px;
+        color: #123b65;
+        font-size: 20px;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+    }
+
+    table {
+        width: 100%;
+        min-width: 650px;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 13px 12px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+    }
+
+    th {
+        background: #f1f5f9;
+        color: #334155;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    td { font-size: 14px; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .permission-code {
+        font-weight: bold;
+        color: #123b65;
+    }
+
+    .empty {
+        text-align: center;
+        padding: 25px;
+        color: #64748b;
+    }
+
+    .actions {
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 10px 17px;
+        background: #64748b;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 14px;
+        transition: .2s;
+    }
+
+    .btn:hover { background: #475569; }
+
+    @media (max-width: 750px) {
+        .card { padding: 18px; }
+        .info-grid { grid-template-columns: 1fr; }
+        .description { grid-column: auto; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <div class="role-header">
+        <h2>{{ role.libelle }}</h2>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>Code</strong>
+                <span class="value">{{ role.code_role }}</span>
+            </div>
+
+            <div class="info-item">
+                <strong>Statut</strong>
+                {% if role.statut == "ACTIF" %}
+                    <span class="statut actif">Actif</span>
+                {% else %}
+                    <span class="statut autre">{{ role.statut }}</span>
+                {% endif %}
+            </div>
+
+            <div class="info-item description">
+                <strong>Description</strong>
+                <span class="value">{{ role.description|default:"-" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="permissions-title">Permissions du rôle</h3>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Code permission</th>
+                    <th>Permission</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rp in permissions_role %}
+                <tr>
+                    <td class="permission-code">{{ rp.id_permission.code_permission }}</td>
+                    <td>{{ rp.id_permission.libelle }}</td>
+                    <td>
+                        <span class="statut actif">Actif</span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="empty">Aucune permission active pour ce rôle.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="actions">
+        <a class="btn" href="{% url 'roles' %}">← Retour à la liste des rôles</a>
+    </div>
+
+</div>
+
+{% endblock %}

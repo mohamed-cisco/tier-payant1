@@ -1,0 +1,157 @@
+{# remboursement/templates/remboursement/virement_detail.html #}
+{% extends "remboursement/base_remb.html" %}
+
+{% block remb_title %}Virement {{ virement.numero }}{% endblock %}
+{% block remb_header_title %}Virement adhérent{% endblock %}
+
+{% block remb_content %}
+
+<div style="margin-bottom:22px; display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:15px;">
+    <div>
+        <h1 style="margin:0; color:#123b65; font-size:24px;">💰 {{ virement.numero }}</h1>
+        <p style="margin:6px 0 0; color:#64748b;">
+            {{ virement.adherent.numero_adherent }} - 
+            {{ virement.adherent.id_personne.nom }} {{ virement.adherent.id_personne.prenom }}
+        </p>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <a href="{% url 'remb_virements' %}" class="btn btn-secondary">← Retour</a>
+        
+        {% if virement.statut == 'A_PAYER' and "REMBOURSEMENT_PAY" in permissions %}
+            <form method="post" action="{% url 'remb_virement_payer' virement.id %}" style="display:inline-flex; gap:6px; align-items:center;">
+                {% csrf_token %}
+                <input type="text" name="reference" placeholder="Réf. virement"
+                       style="padding:7px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
+                <button type="submit" class="btn btn-success" onclick="return confirm('Marquer ce virement comme payé ?');">✅ Payer</button>
+            </form>
+        {% endif %}
+        
+        {% if virement.statut == 'A_PAYER' and "REMBOURSEMENT_PAY" in permissions %}
+            <form method="post" action="{% url 'remb_virement_echec' virement.id %}" style="display:inline;">
+                {% csrf_token %}
+                <input type="text" name="motif" placeholder="Motif échec" required
+                       style="padding:7px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Marquer en échec ?');">❌ Échec</button>
+            </form>
+        {% endif %}
+        
+        {% if virement.statut != 'PAYE' and virement.statut != 'ANNULE' and "REMBOURSEMENT_PAY" in permissions %}
+            <form method="post" action="{% url 'remb_virement_annuler' virement.id %}" style="display:inline;">
+                {% csrf_token %}
+                <input type="text" name="motif" placeholder="Motif annulation" required
+                       style="padding:7px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
+                <button type="submit" class="btn btn-warning" onclick="return confirm('Annuler ce virement ?');">🚫 Annuler</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card" style="padding:14px 20px;">
+    <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;">
+        <div>
+            <span style="font-size:12px; color:#64748b; font-weight:600;">STATUT :</span>
+            {% if virement.statut == 'A_PAYER' %}<span class="badge orange" style="margin-left:6px;">À payer</span>
+            {% elif virement.statut == 'EN_COURS' %}<span class="badge blue" style="margin-left:6px;">En cours</span>
+            {% elif virement.statut == 'PAYE' %}<span class="badge green" style="margin-left:6px;">Payé</span>
+            {% elif virement.statut == 'ECHEC' %}<span class="badge red" style="margin-left:6px;">Échec</span>
+            {% elif virement.statut == 'ANNULE' %}<span class="badge gray" style="margin-left:6px;">Annulé</span>
+            {% endif %}
+        </div>
+        <div><span style="font-size:12px; color:#64748b; font-weight:600;">MODE :</span> {{ virement.get_mode_paiement_display }}</div>
+        {% if virement.date_paiement %}<div><span style="font-size:12px; color:#64748b; font-weight:600;">DATE PAIEMENT :</span> {{ virement.date_paiement|date:"d/m/Y" }}</div>{% endif %}
+        {% if virement.reference_paiement %}<div><span style="font-size:12px; color:#64748b; font-weight:600;">RÉFÉRENCE :</span> {{ virement.reference_paiement }}</div>{% endif %}
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card green">
+        <div class="stat-label">Montant à verser</div>
+        <div class="stat-value">{{ virement.montant|floatformat:2 }} DA</div>
+    </div>
+    <div class="stat-card blue">
+        <div class="stat-label">Nb bulletins</div>
+        <div class="stat-value">{{ bulletins|length }}</div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>🏦 Coordonnées bancaires</h3>
+    <div class="form-grid">
+        <div class="form-field">
+            <label>Banque</label>
+            <input type="text" value="{{ virement.banque|default:'Non renseigné' }}" readonly>
+        </div>
+        <div class="form-field">
+            <label>RIB</label>
+            <input type="text" value="{{ virement.rib|default:'Non renseigné' }}" readonly style="font-family:monospace;">
+        </div>
+    </div>
+    
+    {% if virement.statut == 'ECHEC' %}
+        <div style="margin-top:18px; padding:14px 18px; background:#fef2f2; border-left:4px solid #ef4444; border-radius:8px; color:#991b1b;">
+            <strong>⚠️ Virement en échec</strong>
+            <p style="margin:6px 0 0; font-size:13px;">{{ virement.observations }}</p>
+        </div>
+        
+        <form method="post" action="{% url 'remb_virement_corriger_rib' virement.id %}" style="margin-top:18px;">
+            {% csrf_token %}
+            <h4 style="margin:0 0 12px; color:#123b65;">🔧 Corriger le RIB</h4>
+            <div class="form-grid">
+                <div class="form-field">
+                    <label>Nouveau RIB *</label>
+                    <input type="text" name="rib" required>
+                </div>
+                <div class="form-field">
+                    <label>Banque</label>
+                    <input type="text" name="banque">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top:12px;">Enregistrer le RIB</button>
+        </form>
+    {% endif %}
+</div>
+
+<div class="table-wrap">
+    <div class="table-header">
+        <h2>📋 Bulletins concernés ({{ bulletins|length }})</h2>
+    </div>
+    
+    {% if bulletins %}
+    <table class="data">
+        <thead>
+            <tr>
+                <th>N° Bulletin</th>
+                <th>Date soins</th>
+                <th style="text-align:right;">Montant remboursé</th>
+                <th style="text-align:center;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in bulletins %}
+            <tr>
+                <td><strong>{{ b.numero }}</strong></td>
+                <td>{{ b.date_soins|date:"d/m/Y" }}</td>
+                <td style="text-align:right; color:#059669; font-weight:600;">{{ b.montant_total_rembourse|floatformat:2 }} DA</td>
+                <td style="text-align:center;">
+                    <a href="{% url 'remb_bulletin_detail' b.id %}" class="btn btn-secondary btn-sm">👁️ Voir</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div class="icon">📋</div>
+        <h3>Aucun bulletin</h3>
+    </div>
+    {% endif %}
+</div>
+
+{% if virement.observations %}
+<div class="card" style="border-left:4px solid #f59e0b;">
+    <h3 style="color:#92400e;">📝 Observations</h3>
+    <p style="white-space:pre-wrap;">{{ virement.observations }}</p>
+</div>
+{% endif %}
+
+{% endblock %}

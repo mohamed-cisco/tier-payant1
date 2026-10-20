@@ -1,0 +1,104 @@
+{# remboursement/templates/remboursement/recap_rattrapage.html #}
+{% extends "remboursement/base_remb.html" %}
+
+{% block remb_title %}Récap de rattrapage{% endblock %}
+{% block remb_header_title %}Récap de rattrapage{% endblock %}
+
+{% block remb_content %}
+
+<div style="margin-bottom:22px;">
+    <h1 style="margin:0; color:#123b65; font-size:24px;">🔧 Récap de rattrapage</h1>
+    <p style="margin:6px 0 0; color:#64748b;">
+        Créez un récap sur une période personnalisée pour rattraper un bulletin validé après l'envoi du récap mensuel
+    </p>
+</div>
+
+<div style="padding:14px 18px; background:#fef3c7; border-left:4px solid #f59e0b; border-radius:8px; margin-bottom:20px; color:#92400e; font-size:13px;">
+    <strong>⚠️ Attention :</strong>
+    Le récap de rattrapage inclut <strong>tous les bulletins VALIDÉS</strong> de la période choisie qui ne sont pas encore dans un récap.
+</div>
+
+{# ============ BULLETINS EN ATTENTE ============ #}
+{% if bulletins_en_attente %}
+<div style="background:white; border-radius:10px; padding:18px 20px; margin-bottom:20px; box-shadow:0 1px 6px rgba(0,0,0,.05);">
+    <h3 style="margin:0 0 12px; color:#123b65; font-size:14px;">
+        📄 Bulletins VALIDÉS en attente de récap ({{ bulletins_en_attente|length }})
+    </h3>
+    <div style="max-height:200px; overflow-y:auto; border:1px solid #e5e7eb; border-radius:8px;">
+        <table style="width:100%; border-collapse:collapse; font-size:12px;">
+            <thead style="background:#f8fafc; position:sticky; top:0;">
+                <tr>
+                    <th style="padding:8px 12px; text-align:left; color:#475569; font-size:10.5px; text-transform:uppercase;">N°</th>
+                    <th style="padding:8px 12px; text-align:left; color:#475569; font-size:10.5px; text-transform:uppercase;">Souscripteur</th>
+                    <th style="padding:8px 12px; text-align:left; color:#475569; font-size:10.5px; text-transform:uppercase;">Patient</th>
+                    <th style="padding:8px 12px; text-align:left; color:#475569; font-size:10.5px; text-transform:uppercase;">Date soins</th>
+                    <th style="padding:8px 12px; text-align:right; color:#475569; font-size:10.5px; text-transform:uppercase;">Montant</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bulletins_en_attente %}
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:8px 12px; font-weight:600; color:#123b65;">{{ b.numero }}</td>
+                    <td style="padding:8px 12px;">{{ b.souscripteur.raison_sociale }}</td>
+                    <td style="padding:8px 12px;">{{ b.patient.nom }} {{ b.patient.prenom }}</td>
+                    <td style="padding:8px 12px;">{{ b.date_soins|date:"d/m/Y" }}</td>
+                    <td style="padding:8px 12px; text-align:right;">{{ b.montant_total_rembourse|floatformat:2 }} DA</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div style="background:#f0fdf4; border-left:4px solid #10b981; border-radius:10px; padding:16px 20px; margin-bottom:20px; color:#166534; font-size:14px;">
+    ✅ Aucun bulletin VALIDÉ en attente de récap. Tous les bulletins sont déjà rattachés.
+</div>
+{% endif %}
+
+{# ============ FORMULAIRE ============ #}
+<div style="background:white; border-radius:10px; padding:24px 28px; box-shadow:0 1px 6px rgba(0,0,0,.05); max-width:800px;">
+    <h3 style="margin:0 0 20px; color:#123b65; font-size:15px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+        📋 Paramètres du récap de rattrapage
+    </h3>
+    
+    <form method="post" action="">
+        {% csrf_token %}
+        
+        <div style="display:flex; flex-direction:column; gap:5px; margin-bottom:18px;">
+            <label style="font-size:12px; font-weight:600; color:#475569;">Souscripteur *</label>
+            <select name="souscripteur" required style="padding:9px 12px; border:1px solid #cbd5e1; border-radius:7px; font-size:14px;">
+                <option value="">-- Sélectionner --</option>
+                {% for s in souscripteurs %}
+                    <option value="{{ s.id_souscripteur }}">{{ s.code_souscripteur }} — {{ s.raison_sociale }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px;">
+            <div style="display:flex; flex-direction:column; gap:5px;">
+                <label style="font-size:12px; font-weight:600; color:#475569;">Date début *</label>
+                <input type="date" name="date_debut" required
+                       style="padding:9px 12px; border:1px solid #cbd5e1; border-radius:7px; font-size:14px;">
+            </div>
+            
+            <div style="display:flex; flex-direction:column; gap:5px;">
+                <label style="font-size:12px; font-weight:600; color:#475569;">Date fin *</label>
+                <input type="date" name="date_fin" required
+                       style="padding:9px 12px; border:1px solid #cbd5e1; border-radius:7px; font-size:14px;">
+            </div>
+        </div>
+        
+        <div style="display:flex; flex-direction:column; gap:5px; margin-bottom:18px;">
+            <label style="font-size:12px; font-weight:600; color:#475569;">Motif (optionnel)</label>
+            <input type="text" name="motif" placeholder="Ex: Bulletin validé après envoi du récap mensuel"
+                   style="padding:9px 12px; border:1px solid #cbd5e1; border-radius:7px; font-size:14px;">
+        </div>
+        
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:22px; padding-top:18px; border-top:1px solid #e5e7eb;">
+            <a href="{% url 'remb_recaps' %}" class="btn btn-secondary">← Annuler</a>
+            <button type="submit" class="btn btn-success">🔧 Créer le récap de rattrapage</button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

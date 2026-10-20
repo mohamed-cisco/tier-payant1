@@ -1,0 +1,300 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Détail du recours{% endblock %}
+{% block header_title %}Détail du recours{% endblock %}
+{% block header_sub %}Consultation des informations et documents{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background: white;
+        padding: 25px;
+        border-radius: 14px;
+        box-shadow: 0 4px 15px rgba(15, 23, 42, .07);
+        margin-bottom: 22px;
+        border: 1px solid #e5e7eb;
+        max-width: 1250px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 22px;
+        flex-wrap: wrap;
+    }
+
+    .card-header h2 {
+        margin: 0;
+        color: #123b65;
+        font-size: 20px;
+    }
+
+    .recours-number {
+        display: inline-block;
+        background: #eaf2f9;
+        color: #123b65;
+        padding: 8px 13px;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .info-item {
+        padding: 15px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        min-width: 0;
+    }
+
+    .info-item.full {
+        grid-column: 1 / -1;
+    }
+
+    .info-item strong {
+        display: block;
+        margin-bottom: 7px;
+        color: #475569;
+        font-size: 13px;
+    }
+
+    .info-item span,
+    .info-item div {
+        color: #1f2937;
+        line-height: 1.5;
+    }
+
+    .statut {
+        display: inline-block;
+        padding: 6px 11px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 13px;
+    }
+
+    .actif { color: #166534; background: #dcfce7; }
+    .inactif { color: #991b1b; background: #fee2e2; }
+    .attente { color: #92400e; background: #fef3c7; }
+    .cloture { color: #991b1b; background: #fee2e2; }
+
+    .btn {
+        display: inline-block;
+        padding: 10px 18px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-back { background: #64748b; color: white; }
+    .btn-back:hover { background: #475569; }
+
+    .actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        max-width: 1250px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 700px;
+    }
+
+    thead { background: #f1f5f9; }
+
+    th {
+        text-align: left;
+        padding: 13px 14px;
+        color: #475569;
+        font-size: 13px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    td {
+        padding: 14px;
+        border-bottom: 1px solid #eef2f7;
+        color: #374151;
+        font-size: 14px;
+    }
+
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .empty {
+        padding: 20px;
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 10px;
+        color: #64748b;
+        text-align: center;
+    }
+
+    @media (max-width: 800px) {
+        .info-grid { grid-template-columns: 1fr; }
+        .info-item.full { grid-column: auto; }
+        .card { padding: 18px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Bouton retour -->
+<div class="actions">
+    <a href="{% url 'recours' %}" class="btn btn-back">
+        ← Retour aux recours
+    </a>
+</div>
+
+<!-- INFORMATIONS DU RECOURS -->
+<div class="card">
+
+    <div class="card-header">
+        <h2>Informations générales</h2>
+        <span class="recours-number">{{ recours.numero_recours }}</span>
+    </div>
+
+    <div class="info-grid">
+
+        <div class="info-item">
+            <strong>Personne</strong>
+            <div>{{ recours.id_personne.nom }} {{ recours.id_personne.prenom }}</div>
+        </div>
+
+        <div class="info-item">
+            <strong>Type de recours</strong>
+            <div>{{ recours.type_recours }}</div>
+        </div>
+
+        <div class="info-item">
+            <strong>Date du recours</strong>
+            <div>{{ recours.date_recours|date:"d/m/Y" }}</div>
+        </div>
+
+        <div class="info-item">
+            <strong>Statut</strong>
+            <div>
+                {% if recours.statut == "EN_ATTENTE" %}
+                    <span class="statut attente">En attente</span>
+                {% elif recours.statut == "CLOTURE" %}
+                    <span class="statut cloture">Clôturé</span>
+                {% else %}
+                    <span class="statut actif">{{ recours.statut }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="info-item full">
+            <strong>Objet</strong>
+            <div>{{ recours.objet }}</div>
+        </div>
+
+        <div class="info-item full">
+            <strong>Motif</strong>
+            <div>{{ recours.motif|default:"-" }}</div>
+        </div>
+
+        <div class="info-item">
+            <strong>Date de clôture</strong>
+            <div>
+                {% if recours.date_cloture %}
+                    {{ recours.date_cloture|date:"d/m/Y" }}
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="info-item">
+            <strong>Utilisateur de création</strong>
+            <div>{{ recours.utilisateur_creation|default:"-" }}</div>
+        </div>
+
+        <div class="info-item full">
+            <strong>Observation</strong>
+            <div>{{ recours.observation|default:"-" }}</div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- DOCUMENTS -->
+<div class="card">
+
+    <div class="card-header">
+        <h2>Documents joints</h2>
+        {% if "DOCUMENT_CREATE" in permissions %}
+            <a href="{% url 'recours_document_create' recours.id_recours %}"
+               class="btn" style="background: #123b65; color: white;">
+                + Ajouter un document
+            </a>
+        {% endif %}
+    </div>
+
+    {% if documents_lies %}
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fichier</th>
+                        <th>Type</th>
+                        <th>Date</th>
+                        <th>Utilisateur</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rd in documents_lies %}
+                    <tr>
+                        <td><strong>{{ rd.id_document.nom_fichier }}</strong></td>
+                        <td>{{ rd.type_document|default:"-" }}</td>
+                        <td>{{ rd.date_ajout|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            {% if rd.id_document.id_utilisateur %}
+                                {{ rd.id_document.id_utilisateur.nom_utilisateur }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    {% else %}
+
+        <div class="empty">
+            Aucun document joint à ce recours.
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
